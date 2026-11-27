@@ -53,7 +53,7 @@ object CalendarMealReminders {
         } else {
             work.cancelUniqueWork(WORK)
             work.cancelUniqueWork(WATCH)
-            // A snooze already set for one says nothing once it's off (MealReminderReceiver).
+            MealReminders.cancelSnooze(context, calendar = true)
             StatusNotifier(context).cancelMealReminder(calendar = true)
         }
         scan(context)
@@ -137,7 +137,7 @@ object CalendarMealReminders {
      * the next ([again], after this one finishes).
      */
     fun watch(context: Context, again: Boolean = false) {
-        if (!enabled(context)) return
+        if (!enabled(context) || !permitted(context)) return
         val request = OneTimeWorkRequestBuilder<CalendarChangeWorker>()
             .setConstraints(
                 Constraints.Builder()

@@ -5,6 +5,7 @@ import android.app.Application
 import android.app.PendingIntent
 import android.content.Intent
 import androidx.test.core.app.ApplicationProvider
+import app.steadmo.core.CamapsParser
 import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
@@ -46,8 +47,10 @@ class AlarmsTest {
         assertEquals(ShadowAlarmManager.WINDOW_EXACT, reminder.windowLengthMs)
     }
 
-    @Test fun `allowing it makes a pending snooze and recheck on time too`() {
+    @Test fun `allowing it makes a pending snooze, recheck and signal watch on time too`() {
         val now = System.currentTimeMillis()
+        val dump = NotificationDump.of(app, camapsPost(app, "6.0", now))
+        app.repository.onCamapsNotification(dump, CamapsParser.parse(dump.viewTexts))
         MealReminders.snooze(app, 30, now = now)
         app.repository.recordTreatment(now)
         ShadowAlarmManager.setCanScheduleExactAlarms(true)
@@ -58,6 +61,10 @@ class AlarmsTest {
             shadowOf(it.operation).savedIntent.component?.className == RecheckReceiver::class.java.name
         }
         assertEquals(ShadowAlarmManager.WINDOW_EXACT, recheck.windowLengthMs)
+        val signal = alarms.scheduledAlarms.single {
+            shadowOf(it.operation).savedIntent.component?.className == SignalWatchReceiver::class.java.name
+        }
+        assertEquals(ShadowAlarmManager.WINDOW_EXACT, signal.windowLengthMs)
     }
 
     private fun cancelAll() = alarms.scheduledAlarms.toList().forEach {
@@ -65,6 +72,8 @@ class AlarmsTest {
     }
 
     @Test fun `a snooze cancelled with the permission comes back on start, until it goes off`() {
+        androidx.work.testing.WorkManagerTestInitHelper.initializeTestWorkManager(app)
+        CalendarMealReminders.set(app, true)
         val now = System.currentTimeMillis()
         MealReminders.snooze(app, 30, event = "Lunch at 12:30", now = now)
         cancelAll()
@@ -75,6 +84,16 @@ class AlarmsTest {
         MealReminderReceiver().onReceive(app, shadowOf(again.operation).savedIntent)
         cancelAll()
         MealReminders.restoreSnooze(app, now = now + 31 * MINUTE)
+        assertTrue(alarms.scheduledAlarms.none { shadowOf(it.operation).savedIntent.action == MealReminders.ACTION_FIRE + ".AGAIN" })
+    }
+
+    @Test fun `a snooze for a turned-off setting isn't restored`() {
+        androidx.work.testing.WorkManagerTestInitHelper.initializeTestWorkManager(app)
+        val now = System.currentTimeMillis()
+        MealReminders.snooze(app, 30, event = "Lunch at 12:30", now = now)
+        CalendarMealReminders.set(app, false)
+        cancelAll()
+        MealReminders.restoreSnooze(app, now = now + MINUTE)
         assertTrue(alarms.scheduledAlarms.none { shadowOf(it.operation).savedIntent.action == MealReminders.ACTION_FIRE + ".AGAIN" })
     }
 

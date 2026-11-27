@@ -40,6 +40,7 @@ class CalendarMealRemindersTest {
         CalendarMealReminders.set(app, true)
         CalendarMealReminders.scan(app, now) { listOf(dinner) }
         assertTrue(calendarAlarms().isEmpty())
+        assertTrue(WorkManager.getInstance(app).getWorkInfosForUniqueWork("calendar-meals-changes").get().isEmpty())
     }
 
     @Test fun `reminds when the next meal event starts, and looks again on changes and every few hours`() {
@@ -76,7 +77,7 @@ class CalendarMealRemindersTest {
         CalendarMealReminders.set(app, true)
         MealReminders.set(app, false)
         StatusNotifier(app).showMealReminder("Lunch")
-        MealReminders.snooze(app, 30)
+        MealReminders.snooze(app, 30, event = "Lunch")
         MealReminders.schedule(app)
         assertTrue(app.posted(7) != null)
         assertEquals(1, alarms.scheduledAlarms.count { shadowOf(it.operation).savedIntent.action == MealReminders.ACTION_FIRE + ".AGAIN" })
@@ -198,6 +199,7 @@ class CalendarMealRemindersTest {
     }
 
     @Test fun `a calendar change looks again and keeps watching`() {
+        shadowOf(app).grantPermissions(Manifest.permission.READ_CALENDAR)
         CalendarMealReminders.set(app, true)
         val worker = androidx.work.testing.TestListenableWorkerBuilder<CalendarChangeWorker>(app).build()
         kotlinx.coroutines.runBlocking { assertEquals(androidx.work.ListenableWorker.Result.success(), worker.doWork()) }
