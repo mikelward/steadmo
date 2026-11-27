@@ -8,8 +8,8 @@ package app.steadmo.core
 data class CamapsStatus(
     /** Glucose in mmol/L, or null when the notification shows none. */
     val mmol: Double?,
-    /** True when CamAPS shows a bound such as "<2.2" rather than a value. */
-    val outOfRange: Boolean,
+    /** Set when CamAPS shows a sensor limit such as "<2.2" rather than a value. */
+    val bound: Bound?,
     val unit: GlucoseUnit,
     /** The text after "Auto mode", e.g. "On", "Off", "Boost". Null if absent. */
     val autoMode: String?,
@@ -37,7 +37,7 @@ object CamapsParser {
         }
 
         var mmol: Double? = null
-        var outOfRange = false
+        var bound: Bound? = null
         for (text in cleaned) {
             val match = value.matchEntire(text) ?: continue
             val number = match.groupValues[2].replace(',', '.').toDoubleOrNull() ?: continue
@@ -49,13 +49,17 @@ object CamapsParser {
                 continue
             }
             mmol = asMmol
-            outOfRange = match.groupValues[1].isNotEmpty()
+            bound = when (match.groupValues[1]) {
+                "<" -> Bound.BELOW
+                ">" -> Bound.ABOVE
+                else -> null
+            }
             break
         }
 
         val autoMode = autoModeOf(cleaned)
         if (mmol == null && autoMode == null) return null
-        return CamapsStatus(mmol, outOfRange, unit, autoMode)
+        return CamapsStatus(mmol, bound, unit, autoMode)
     }
 
     private fun autoModeOf(texts: List<String>): String? {

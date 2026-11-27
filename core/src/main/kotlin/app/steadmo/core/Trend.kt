@@ -5,8 +5,18 @@ import kotlin.math.abs
 /** mg/dL per mmol/L. */
 const val MGDL_PER_MMOL = 18.0182
 
-/** One CGM value. [mmol] is in mmol/L whatever unit the source shows. */
-data class Reading(val timeMillis: Long, val mmol: Double)
+/** A sensor limit CamAPS FX shows in place of a value, e.g. "<2.2". */
+enum class Bound(val symbol: String) { BELOW("<"), ABOVE(">") }
+
+/**
+ * One CGM value. [mmol] is in mmol/L whatever unit the source shows. With a
+ * [bound], [mmol] is the sensor's limit, not the glucose: it is shown with
+ * its sign and left out of the trend (SPEC.md §3).
+ */
+data class Reading(val timeMillis: Long, val mmol: Double, val bound: Bound? = null) {
+    /** e.g. "8.9" or "<2.2". */
+    val display: String get() = (bound?.symbol ?: "") + String.format(java.util.Locale.US, "%.1f", mmol)
+}
 
 /**
  * The seven CGM trend arrows, using the thresholds Dexcom and most pumps use
@@ -50,11 +60,13 @@ object TrendCalculator {
 
     /**
      * The least-squares slope of the readings in the [WINDOW_MILLIS] before the
-     * latest one, or null when there are too few to say.
+     * latest one, or null when there are too few to say. A bounded latest
+     * reading has no trend: its real value is unknown.
      */
     fun trend(readings: List<Reading>): Trend? {
         val latest = readings.maxByOrNull { it.timeMillis } ?: return null
-        val window = readings.filter { latest.timeMillis - it.timeMillis in 0..WINDOW_MILLIS }
+        if (latest.bound != null) return null
+        val window = readings.filter { it.bound == null && latest.timeMillis - it.timeMillis in 0..WINDOW_MILLIS }
         if (window.size < 2) return null
         val start = window.minOf { it.timeMillis }
         if (latest.timeMillis - start < MIN_SPAN_MILLIS) return null

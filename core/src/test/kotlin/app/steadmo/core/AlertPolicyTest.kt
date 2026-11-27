@@ -31,6 +31,10 @@ class AlertPolicyTest {
         assertNull(AlertPolicy().evaluate(Reading(0, 9.5), trend(0.07)))
     }
 
+    @Test fun boundedReadingsDoNotAlert() {
+        assertNull(AlertPolicy().evaluate(Reading(0, 2.2, Bound.BELOW), trend(-0.2)))
+    }
+
     @Test fun steadyIsQuiet() {
         assertNull(AlertPolicy().evaluate(Reading(0, 6.0), trend(0.01)))
         assertNull(AlertPolicy().evaluate(Reading(0, 6.0), null))

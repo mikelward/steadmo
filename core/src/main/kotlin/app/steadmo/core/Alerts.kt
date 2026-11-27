@@ -20,6 +20,7 @@ class AlertPolicy(private val lastAlerted: MutableMap<AlertKind, Long> = mutable
 
     fun evaluate(latest: Reading, trend: Trend?): TrendAlert? {
         trend ?: return null
+        if (latest.bound != null) return null
         val alert = candidate(latest, trend) ?: return null
         val last = lastAlerted[alert.kind]
         if (last != null && latest.timeMillis - last < REPEAT_MILLIS) return null
@@ -29,7 +30,7 @@ class AlertPolicy(private val lastAlerted: MutableMap<AlertKind, Long> = mutable
 
     private fun candidate(latest: Reading, trend: Trend): TrendAlert? {
         val rate = trend.mmolPerMinute
-        val value = fmt(latest.mmol)
+        val value = latest.display
         val rateText = "${if (rate >= 0) "+" else "−"}${fmt2(abs(rate))}/min"
 
         if (rate < 0 && latest.mmol > LOW_MMOL) {

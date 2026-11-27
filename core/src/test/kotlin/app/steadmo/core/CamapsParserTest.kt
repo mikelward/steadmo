@@ -1,9 +1,7 @@
 package app.steadmo.core
 
 import org.junit.Assert.assertEquals
-import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNull
-import org.junit.Assert.assertTrue
 import org.junit.Test
 
 class CamapsParserTest {
@@ -12,7 +10,7 @@ class CamapsParserTest {
         assertEquals(11.2, status.mmol!!, 1e-9)
         assertEquals("On", status.autoMode)
         assertEquals(GlucoseUnit.MMOL, status.unit)
-        assertFalse(status.outOfRange)
+        assertNull(status.bound)
     }
 
     @Test fun valueAndUnitInOneView() {
@@ -31,10 +29,11 @@ class CamapsParserTest {
         assertEquals(9.99, status.mmol!!, 0.01)
     }
 
-    @Test fun boundIsMarkedOutOfRange() {
-        val status = CamapsParser.parse(listOf("Auto mode", "On", "<2.2", "mmol/L"))!!
-        assertEquals(2.2, status.mmol!!, 1e-9)
-        assertTrue(status.outOfRange)
+    @Test fun boundsKeepTheirDirection() {
+        val low = CamapsParser.parse(listOf("Auto mode", "On", "<2.2", "mmol/L"))!!
+        assertEquals(2.2, low.mmol!!, 1e-9)
+        assertEquals(Bound.BELOW, low.bound)
+        assertEquals(Bound.ABOVE, CamapsParser.parse(listOf("Auto mode", "On", ">22.2", "mmol/L"))!!.bound)
     }
 
     @Test fun bareIntegersAreNotMmolValues() {

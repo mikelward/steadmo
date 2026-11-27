@@ -10,6 +10,7 @@ import app.steadmo.core.Trend
 import app.steadmo.core.TrendCalculator
 import java.io.File
 import java.io.IOException
+import java.util.concurrent.Executor
 import java.util.concurrent.Executors
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -31,9 +32,13 @@ data class GlucoseState(
  * The readings and CamAPS status, on the device only: a day of readings in
  * `files/readings.csv`, nothing sent anywhere (SPEC.md §5).
  */
-class GlucoseRepository(context: Context, private val notifier: StatusNotifier) {
+class GlucoseRepository(
+    context: Context,
+    private val notifier: StatusNotifier,
+    private val writer: Executor = Executors.newSingleThreadExecutor(),
+    private val clock: () -> Long = System::currentTimeMillis,
+) {
     private val file = File(context.filesDir, "readings.csv")
-    private val writer = Executors.newSingleThreadExecutor()
     private val log = load()
     private val alerts = AlertPolicy()
 
@@ -49,7 +54,7 @@ class GlucoseRepository(context: Context, private val notifier: StatusNotifier) 
             return
         }
         val mmol = status.mmol
-        val added = mmol != null && log.add(Reading(dump.postTime, mmol))
+        val added = mmol != null && log.add(Reading(dump.postTime, mmol, status.bound))
         val readings = log.all
         val trend = TrendCalculator.trend(readings)
         _state.update {
@@ -65,7 +70,10 @@ class GlucoseRepository(context: Context, private val notifier: StatusNotifier) 
         notifier.showStatus(_state.value)
         if (added) {
             save(log.encode())
-            log.latest?.let { latest -> alerts.evaluate(latest, trend)?.let(notifier::showAlert) }
+            // A replayed old post (e.g. on reconnect) is history, not news.
+            log.latest?.takeIf { clock() - it.timeMillis < StatusNotifier.STALE_MILLIS }?.let { latest ->
+                alerts.evaluate(latest, trend)?.let(notifier::showAlert)
+            }
         }
     }
 
