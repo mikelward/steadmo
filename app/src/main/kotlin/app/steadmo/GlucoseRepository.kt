@@ -4,6 +4,8 @@ import android.content.Context
 import android.util.Log
 import app.steadmo.core.AlertKind
 import app.steadmo.core.AlertPolicy
+import app.steadmo.core.RangeSide
+import app.steadmo.core.side
 import app.steadmo.core.CamapsStatus
 import app.steadmo.core.Reading
 import app.steadmo.core.ReadingLog
@@ -69,17 +71,16 @@ class GlucoseRepository(
                 lastDump = dump,
             )
         }
-        notifier.showStatus(_state.value)
         if (added) {
             save(log.encode())
-            // Only a reading posted just now alerts. A replay (e.g. on reconnect)
-            // is history: its projection was about a moment that has passed.
             val latest = log.latest
             // A newer reading that no longer calls for the shown alert clears it.
             if (shownAlert != null && latest != null && alerts.applying(latest, trend)?.kind != shownAlert) {
                 notifier.cancelAlert()
                 shownAlert = null
             }
+            // Only a reading posted just now alerts. A replay (e.g. on reconnect)
+            // is history: its projection was about a moment that has passed.
             latest?.takeIf { clock() - it.timeMillis < ALERT_MAX_AGE_MILLIS }?.let {
                 alerts.evaluate(it, trend)?.let { alert ->
                     notifier.showAlert(alert, it.timeMillis)
@@ -87,6 +88,10 @@ class GlucoseRepository(
                 }
             }
         }
+        // A Live Update while out of range, or while a low is on the way.
+        val current = _state.value.latest
+        val promote = current != null && (current.side() != RangeSide.IN_RANGE || shownAlert == AlertKind.LOW_SOON)
+        notifier.showStatus(_state.value, promote)
     }
 
     companion object {

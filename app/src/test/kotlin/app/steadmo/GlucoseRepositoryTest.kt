@@ -6,6 +6,7 @@ import app.steadmo.core.CamapsParser
 import app.steadmo.core.TrendArrow
 import java.io.File
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
@@ -103,6 +104,25 @@ class GlucoseRepositoryTest {
         repo.post("14.0", 5 * MINUTE)
         repo.post("13.0", 10 * MINUTE)
         assertEquals("Falling fast: 14.0", app.posted(2)!!.extras.getString(android.app.Notification.EXTRA_TITLE))
+    }
+
+    private fun promoted() = app.posted(1)!!.extras.getBoolean(android.app.Notification.EXTRA_REQUEST_PROMOTED_ONGOING)
+
+    @Test fun `out of range promotes the status, back in range demotes it`() {
+        val repo = repository()
+        repo.post("4.2", 0)
+        assertFalse(promoted())
+        repo.post("3.6", 5 * MINUTE)
+        assertTrue(promoted())
+        repo.post("4.4", 10 * MINUTE)
+        assertFalse(promoted())
+    }
+
+    @Test fun `a low on the way promotes while still in range`() {
+        val repo = repository()
+        repo.post("7.0", 0)
+        repo.post("6.0", 5 * MINUTE)
+        assertTrue(promoted())
     }
 
     @Test fun `a bound is kept, shown, and left out of the trend`() {

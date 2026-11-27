@@ -82,6 +82,24 @@ reading, or sooner when a newer reading no longer calls for it. In priority orde
 3. **High soon**: a single or double up arrow, and projected above 10.0 within 15 minutes.
 4. **Rising fast**: a double up arrow.
 
+### 4.3 Live Update
+
+On Android 16 and later, Steadmo's status notification becomes a Live Update while the
+latest reading is out of range (below 3.9 or above 10.0) or a "Low soon" alert is
+showing. The status bar chip shows the value next to the arrow icon. The promoted card
+reads "Low: 3.6 mmol/L", says how long it has been out of range, and shows a progress bar
+on a 2–14 scale (red, green, amber) with the value marked. The notification is demoted
+once a reading is back in range and no low is on the way. It needs
+`POST_PROMOTED_NOTIFICATIONS`; the user can turn it off in Settings. On Android 15 the
+same notification posts unpromoted.
+
+### 4.4 CamAPS FX's notification
+
+Steadmo reads CamAPS FX's "My diabetes info" notification, so the user keeps it on but can
+minimize it (Silent, then Minimize) to avoid seeing glucose twice. Steadmo knows the
+channel's importance from the listener's ranking and shows a "Minimize CamAPS FX's
+notification" card, with a button to that channel's settings, until it is minimized.
+
 ## 5. Privacy
 
 Glucose data stays on the device. The app has no `INTERNET` permission.

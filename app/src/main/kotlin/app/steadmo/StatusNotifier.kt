@@ -8,10 +8,18 @@ import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.graphics.Bitmap
+import android.os.Build
+import androidx.annotation.RequiresApi
 import android.util.Log
 import androidx.compose.ui.graphics.toArgb
 import androidx.core.graphics.drawable.toBitmap
 import app.steadmo.core.AlertPolicy
+import app.steadmo.core.HIGH_MMOL
+import app.steadmo.core.LOW_MMOL
+import app.steadmo.core.RangeSide
+import app.steadmo.core.Reading
+import app.steadmo.core.outOfRangeSince
+import app.steadmo.core.side
 import app.steadmo.core.TrendAlert
 import app.steadmo.core.TrendArrow
 
@@ -33,7 +41,12 @@ class StatusNotifier(private val context: Context, private val clock: () -> Long
         )
     }
 
-    fun showStatus(state: GlucoseState) {
+    /**
+     * Shows the latest reading. With [promote] (out of range, or a low on the
+     * way) it becomes an Android 16 Live Update: a status bar chip with the
+     * value, and a bar placing it against the range (SPEC.md §4.3).
+     */
+    fun showStatus(state: GlucoseState, promote: Boolean = false) {
         val latest = state.latest ?: return
         // The notification lives only as long as its reading is fresh, however
         // late it was posted (a reconnect replay, a mode-only update).
@@ -50,12 +63,24 @@ class StatusNotifier(private val context: Context, private val clock: () -> Long
             state.status?.autoMode?.let { "Auto mode ${it.lowercase()}" },
         ).joinToString(" · ")
         val color = rangeColor(latest.mmol).toArgb()
-        val notification = Notification.Builder(context, CHANNEL_GLUCOSE)
+        val side = latest.side()
+        val title = when (side) {
+            RangeSide.LOW -> "Low: ${latest.display} mmol/L"
+            RangeSide.HIGH -> "High: ${latest.display} mmol/L"
+            RangeSide.IN_RANGE -> "${latest.display} mmol/L"
+        }
+        val since = outOfRangeSince(state.readings)?.let { start ->
+            val minutes = (latest.timeMillis - start) / 60_000
+            val edge = if (side == RangeSide.LOW) "Below ${AlertPolicy.fmt(LOW_MMOL)}" else "Above ${AlertPolicy.fmt(HIGH_MMOL)}"
+            if (minutes > 0) "$edge for $minutes min" else edge
+        }
+        val text = listOfNotNull(detail.ifEmpty { null }, since).joinToString(". ")
+        val builder = Notification.Builder(context, CHANNEL_GLUCOSE)
             .setSmallIcon(arrow.drawable())
             .setLargeIcon(arrowBitmap(arrow, color))
             .setColor(color)
-            .setContentTitle("${latest.display} mmol/L")
-            .setContentText(detail)
+            .setContentTitle(title)
+            .setContentText(text)
             .setWhen(latest.timeMillis)
             .setShowWhen(true)
             .setOngoing(true)
@@ -64,8 +89,31 @@ class StatusNotifier(private val context: Context, private val clock: () -> Long
             // A reading this old is no use; better gone than wrong.
             .setTimeoutAfter(remaining)
             .setContentIntent(openApp())
-            .build()
-        post(ID_STATUS, notification)
+        if (promote && Build.VERSION.SDK_INT >= Build.VERSION_CODES.BAKLAVA) promote(builder, latest)
+        post(ID_STATUS, builder.build())
+    }
+
+    /** A Live Update: chip text, promotion request, and the range bar. */
+    @RequiresApi(Build.VERSION_CODES.BAKLAVA)
+    private fun promote(builder: Notification.Builder, latest: Reading) {
+        val low = LowColor.toArgb()
+        val inRange = InRangeColor.toArgb()
+        val high = HighColor.toArgb()
+        builder
+            .setShortCriticalText(latest.display)
+            .setStyle(
+                Notification.ProgressStyle()
+                    .setStyledByProgress(false)
+                    .setProgressSegments(
+                        listOf(
+                            Notification.ProgressStyle.Segment(scale(LOW_MMOL)).setColor(low),
+                            Notification.ProgressStyle.Segment(scale(HIGH_MMOL) - scale(LOW_MMOL)).setColor(inRange),
+                            Notification.ProgressStyle.Segment(SCALE_MAX - scale(HIGH_MMOL)).setColor(high),
+                        ),
+                    )
+                    .setProgress(scale(latest.mmol)),
+            )
+            .extras.putBoolean(Notification.EXTRA_REQUEST_PROMOTED_ONGOING, true)
     }
 
     /** Shows [alert] until its reading, taken at [readingTime], is stale. */
@@ -116,5 +164,9 @@ class StatusNotifier(private val context: Context, private val clock: () -> Long
         private const val ID_ALERT = 2
         private const val ICON_PX = 128
         const val STALE_MILLIS = 15 * 60_000L
+
+        /** The Live Update bar runs from 2 to 14 mmol/L in tenths. */
+        const val SCALE_MAX = 120
+        fun scale(mmol: Double): Int = ((mmol - 2.0) * 10).toInt().coerceIn(0, SCALE_MAX)
     }
 }
