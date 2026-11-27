@@ -204,14 +204,15 @@ class CamapsTask(val goal: CamapsGoal, val startedAt: Long) {
 
         /**
          * Never tapped, even if it also reads like the way to the meal screen:
-         * anything that acts, and anything about a dose ("Bolus 2 U", "Give
-         * bolus", "Bolus now"). A bolus button with any number on it is [DOSED].
+         * anything that acts, anything about a dose ("Bolus 2 U", "Give
+         * bolus", "Bolus now"), and CamAPS FX's meal size presets, which enter
+         * carbs when tapped. A bolus button with any number on it is [DOSED].
          */
         private val NEVER = Regex(
             """deliver|confirm|start|send|\bok\b|yes|apply|accept|save|done|next|continue|submit|""" +
                 """boost|ease|stop|suspend|resume|cancel|delete|remove|auto\s*mode|prime|fill|""" +
                 """basal|temp|alarm|alert|setting|pair|sensor|pump|units?\b|\bi?u\b|""" +
-                """give|inject|dose|insulin|\bnow\b""",
+                """give|inject|dose|insulin|\bnow\b|size""",
             RegexOption.IGNORE_CASE,
         )
 
@@ -264,11 +265,15 @@ class CamapsTask(val goal: CamapsGoal, val startedAt: Long) {
                 if (CONTROLS.containsMatchIn(node.className.orEmpty())) return@walk
                 var label = (texts(node) + listOfNotNull(node.viewId?.substringAfter(":id/")))
                     .joinToString(" ").trim()
-                if (label.isNotEmpty() && !label.any { it.isLetter() } && parent != null) {
-                    // A value cell such as CamAPS FX's Carbs "---" reads as the label before it.
+                if (label.isNotEmpty() && isValue(label) && parent != null) {
+                    // A value cell, such as CamAPS FX's Carbs "---", or "40" once carbs are
+                    // entered, reads as the labels just before it, whatever it shows: on
+                    // v1.4 those are two views, "Carbs" then "g CHO".
                     val before = parent.children.take(parent.children.indexOfFirst { it === node })
-                        .lastOrNull { !it.clickable && texts(it).any { t -> t.any(Char::isLetter) } }
-                    if (before != null) label = (texts(before) + label).joinToString(" ").trim()
+                        .asReversed()
+                        .takeWhile { !it.clickable && texts(it).any { t -> t.any(Char::isLetter) } }
+                        .asReversed()
+                    if (before.isNotEmpty()) label = (before.flatMap { texts(it) } + label).joinToString(" ").trim()
                 }
                 if (label.isEmpty() || NEVER.containsMatchIn(label) || DOSED.containsMatchIn(label)) return@walk
                 if (NAVIGATION.any { it.containsMatchIn(label) }) found += path to label
@@ -288,6 +293,11 @@ class CamapsTask(val goal: CamapsGoal, val startedAt: Long) {
             if (tabs.size != 3 || tabs.any { (_, tab) -> texts(tab).any { it.isNotBlank() } }) return null
             return tabs[index].first to "tab ${index + 1} of 3"
         }
+
+        /** Only a value: digits, dashes, and at most a carbs unit ("---", "40", "40 g", "12.5g"). */
+        private fun isValue(text: String): Boolean = text.replace(VALUE_UNIT, "").none { it.isLetter() }
+
+        private val VALUE_UNIT = Regex("""(?<=[\d\s-])(g|grams?)\b""", RegexOption.IGNORE_CASE)
 
         private fun clickableLabels(screen: ScreenNode): List<String> {
             val found = mutableListOf<String>()
