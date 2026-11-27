@@ -77,14 +77,11 @@ object Camaps {
             }
             Toast.makeText(context, text, Toast.LENGTH_LONG).show()
         } else {
+            if (started) CamapsShortcuts.pending?.let { CamapsShortcuts.forget(context, it) }
             CamapsShortcuts.clear()
         }
     }
 
-    /**
-     * Opens CamAPS FX and, with shortcuts on, its [mode] (Boost or Ease-off)
-     * dialog, for the user to set and confirm there (SPEC.md §4.6).
-     */
     /**
      * The Other button: opens CamAPS FX and, with shortcuts on, its meal entry,
      * for the user to type the grams (SPEC.md §4.6). Nothing is typed, so no
@@ -96,10 +93,15 @@ object Camaps {
         if (!open(context, seenPackage)) CamapsShortcuts.clear()
     }
 
+    /**
+     * Opens CamAPS FX and, with shortcuts on, its [mode] (Boost or Ease-off)
+     * dialog, for the user to set and confirm there (SPEC.md §4.6).
+     */
     fun openForMode(context: Context, seenPackage: String?, mode: CamapsGoal.Mode) {
         val shortcuts = CamapsShortcuts.enabled(context)
         val started = shortcuts && CamapsShortcuts.begin(context, mode)
         if (!open(context, seenPackage)) {
+            if (started) CamapsShortcuts.pending?.let { CamapsShortcuts.forget(context, it) }
             CamapsShortcuts.clear()
         } else if (shortcuts && !started) {
             Toast.makeText(context, "${mode.name} was opened under a minute ago. Opening CamAPS FX only.", Toast.LENGTH_LONG).show()

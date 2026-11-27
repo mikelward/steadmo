@@ -171,23 +171,21 @@ class CamapsTest {
         assertEquals(CamapsGoal.BOOST, CamapsShortcuts.pending!!.goal)
     }
 
-    @Test fun `with no CamAPS FX, Boost doesn't wait for it`() {
-        android.provider.Settings.Secure.putString(
-            app.contentResolver,
-            android.provider.Settings.Secure.ENABLED_ACCESSIBILITY_SERVICES,
-            ComponentName(app, CamapsShortcutsService::class.java).flattenToString(),
-        )
+    @Test fun `with no CamAPS FX, Boost doesn't wait for it or lock the guard`() {
+        turnOnShortcuts()
         Camaps.openForMode(app, null, CamapsGoal.EASE_OFF)
         assertNull(CamapsShortcuts.pending)
+        installCamaps()
+        Camaps.openForMode(app, null, CamapsGoal.EASE_OFF)
+        assertEquals(CamapsGoal.EASE_OFF, CamapsShortcuts.pending!!.goal)
     }
 
-    @Test fun `with no CamAPS FX, a meal doesn't wait for it`() {
-        android.provider.Settings.Secure.putString(
-            app.contentResolver,
-            android.provider.Settings.Secure.ENABLED_ACCESSIBILITY_SERVICES,
-            ComponentName(app, CamapsShortcutsService::class.java).flattenToString(),
-        )
+    @Test fun `with no CamAPS FX, a meal doesn't wait for it or lock the guard`() {
+        turnOnShortcuts()
         Camaps.openForMeal(app, null, 40)
         assertNull(CamapsShortcuts.pending)
+        installCamaps()
+        Camaps.openForMeal(app, null, 40)
+        assertEquals(40, (CamapsShortcuts.pending!!.goal as CamapsGoal.Meal).grams)
     }
 }
