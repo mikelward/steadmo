@@ -231,8 +231,10 @@ class StatusNotifier(private val context: Context, private val clock: () -> Long
         val bolus = PendingIntent.getActivity(
             context, 5,
             Intent(context, app.steadmo.widget.WidgetActionActivity::class.java)
-                .setData(android.net.Uri.parse("${app.steadmo.widget.WidgetActionActivity.SCHEME}://widget/camaps/meal")),
-            PendingIntent.FLAG_IMMUTABLE,
+                .setData(android.net.Uri.parse("${app.steadmo.widget.WidgetActionActivity.SCHEME}://widget/camaps/meal"))
+                .putExtra(app.steadmo.widget.WidgetActionActivity.EXTRA_CANCEL_NOTIFICATION, ID_MEAL_REMINDER)
+                .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK),
+            PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT,
         )
         fun later(minutes: Int) = Notification.Action.Builder(
             null, "In $minutes min",
@@ -271,7 +273,7 @@ class StatusNotifier(private val context: Context, private val clock: () -> Long
             context, 4,
             Intent(context, app.steadmo.widget.WidgetActionActivity::class.java)
                 .setData(android.net.Uri.parse("${app.steadmo.widget.WidgetActionActivity.SCHEME}://widget/camaps/meal"))
-                .putExtra(app.steadmo.widget.WidgetActionActivity.EXTRA_CANCEL_PRE_BOLUS, true)
+                .putExtra(app.steadmo.widget.WidgetActionActivity.EXTRA_CANCEL_NOTIFICATION, ID_PRE_BOLUS)
                 .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK),
             PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT,
         )
@@ -288,7 +290,7 @@ class StatusNotifier(private val context: Context, private val clock: () -> Long
         post(ID_PRE_BOLUS, notification)
     }
 
-    fun cancelPreBolus() = manager.cancel(ID_PRE_BOLUS)
+    fun cancel(id: Int) = manager.cancel(id)
 
     private fun treatedAction(): Notification.Action = Notification.Action.Builder(
         null, "Treated",

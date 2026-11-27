@@ -5,6 +5,7 @@ import android.app.Application
 import android.app.Notification
 import android.content.Intent
 import androidx.test.core.app.ApplicationProvider
+import app.steadmo.widget.WidgetActionActivity
 import java.time.LocalTime
 import java.time.ZoneId
 import java.time.ZonedDateTime
@@ -15,6 +16,7 @@ import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
+import org.robolectric.Robolectric
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.Shadows.shadowOf
 
@@ -101,7 +103,11 @@ class MealReminderTest {
         val n = app.posted(7)!!
         assertEquals("Time to bolus for dinner?", n.extras.getString(Notification.EXTRA_TITLE))
         assertEquals(listOf("Bolus", "In 30 min", "In 60 min"), n.actions.map { it.title.toString() })
-        assertEquals("steadmo://widget/camaps/meal", shadowOf(n.actions[0].actionIntent).savedIntent.dataString)
+        val bolusIntent = shadowOf(n.actions[0].actionIntent).savedIntent
+        assertEquals("steadmo://widget/camaps/meal", bolusIntent.dataString)
+        assertTrue(bolusIntent.flags and Intent.FLAG_ACTIVITY_NEW_TASK != 0)
+        Robolectric.buildActivity(WidgetActionActivity::class.java, bolusIntent).create()
+        assertNull(app.posted(7))
         assertEquals(StatusNotifier.CHANNEL_REMINDERS, n.channelId)
     }
 
