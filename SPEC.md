@@ -232,6 +232,19 @@ hypo treatment in Steadmo only (CamAPS FX doesn't hear of it), kept for a day:
 - **Meal**: like the Other button, opens CamAPS FX's carbs box (with CamAPS FX shortcuts on)
   through the widget's UI-less activity, so the disclaimer gate applies.
 
+### 4.12 Delivery pre-bolus prompts
+
+The notification listener also sees Deliveroo, Uber Eats, Just Eat (and Menulog) and
+DoorDash. When one says the rider is nearby (nearly there, around the corner, approaching,
+arriving or minutes away under 5 minutes) and not that the food has arrived, Steadmo posts "Food
+nearly here" on a Reminders channel, with Bolus, which opens CamAPS FX's carbs box like
+Other. "On its way", "picked up" or "out for delivery" don't prompt: the maintainer wants
+the prompt when the rider is close, not when the order sets off. At most one per app per
+hour, only for posts under 15 minutes old (not old ones replayed on reconnect); it expires
+after 45 minutes. It is for a pre-bolus only: Steadmo doesn't try to detect unannounced
+meals from a rise. What the delivery app says is never stored or logged; the last one is
+kept in memory for a bug report the user sends.
+
 ### 4.4 CamAPS FX's notification
 
 Steadmo reads CamAPS FX's "My diabetes info" notification, so the user keeps it on but can
@@ -241,7 +254,8 @@ notification" card, with a button to that channel's settings, until it is minimi
 
 ## 5. Privacy
 
-Glucose data stays on the device. The app has no `INTERNET` permission. CamAPS FX shortcuts
+Glucose data stays on the device. Delivery apps' notifications are read on the device and
+not stored. The app has no `INTERNET` permission. CamAPS FX shortcuts
 reads CamAPS FX's screens only while filling a meal, and logs them with digits masked. The only way
 anything leaves is a bug report the user sends themselves (§6).
 

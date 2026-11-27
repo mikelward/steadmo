@@ -57,6 +57,10 @@ class StatusNotifier(private val context: Context, private val clock: () -> Long
                 },
         )
         manager.createNotificationChannel(
+            NotificationChannel(CHANNEL_REMINDERS, context.getString(R.string.channel_reminders), NotificationManager.IMPORTANCE_DEFAULT)
+                .apply { description = context.getString(R.string.channel_reminders_description) },
+        )
+        manager.createNotificationChannel(
             NotificationChannel(CHANNEL_ALERTS, context.getString(R.string.channel_alerts), NotificationManager.IMPORTANCE_HIGH)
                 .apply { description = context.getString(R.string.channel_alerts_description) },
         )
@@ -214,6 +218,27 @@ class StatusNotifier(private val context: Context, private val clock: () -> Long
 
     fun cancelUrgentLow() = manager.cancel(ID_URGENT)
 
+    /** A delivery app says the rider is nearby: bolus now, so insulin is working by the time it's here. */
+    fun showPreBolus(appLabel: String) {
+        val bolus = PendingIntent.getActivity(
+            context, 4,
+            Intent(context, app.steadmo.widget.WidgetActionActivity::class.java)
+                .setData(android.net.Uri.parse("${app.steadmo.widget.WidgetActionActivity.SCHEME}://widget/camaps/meal")),
+            PendingIntent.FLAG_IMMUTABLE,
+        )
+        val notification = Notification.Builder(context, CHANNEL_REMINDERS)
+            .setSmallIcon(R.drawable.ic_shortcut_meal)
+            .setContentTitle("Food nearly here")
+            .setContentText("$appLabel says your rider is nearby. Bolus now?")
+            .setCategory(Notification.CATEGORY_REMINDER)
+            .setAutoCancel(true)
+            .setContentIntent(bolus)
+            .addAction(Notification.Action.Builder(null, "Bolus", bolus).build())
+            .setTimeoutAfter(PRE_BOLUS_TIMEOUT_MILLIS)
+            .build()
+        post(ID_PRE_BOLUS, notification)
+    }
+
     private fun treatedAction(): Notification.Action = Notification.Action.Builder(
         null, "Treated",
         PendingIntent.getBroadcast(context, 2, Intent(context, TreatedReceiver::class.java), PendingIntent.FLAG_IMMUTABLE),
@@ -317,6 +342,11 @@ class StatusNotifier(private val context: Context, private val clock: () -> Long
         private const val ID_SIGNAL = 3
         private const val ID_URGENT = 4
         private const val ID_RECHECK = 5
+        private const val ID_PRE_BOLUS = 6
+        const val CHANNEL_REMINDERS = "reminders"
+
+        /** A pre-bolus suggestion is no use once the food has long arrived. */
+        const val PRE_BOLUS_TIMEOUT_MILLIS = 45 * 60_000L
         private const val EXTRA_KIND = "app.steadmo.alert_kind"
         const val CHANNEL_URGENT = "urgent_low"
 
