@@ -16,4 +16,6 @@
     <string name="shortcuts_label">Steadmo CamAPS FX shortcuts</string>
     <string name="shortcuts_summary">Takes Steadmo\'s buttons straight to CamAPS FX\'s meal, Boost and Ease-off</string>
     <string name="shortcuts_description">After you tap a meal, Boost or Ease-off button in Steadmo, this goes to that screen in CamAPS FX, and enters a meal\'s carbs, up to 60 g. You check the bolus and deliver it in CamAPS FX; Steadmo never delivers insulin. It sees and taps CamAPS FX\'s screens only, no other app\'s.</string>
+    <string name="tile_glucose">Glucose</string>
+    <string name="tile_meal">Meal</string>
 </resources>
