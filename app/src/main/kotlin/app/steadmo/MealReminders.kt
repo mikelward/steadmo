@@ -17,6 +17,8 @@ object MealReminders {
     const val EXTRA_SNOOZE = "snooze_minutes"
     const val EXTRA_EVENT = "event"
     private const val KEY_PENDING = "pending_at"
+    private const val KEY_SNOOZE_AT = "snooze_at"
+    private const val KEY_SNOOZE_EVENT = "snooze_event"
 
     fun enabled(context: Context): Boolean = prefs(context).getBoolean("on", true)
 
@@ -38,15 +40,18 @@ object MealReminders {
             alarms.cancel(daily)
             prefs(context).edit().remove(KEY_PENDING).apply()
             // A calendar meal's snooze shares this alarm; keep it while that's on (the receiver drops a daily one).
-            if (!CalendarMealReminders.enabled(context)) alarms.cancel(again(context))
+            if (!CalendarMealReminders.enabled(context)) {
+                alarms.cancel(again(context))
+                snoozeDone(context)
+            }
             StatusNotifier(context).cancelMealReminder(calendar = false)
             return
         }
         val pending = prefs(context).getLong(KEY_PENDING, -1).takeIf { it >= 0 }
         val at = MealReminder.nextAt(now, time(context), zone, pending)
         prefs(context).edit().putLong(KEY_PENDING, at).apply()
-        // Allowed while idle, so Doze can't hold it until the phone wakes; needs no exact-alarm permission.
-        alarms.setAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, at, daily)
+        // On time with "Alarms & reminders" allowed, else within about an hour; either way while idle.
+        Alarms.set(context, at, daily)
         SteadmoLog.verbose("meal reminder: next at %s", at)
     }
 
@@ -62,9 +67,28 @@ object MealReminders {
     /** "In 30 min" or "In 60 min": once more, later. */
     fun snooze(context: Context, minutes: Int, event: String? = null, now: Long = System.currentTimeMillis()) {
         SteadmoLog.event("meal reminder: again in %s min", minutes)
-        context.getSystemService(AlarmManager::class.java)
-            .setAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, now + minutes * 60_000L, again(context, event))
+        val at = now + minutes * 60_000L
+        prefs(context).edit().putLong(KEY_SNOOZE_AT, at).putString(KEY_SNOOZE_EVENT, event).apply()
+        Alarms.set(context, at, again(context, event))
     }
+
+    /**
+     * Sets a snooze again on start: taking away "Alarms & reminders" stops
+     * Steadmo and cancels its exact alarms, and nothing else re-arms a snooze.
+     */
+    fun restoreSnooze(context: Context, now: Long = System.currentTimeMillis()) {
+        val at = prefs(context).getLong(KEY_SNOOZE_AT, -1).takeIf { it >= 0 } ?: return
+        if (now - at > MealReminder.LATE_MILLIS) {
+            SteadmoLog.event("meal reminder: a snooze for %s is too old; dropping it", at)
+            snoozeDone(context)
+            return
+        }
+        SteadmoLog.event("meal reminder: restoring the snooze for %s", at)
+        Alarms.set(context, at, again(context, prefs(context).getString(KEY_SNOOZE_EVENT, null)))
+    }
+
+    /** The snooze went off, or was dropped: nothing to restore. */
+    fun snoozeDone(context: Context) = prefs(context).edit().remove(KEY_SNOOZE_AT).remove(KEY_SNOOZE_EVENT).apply()
 
     /** [event] is a calendar meal's heading, kept so the reminder says which meal again. */
     private fun again(context: Context, event: String? = null) = pending(
@@ -124,6 +148,7 @@ class MealReminderReceiver : BroadcastReceiver() {
         if (!on) {
             // Turned off since this was set (a snooze, say): say nothing.
             SteadmoLog.event("meal reminder: off; not reminding")
+            if (intent.action == MealReminders.ACTION_FIRE + ".AGAIN") MealReminders.snoozeDone(context)
             return
         }
         when {
@@ -138,6 +163,7 @@ class MealReminderReceiver : BroadcastReceiver() {
                 MealReminders.schedule(context)
             }
             else -> {
+                MealReminders.snoozeDone(context)
                 SteadmoLog.event("meal reminder: again")
                 notifier.showMealReminder(intent.getStringExtra(MealReminders.EXTRA_EVENT))
             }

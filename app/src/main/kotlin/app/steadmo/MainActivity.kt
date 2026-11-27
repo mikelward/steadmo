@@ -33,6 +33,7 @@ class MainActivity : ComponentActivity() {
             CalendarMealReminders.set(this, granted)
             calendarMealsOn = granted
         }
+    private var remindersOnTime by mutableStateOf(true)
     private var mealReminderTime by mutableStateOf(app.steadmo.core.MealReminder.DEFAULT_TIME)
     private var suggestShortcuts by mutableStateOf(false)
     private var shortcutsOn by mutableStateOf(false)
@@ -82,6 +83,8 @@ class MainActivity : ComponentActivity() {
                         onPickMealReminderTime = ::pickMealReminderTime,
                         calendarMealsOn = calendarMealsOn,
                         onCalendarMealsOn = ::setCalendarMeals,
+                        remindersOnTime = remindersOnTime,
+                        onAllowRemindersOnTime = ::openExactAlarmSettings,
                         shortcutsOn = shortcutsOn,
                         onOpenShortcutsSettings = ::openAccessibilitySettings,
                         onOpenAppInfo = ::openAppInfo,
@@ -130,6 +133,7 @@ class MainActivity : ComponentActivity() {
         mealReminderOn = MealReminders.enabled(this)
         calendarMealsOn = CalendarMealReminders.enabled(this) && CalendarMealReminders.permitted(this)
         mealReminderTime = MealReminders.time(this)
+        remindersOnTime = Alarms.exactAllowed(this)
         fullScreenAllowed = getSystemService(android.app.NotificationManager::class.java).canUseFullScreenIntent()
         suggestShortcuts = !shortcutsOn && !getSharedPreferences(PREFS_UI, MODE_PRIVATE).getBoolean(KEY_SHORTCUTS_DISMISSED, false)
         SteadmoLog.event(
@@ -199,6 +203,15 @@ class MainActivity : ComponentActivity() {
             mealReminderTime.minute,
             android.text.format.DateFormat.is24HourFormat(this),
         ).show()
+    }
+
+    /** "Alarms & reminders" for Steadmo, so reminders go off on time. */
+    private fun openExactAlarmSettings() {
+        SteadmoLog.event("ui: opening alarms and reminders settings")
+        launch(
+            "Alarms & reminders",
+            Intent(Settings.ACTION_REQUEST_SCHEDULE_EXACT_ALARM, android.net.Uri.fromParts("package", packageName, null)),
+        )
     }
 
     /** Android 14+'s "Full screen intents" page for Steadmo. */

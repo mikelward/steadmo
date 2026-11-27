@@ -257,9 +257,15 @@ Dialog content scrolls when it doesn't fit.
 
 Each day at a set time (on by default at 18:00; ⋮ → Settings → Meal reminder turns it off or changes
 the time), "Time to bolus for dinner?" on the Reminders channel, with Bolus (CamAPS FX's
-carbs box, like Other), In 30 min and In 60 min. Its alarms are inexact but allowed while
-idle, so Doze can't hold them until the phone wakes; they usually land within a minute or
-two, and Android may delay them up to about 10 minutes. App start re-arms the daily alarm,
+carbs box, like Other), In 30 min and In 60 min. Its alarms go off while the phone is idle.
+With "Alarms & reminders" (`SCHEDULE_EXACT_ALARM`, which the user grants) they're on time;
+without it they're inexact, and Android may deliver them up to an hour late. While it's not
+allowed, the Meal reminder dialog says so, with Allow. Granting it re-arms the reminders, a
+pending snooze and a pending recheck.
+Revoking it stops Steadmo and cancels its exact alarms, so app start restores the daily and
+calendar reminders, a pending snooze (if under 2 hours overdue) and a pending recheck. The signal-loss check and the recheck after Treated use exact alarms too when
+allowed. Steadmo doesn't use `USE_EXACT_ALARM`, which Play keeps for alarm clock and calendar
+apps. App start re-arms the daily alarm,
 each day's reminder sets the next, and a time zone or clock change sets it again, so it
 stays at 18:00 local. Turning it off cancels any snooze and clears a shown reminder.
 

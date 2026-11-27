@@ -8,6 +8,8 @@
     <uses-permission android:name="android.permission.USE_FULL_SCREEN_INTENT" />
     <!-- Calendar meals and restaurant bookings, read on the device (SPEC.md §4.14); asked for only when turned on. -->
     <uses-permission android:name="android.permission.READ_CALENDAR" />
+    <!-- Reminders on time, once the user allows "Alarms & reminders" (SPEC.md §4.13); inexact without it. -->
+    <uses-permission android:name="android.permission.SCHEDULE_EXACT_ALARM" />
 
     <!-- Package visibility, to open CamAPS FX from the Boost, Ease-off and bolus buttons. -->
     <queries>
@@ -110,6 +112,13 @@
             android:name=".MealReminderReceiver"
             android:exported="false" />
         <!-- Exported only for these system broadcasts, which other apps can't send. -->
+        <receiver
+            android:name=".ExactAlarmPermissionReceiver"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.app.action.SCHEDULE_EXACT_ALARM_PERMISSION_STATE_CHANGED" />
+            </intent-filter>
+        </receiver>
         <receiver
             android:name=".TimeChangeReceiver"
             android:exported="true">
