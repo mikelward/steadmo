@@ -63,7 +63,11 @@ fun SettingsScreen(
                 Text("Settings", style = MaterialTheme.typography.titleLarge, modifier = Modifier.semantics { heading() })
             }
             SettingRow("Units", unit.label) { showing = UNITS }
-            SettingRow("Meal reminder", if (mealReminderOn) "At $mealReminderTime" else "Off") { showing = MEAL_REMINDER }
+            val mealSummary = listOfNotNull(
+                if (mealReminderOn) "At $mealReminderTime" else null,
+                if (calendarMealsOn) "Calendar meals" else null,
+            ).joinToString(" · ").ifEmpty { "Off" }
+            SettingRow("Meal reminder", mealSummary) { showing = MEAL_REMINDER }
             SettingRow("CamAPS FX shortcuts", if (shortcutsOn) "On" else "Off") { showing = SHORTCUTS }
         }
     }
