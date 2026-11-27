@@ -43,7 +43,9 @@ import androidx.glance.text.FontWeight
 import androidx.glance.text.Text
 import androidx.glance.text.TextStyle
 import androidx.glance.unit.ColorProvider
-import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.compose.runtime.collectAsState
+import app.steadmo.GlucoseState
+import kotlinx.coroutines.flow.StateFlow
 import app.steadmo.Disclaimer
 import app.steadmo.HighColor
 import app.steadmo.InRangeColor
@@ -62,12 +64,21 @@ class SteadmoWidget(private val clock: () -> Long = System::currentTimeMillis) :
 
     override suspend fun provideGlance(context: Context, id: GlanceId) {
         val repository = context.repository
-        provideContent {
-            val state by repository.state.collectAsStateWithLifecycle()
-            val model = WidgetModel.of(state, Disclaimer.accepted(context), clock())
-            GlanceTheme { WidgetContent(model, clock()) }
-        }
+        // A widget placed after the last reading still greys out on time.
+        WidgetUpdates.scheduleStale(context, repository.state.value, clock())
+        provideContent { WidgetRoot(repository.state, context, clock) }
     }
+}
+
+/**
+ * The widget's live content. Plain collectAsState: Glance's composition has
+ * no lifecycle owner, so the lifecycle-aware collector would throw.
+ */
+@Composable
+fun WidgetRoot(states: StateFlow<GlucoseState>, context: Context, clock: () -> Long) {
+    val state by states.collectAsState()
+    val model = WidgetModel.of(state, Disclaimer.accepted(context), clock())
+    GlanceTheme { WidgetContent(model, clock()) }
 }
 
 private val StaleColor = Color(0xFF8A8A8A)

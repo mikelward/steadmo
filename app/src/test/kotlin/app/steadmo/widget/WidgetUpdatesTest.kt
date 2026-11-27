@@ -20,6 +20,19 @@ class WidgetUpdatesTest {
         WidgetUpdates.onState(context, Samples.rising(), Samples.NOW)
     }
 
+    @Test fun `scheduling the stale redraw without WorkManager is logged, not thrown`() {
+        WidgetUpdates.scheduleStale(context, Samples.rising(), Samples.NOW)
+        WidgetUpdates.scheduleStale(context, Samples.rising(), Samples.NOW + 60 * 60_000)
+        WidgetUpdates.scheduleStale(context, app.steadmo.GlucoseState(), Samples.NOW)
+    }
+
+    @Test fun `the stale redraw is scheduled when WorkManager is there`() {
+        androidx.work.testing.WorkManagerTestInitHelper.initializeTestWorkManager(context)
+        WidgetUpdates.scheduleStale(context, Samples.rising(), Samples.NOW)
+        val work = androidx.work.WorkManager.getInstance(context).getWorkInfosForUniqueWork("widget-stale").get()
+        assertEquals(1, work.size)
+    }
+
     @Test fun `the stale redraw succeeds`() = runBlocking {
         val worker = TestListenableWorkerBuilder<WidgetUpdates.StaleWorker>(context).build()
         assertEquals(ListenableWorker.Result.success(), worker.doWork())

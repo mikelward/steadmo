@@ -34,16 +34,25 @@ object WidgetUpdates {
         }
         if (ids.isEmpty()) return
         SteadmoWidget().updateAll(context)
+        scheduleStale(context, state, now)
+        SteadmoLog.verbose("widget: %s updated", ids.size)
+    }
+
+    /** Redraws once the latest reading goes stale, so it greys out on time. */
+    fun scheduleStale(context: Context, state: GlucoseState, now: Long = System.currentTimeMillis()) {
         val latest = state.latest ?: return
         val delay = latest.timeMillis + WidgetModel.STALE_MILLIS + 5_000 - now
-        if (delay > 0) {
+        if (delay <= 0) return
+        try {
             WorkManager.getInstance(context).enqueueUniqueWork(
                 STALE_WORK,
                 ExistingWorkPolicy.REPLACE,
                 OneTimeWorkRequestBuilder<StaleWorker>().setInitialDelay(delay, TimeUnit.MILLISECONDS).build(),
             )
+            SteadmoLog.verbose("widget: stale redraw in %s ms", delay)
+        } catch (e: IllegalStateException) {
+            SteadmoLog.failure(e, "widget: couldn't schedule the stale redraw")
         }
-        SteadmoLog.verbose("widget: %s updated; stale redraw in %s ms", ids.size, delay)
     }
 
     class StaleWorker(context: Context, params: WorkerParameters) : CoroutineWorker(context, params) {
