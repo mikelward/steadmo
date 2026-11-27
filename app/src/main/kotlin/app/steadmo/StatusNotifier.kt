@@ -23,6 +23,7 @@ import app.steadmo.core.Reading
 import app.steadmo.core.outOfRangeSince
 import app.steadmo.core.side
 import app.steadmo.core.TrendAlert
+import app.steadmo.core.GlucoseUnit
 import app.steadmo.core.TrendArrow
 
 /**
@@ -36,6 +37,22 @@ class StatusNotifier(private val context: Context, private val clock: () -> Long
         manager.createNotificationChannel(
             NotificationChannel(CHANNEL_GLUCOSE, context.getString(R.string.channel_glucose), NotificationManager.IMPORTANCE_LOW)
                 .apply { description = context.getString(R.string.channel_glucose_description); setShowBadge(false) },
+        )
+        manager.createNotificationChannel(
+            // An alarm, so Do Not Disturb lets it through wherever it lets alarms through.
+            NotificationChannel(CHANNEL_URGENT, context.getString(R.string.channel_urgent), NotificationManager.IMPORTANCE_HIGH)
+                .apply {
+                    description = context.getString(R.string.channel_urgent_description)
+                    setSound(
+                        android.media.RingtoneManager.getDefaultUri(android.media.RingtoneManager.TYPE_ALARM),
+                        android.media.AudioAttributes.Builder()
+                            .setUsage(android.media.AudioAttributes.USAGE_ALARM)
+                            .setContentType(android.media.AudioAttributes.CONTENT_TYPE_SONIFICATION)
+                            .build(),
+                    )
+                    enableVibration(true)
+                    setBypassDnd(true)
+                },
         )
         manager.createNotificationChannel(
             NotificationChannel(CHANNEL_ALERTS, context.getString(R.string.channel_alerts), NotificationManager.IMPORTANCE_HIGH)
@@ -149,6 +166,39 @@ class StatusNotifier(private val context: Context, private val clock: () -> Long
         post(ID_ALERT, notification)
     }
 
+    /**
+     * The urgent low alarm (SPEC.md §4.8): sounds until the user taps OK or
+     * glucose comes back above 3.0, and lasts only while [latest] is fresh.
+     */
+    fun showUrgentLow(latest: Reading, unit: GlucoseUnit, quiet: Boolean = false) {
+        val remaining = STALE_MILLIS - (clock() - latest.timeMillis)
+        if (remaining <= 0) return
+        val ok = PendingIntent.getBroadcast(
+            context, 0, Intent(context, UrgentLowAckReceiver::class.java), PendingIntent.FLAG_IMMUTABLE,
+        )
+        val notification = Notification.Builder(context, CHANNEL_URGENT)
+            .setSmallIcon(R.drawable.ic_trend_double_down)
+            .setColor(LowColor.toArgb())
+            .setContentTitle("Urgent low: ${unit.reading(latest)} ${unit.label}")
+            .setContentText("Treat it now. This repeats until you tap OK.")
+            .setCategory(Notification.CATEGORY_ALARM)
+            .setTimeoutAfter(remaining)
+            .setContentIntent(openApp())
+            .setDeleteIntent(ok)
+            .addAction(Notification.Action.Builder(null, "OK", ok).build())
+            .setOnlyAlertOnce(quiet)
+            .build()
+        // Sounds over and over until it's acknowledged or cleared.
+        notification.flags = notification.flags or Notification.FLAG_INSISTENT
+        SteadmoLog.warning("notify: urgent low %s", unit.reading(latest))
+        post(ID_URGENT, notification)
+    }
+
+    fun cancelUrgentLow() = manager.cancel(ID_URGENT)
+
+    /** Whether the urgent low alarm is still on screen (not acknowledged or timed out). */
+    fun urgentLowShowing(): Boolean = manager.activeNotifications.any { it.id == ID_URGENT }
+
     /** Whether a trend alert is still on screen (not dismissed, tapped or timed out). */
     fun alertShowing(): Boolean = manager.activeNotifications.any { it.id == ID_ALERT }
 
@@ -210,6 +260,8 @@ class StatusNotifier(private val context: Context, private val clock: () -> Long
         private const val ID_STATUS = 1
         private const val ID_ALERT = 2
         private const val ID_SIGNAL = 3
+        private const val ID_URGENT = 4
+        const val CHANNEL_URGENT = "urgent_low"
 
         /** e.g. "15 min", "1 h 15 min". */
         fun duration(minutes: Long): String =

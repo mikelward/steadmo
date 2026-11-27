@@ -56,6 +56,11 @@
             android:name=".SignalWatchReceiver"
             android:exported="false" />
 
+        <!-- OK on the urgent low alarm (SPEC.md §4.8). -->
+        <receiver
+            android:name=".UrgentLowAckReceiver"
+            android:exported="false" />
+
         <!-- Shares bug report screenshots with the app the user picks. -->
         <provider
             android:name="androidx.core.content.FileProvider"

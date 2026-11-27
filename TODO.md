@@ -69,9 +69,12 @@ CamAPS FX's. Each step needs the maintainer's sign-off: these are safety decisio
       Default, with a button to its settings.
 - [ ] Pump connection: find what CamAPS FX's notifications say when it loses the pump
       (bug report while disconnected), then warn, and say so on the Boost and meal buttons.
-- [ ] Do Not Disturb: let urgent low alerts through (channel bypass needs notification
-      policy access, which the user grants), and decide whether highs may stay quiet.
-- [ ] Escalation for an unacknowledged urgent low: repeat, louder, then full screen.
+- [x] Urgent low alarm below 3.0 mmol/L: an alarm-sound channel that Do Not Disturb lets
+      through wherever it lets alarms through, repeating until OK (SPEC.md §4.8).
+- [ ] Check on a real phone that the urgent low alarm sounds in Do Not Disturb; if not,
+      ask for notification policy access so its channel can bypass it.
+- [ ] Full-screen urgent low after it's been ignored (needs `USE_FULL_SCREEN_INTENT`, a
+      Play policy question for the maintainer).
 - [ ] Tests for each alert path, including DND on and off, before any CamAPS FX alert is
       silenced.
 
@@ -104,3 +107,5 @@ CamAPS FX's. Each step needs the maintainer's sign-off: these are safety decisio
 - Signal loss warns after 15 minutes without a reading, repeats every 30 minutes, and stops
   after 2 hours (CamAPS FX is likely off on purpose by then; the app still says so). The
   check is an inexact alarm allowed while idle, so it can land a few minutes late.
+- Urgent low is below 3.0 mmol/L (54 mg/dL) or under the sensor's range. It sounds on every
+  new reading until OK; swiping it away counts as OK. OK quiets it for 15 minutes.
