@@ -25,7 +25,13 @@ private const val WINDOW_MILLIS = 3 * 60 * 60_000L
 
 /** The last three hours, with the 3.9–10 target band. */
 @Composable
-fun GlucoseGraph(readings: List<Reading>, now: Long, modifier: Modifier = Modifier, unit: GlucoseUnit = GlucoseUnit.MMOL) {
+fun GlucoseGraph(
+    readings: List<Reading>,
+    now: Long,
+    modifier: Modifier = Modifier,
+    unit: GlucoseUnit = GlucoseUnit.MMOL,
+    treatments: List<Long> = emptyList(),
+) {
     val labelColor = MaterialTheme.colorScheme.onSurfaceVariant.toArgb()
     val gridColor = MaterialTheme.colorScheme.outlineVariant
     val labelPx = with(LocalDensity.current) { 11.sp.toPx() }
@@ -52,6 +58,10 @@ fun GlucoseGraph(readings: List<Reading>, now: Long, modifier: Modifier = Modifi
             listOf(4, 10, 14).forEach { v ->
                 canvas.nativeCanvas.drawText(unit.axis(v), 0f, y(v.toDouble()) + labelPx / 3, paint)
             }
+        }
+        // "Treated": a low-coloured line up from the bottom (SPEC.md §4.10).
+        treatments.filter { now - it in 0..WINDOW_MILLIS }.forEach { t ->
+            drawLine(LowColor, Offset(x(t), size.height), Offset(x(t), size.height * 0.8f), strokeWidth = 6f)
         }
         shown.forEachIndexed { i, r ->
             val last = i == shown.lastIndex

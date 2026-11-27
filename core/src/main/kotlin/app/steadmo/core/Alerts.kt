@@ -18,8 +18,15 @@ data class TrendAlert(val kind: AlertKind, val arrow: TrendArrow, val title: Str
  */
 class AlertPolicy(private val lastAlerted: MutableMap<AlertKind, Long> = mutableMapOf()) {
 
-    fun evaluate(latest: Reading, trend: Trend?, unit: GlucoseUnit = GlucoseUnit.MMOL): TrendAlert? {
+    /** [treatedAt]: the latest "Treated", which holds off the rise it explains. */
+    fun evaluate(
+        latest: Reading,
+        trend: Trend?,
+        unit: GlucoseUnit = GlucoseUnit.MMOL,
+        treatedAt: Long? = null,
+    ): TrendAlert? {
         val alert = applying(latest, trend, unit) ?: return null
+        if (Treatment.explains(alert.kind, treatedAt, latest.timeMillis)) return null
         val last = lastAlerted[alert.kind]
         if (last != null && latest.timeMillis - last < REPEAT_MILLIS) return null
         lastAlerted[alert.kind] = latest.timeMillis

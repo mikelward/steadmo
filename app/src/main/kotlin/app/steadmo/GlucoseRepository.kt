@@ -13,6 +13,8 @@ import app.steadmo.core.ReadingLog
 import app.steadmo.core.Trend
 import app.steadmo.core.TrendCalculator
 import app.steadmo.core.UrgentLow
+import app.steadmo.core.Treatment
+import app.steadmo.core.isLow
 import java.io.File
 import java.io.IOException
 import java.util.concurrent.Executor
@@ -32,6 +34,8 @@ data class GlucoseState(
     val camapsChannelId: String? = null,
     val camapsChannelImportance: Int? = null,
     val listenerConnected: Boolean = false,
+    /** "Treated" times, oldest first, for the last day (SPEC.md §4.10). */
+    val treatments: List<Long> = emptyList(),
     /** How glucose is shown; readings are kept in mmol/L whatever this is. */
     val unit: GlucoseUnit = GlucoseUnit.MMOL,
 ) {
@@ -63,7 +67,7 @@ class GlucoseRepository(
     private var shownAlertTime: Long? = null
 
     private val _state = MutableStateFlow(
-        GlucoseState(readings = log.all, trend = TrendCalculator.trend(log.all), unit = loadUnit()),
+        GlucoseState(readings = log.all, trend = TrendCalculator.trend(log.all), unit = loadUnit(), treatments = loadTreatments()),
     )
     val state: StateFlow<GlucoseState> = _state
 
@@ -99,6 +103,38 @@ class GlucoseRepository(
                 UrgentLowAck.clear(appContext)
             }
         }
+    }
+
+    /**
+     * Records a hypo treatment at [at]: on the graph, holding off the rise it
+     * explains, quieting the low alerts it answers, and a recheck in 15 minutes.
+     */
+    @Synchronized
+    fun recordTreatment(at: Long) {
+        val kept = (_state.value.treatments + at).filter { at - it < Treatment.RETENTION_MILLIS }
+        SteadmoLog.event("treated: at %s (%s in the last day)", at, kept.size)
+        settings.edit().putString(KEY_TREATMENTS, kept.joinToString(",")).apply()
+        _state.update { it.copy(treatments = kept) }
+        // From the notification too: a restarted process doesn't remember shownAlert.
+        if (shownAlert?.isLow == true || notifier.shownAlertKind()?.isLow == true) {
+            notifier.cancelAlert()
+            shownAlert = null
+        }
+        notifier.cancelUrgentLow()
+        UrgentLowAck.set(appContext, at)
+        Recheck.schedule(appContext, at)
+    }
+
+    private fun loadTreatments(): List<Long> = settings.getString(KEY_TREATMENTS, null)
+        ?.split(',')?.mapNotNull { it.toLongOrNull() }.orEmpty()
+        .filter { clock() - it < Treatment.RETENTION_MILLIS }
+
+    /** Drops treatments older than a day, as readings go by. */
+    private fun pruneTreatments() {
+        val kept = _state.value.treatments.filter { clock() - it < Treatment.RETENTION_MILLIS }
+        if (kept.size == _state.value.treatments.size) return
+        settings.edit().putString(KEY_TREATMENTS, kept.joinToString(",")).apply()
+        _state.update { it.copy(treatments = kept) }
     }
 
     private fun loadUnit(): GlucoseUnit {
@@ -145,6 +181,7 @@ class GlucoseRepository(
         }
         if (added) {
             save(log.encode())
+            pruneTreatments()
             val latest = log.latest
             latest?.let { SignalWatch.onReading(appContext, it.timeMillis, notifier, clock()) }
             // A newer reading that no longer calls for the shown alert clears it.
@@ -161,7 +198,7 @@ class GlucoseRepository(
             }
             latest?.let { urgentLow(it, fresh = clock() - it.timeMillis < ALERT_MAX_AGE_MILLIS) }
             latest?.takeIf { clock() - it.timeMillis < ALERT_MAX_AGE_MILLIS }?.let {
-                alerts.evaluate(it, trend, _state.value.unit)?.let { alert ->
+                alerts.evaluate(it, trend, _state.value.unit, _state.value.treatments.lastOrNull())?.let { alert ->
                     SteadmoLog.event("alerts: %s (%s)", alert.kind, alert.title)
                     notifier.showAlert(alert, it.timeMillis)
                     shownAlert = alert.kind
@@ -177,6 +214,7 @@ class GlucoseRepository(
         /** CamAPS posts as a reading arrives; anything older is a replay. */
         const val ALERT_MAX_AGE_MILLIS = 2 * 60_000L
         private const val KEY_UNIT = "unit"
+        private const val KEY_TREATMENTS = "treatments"
     }
 
     private fun load(): ReadingLog = try {

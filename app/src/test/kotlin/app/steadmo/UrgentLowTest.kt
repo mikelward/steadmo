@@ -52,7 +52,7 @@ class UrgentLowTest {
         assertEquals(StatusNotifier.CHANNEL_URGENT, n.channelId)
         assertEquals(Notification.CATEGORY_ALARM, n.category)
         assertTrue(n.flags and Notification.FLAG_INSISTENT != 0)
-        assertEquals("OK", n.actions.single().title)
+        assertEquals("OK", n.actions.first().title)
 
         UrgentLowAckReceiver().onReceive(app, Intent())
         assertNull(app.posted(4))

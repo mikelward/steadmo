@@ -204,6 +204,7 @@ fun HomeScreen(
                         readings = state.readings,
                         now = now,
                         unit = state.unit,
+                        treatments = state.treatments,
                         modifier = Modifier.fillMaxWidth().height(180.dp).padding(8.dp),
                     )
                 }

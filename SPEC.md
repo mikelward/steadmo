@@ -210,6 +210,16 @@ grams, open CamAPS FX (straight to the screen with CamAPS FX shortcuts on), and 
 Steadmo instead until the disclaimer is accepted. They are published as dynamic shortcuts
 on start, so they follow the debug build's package.
 
+### 4.10 Treated
+
+Low alerts (low soon, falling fast) and the urgent low alarm offer "Treated". It records a
+hypo treatment in Steadmo only (CamAPS FX doesn't hear of it), kept for a day:
+- a low-coloured mark on the app's and widget's graphs;
+- the low alerts it answers are cleared, and the urgent low alarm quieted as OK does;
+- rise alerts (rising fast, high soon) hold off for 45 minutes, since the treatment
+  explains the rise;
+- 15 minutes later, "Recheck your glucose" with the current value.
+
 ### 4.4 CamAPS FX's notification
 
 Steadmo reads CamAPS FX's "My diabetes info" notification, so the user keeps it on but can

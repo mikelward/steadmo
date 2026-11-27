@@ -57,7 +57,7 @@ open class SteadmoApp : Application() {
         appScope.launch {
             repository.state
                 // statusTime too: a mode-only repost moves when the mode goes stale.
-                .map { listOf(it.latest, it.trend, it.status?.autoMode, it.statusTime, it.unit) }
+                .map { listOf(it.latest, it.trend, it.status?.autoMode, it.statusTime, it.unit, it.treatments) }
                 .distinctUntilChanged()
                 .collect { WidgetUpdates.onState(this@SteadmoApp, repository.state.value) }
         }

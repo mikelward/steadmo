@@ -27,9 +27,9 @@
 - [x] Setup step to minimize CamAPS FX's "My diabetes info" channel (Silent + Minimize,
       not off: a channel that is off posts nothing to read), opening its channel settings
       with the channel id Steadmo has seen.
-- [ ] "Treated" action on low alerts (label to try first; "Took 15 g" is the alternative): records a hypo treatment in Steadmo only (not
-      CamAPS FX), keeps it on the timeline, holds off rise alerts it explains, and reminds
-      you to recheck after 15 minutes.
+- [x] "Treated" on low alerts and the urgent low alarm: recorded in Steadmo only (not
+      CamAPS FX), marked on the graph, holds off rise alerts for 45 minutes, and reminds you
+      to recheck after 15 minutes (SPEC.md §4.10).
 
 - [x] Full-page home screen widget (Glance): value, arrow, graph, Auto mode, Boost,
       Ease-off, 20/40/45/Other.
@@ -114,3 +114,5 @@ CamAPS FX's. Each step needs the maintainer's sign-off: these are safety decisio
   and Other stay on the widget and in the app.
 - About lists the licence once (Apache 2.0 covers Steadmo and all its libraries) rather
   than adding a licence-listing library; add one if a non-Apache dependency arrives.
+- "Treated" holds off rise alerts for 45 minutes and quiets the urgent low alarm as OK does;
+  it is Steadmo's own note, kept for a day, and not sent to CamAPS FX.

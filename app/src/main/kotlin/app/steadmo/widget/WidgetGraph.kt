@@ -26,6 +26,7 @@ object WidgetGraph {
         density: Float,
         colors: Colors,
         unit: GlucoseUnit = GlucoseUnit.MMOL,
+        treatments: List<Long> = emptyList(),
     ): Bitmap {
         val bitmap = createBitmap(widthPx.coerceAtLeast(1), heightPx.coerceAtLeast(1))
         val canvas = Canvas(bitmap)
@@ -51,6 +52,11 @@ object WidgetGraph {
         listOf(LOW_MMOL, HIGH_MMOL).forEach { canvas.drawLine(left, y(it), widthPx.toFloat(), y(it), grid) }
         val text = Paint(Paint.ANTI_ALIAS_FLAG).apply { color = colors.label; textSize = labelPx }
         listOf(4, 10, 14).forEach { canvas.drawText(unit.axis(it), 0f, y(it.toDouble()) + labelPx / 3, text) }
+        // "Treated": a low-coloured line up from the bottom (SPEC.md §4.10).
+        val mark = Paint(Paint.ANTI_ALIAS_FLAG).apply { color = colors.low; strokeWidth = 2 * density }
+        treatments.filter { now - it in 0..WINDOW_MILLIS }.forEach { t ->
+            canvas.drawLine(x(t), heightPx.toFloat(), x(t), heightPx * 0.8f, mark)
+        }
         shown.forEachIndexed { i, r ->
             fill.color = when {
                 r.mmol < LOW_MMOL -> colors.low
