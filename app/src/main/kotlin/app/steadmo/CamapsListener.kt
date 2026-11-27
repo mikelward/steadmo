@@ -52,7 +52,7 @@ class CamapsListener : NotificationListenerService() {
     private fun handle(sbn: StatusBarNotification) {
         DeliveryApp.of(sbn.packageName)?.let { app ->
             try {
-                val texts = NotificationDump.of(this, sbn).extrasTexts
+                val texts = NotificationDump.extrasTexts(sbn.notification)
                 DeliveryPrompts.onNotification(this, app, texts, sbn.postTime, System.currentTimeMillis(), StatusNotifier(this))
             } catch (e: RuntimeException) {
                 // A delivery app's post is only a hint; failing to read one costs a suggestion, nothing more.

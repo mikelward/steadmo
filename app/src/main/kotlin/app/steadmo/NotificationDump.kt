@@ -101,7 +101,7 @@ data class NotificationDump(
             return "$name rotation=${view.rotation} description=${view.contentDescription} pixels=$hash"
         }
 
-        private fun extrasTexts(notification: Notification): List<String> {
+        internal fun extrasTexts(notification: Notification): List<String> {
             val extras = notification.extras ?: return emptyList()
             val keys = listOf(
                 Notification.EXTRA_TITLE,
