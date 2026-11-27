@@ -47,7 +47,8 @@ class MainActivityTest {
         compose.onNodeWithText("Get latest version").performClick()
         val intent = shadowOf(app).nextStartedActivity
         assertEquals(android.content.Intent.ACTION_VIEW, intent.action)
-        assertEquals(MainActivity.LATEST_RELEASE_URL, intent.dataString)
+        // Debug builds download the newest debug APK directly, to install over this one.
+        assertEquals("https://github.com/mikelward/steadmo/releases/latest/download/steadmo-debug.apk", intent.dataString)
     }
 
     @Test fun `Known issues opens the GitHub issues`() {

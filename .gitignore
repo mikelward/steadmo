@@ -18,6 +18,8 @@ local.properties
 build/
 /captures
 *.keystore
+# The shared debug key, so every debug build installs over the last (docs/RELEASES.md).
+!/app/debug.keystore
 *.jks
 hs_err_pid*.log
 replay_pid*.log
