@@ -2,6 +2,7 @@ package app.steadmo
 
 import android.content.Context
 import android.util.Log
+import app.steadmo.core.AlertKind
 import app.steadmo.core.AlertPolicy
 import app.steadmo.core.CamapsStatus
 import app.steadmo.core.Reading
@@ -41,6 +42,7 @@ class GlucoseRepository(
     private val file = File(context.filesDir, "readings.csv")
     private val log = load()
     private val alerts = AlertPolicy()
+    private var shownAlert: AlertKind? = null
 
     private val _state = MutableStateFlow(GlucoseState(readings = log.all, trend = TrendCalculator.trend(log.all)))
     val state: StateFlow<GlucoseState> = _state
@@ -72,8 +74,17 @@ class GlucoseRepository(
             save(log.encode())
             // Only a reading posted just now alerts. A replay (e.g. on reconnect)
             // is history: its projection was about a moment that has passed.
-            log.latest?.takeIf { clock() - it.timeMillis < ALERT_MAX_AGE_MILLIS }?.let { latest ->
-                alerts.evaluate(latest, trend)?.let { notifier.showAlert(it, latest.timeMillis) }
+            val latest = log.latest
+            // A newer reading that no longer calls for the shown alert clears it.
+            if (shownAlert != null && latest != null && alerts.applying(latest, trend)?.kind != shownAlert) {
+                notifier.cancelAlert()
+                shownAlert = null
+            }
+            latest?.takeIf { clock() - it.timeMillis < ALERT_MAX_AGE_MILLIS }?.let {
+                alerts.evaluate(it, trend)?.let { alert ->
+                    notifier.showAlert(alert, it.timeMillis)
+                    shownAlert = alert.kind
+                }
             }
         }
     }

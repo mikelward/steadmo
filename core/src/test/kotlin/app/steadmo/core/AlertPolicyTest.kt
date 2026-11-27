@@ -40,6 +40,14 @@ class AlertPolicyTest {
         assertNull(AlertPolicy().evaluate(Reading(0, 6.0), null))
     }
 
+    @Test fun applyingIgnoresTheRepeatLimit() {
+        val policy = AlertPolicy()
+        policy.evaluate(Reading(0, 12.0), trend(0.2))!!
+        assertNull(policy.evaluate(Reading(5 * min, 13.0), trend(0.2)))
+        assertEquals(AlertKind.RISING_FAST, policy.applying(Reading(5 * min, 13.0), trend(0.2))!!.kind)
+        assertNull(policy.applying(Reading(5 * min, 13.0), trend(0.0)))
+    }
+
     @Test fun sameKindRepeatsOnlyAfterHalfAnHour() {
         val policy = AlertPolicy()
         policy.evaluate(Reading(0, 12.0), trend(0.2))!!

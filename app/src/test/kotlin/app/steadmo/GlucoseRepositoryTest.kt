@@ -88,6 +88,23 @@ class GlucoseRepositoryTest {
         assertNull(app.posted(2))
     }
 
+    @Test fun `a recovery clears the prediction it invalidated`() {
+        val repo = repository()
+        repo.post("7.0", 0)
+        repo.post("6.0", 5 * MINUTE)
+        assertEquals("Low in about 10 min", app.posted(2)!!.extras.getString(android.app.Notification.EXTRA_TITLE))
+        repo.post("7.0", 10 * MINUTE)
+        assertNull(app.posted(2))
+    }
+
+    @Test fun `a throttled repeat keeps the alert up`() {
+        val repo = repository()
+        repo.post("15.0", 0)
+        repo.post("14.0", 5 * MINUTE)
+        repo.post("13.0", 10 * MINUTE)
+        assertEquals("Falling fast: 14.0", app.posted(2)!!.extras.getString(android.app.Notification.EXTRA_TITLE))
+    }
+
     @Test fun `a bound is kept, shown, and left out of the trend`() {
         val repo = repository()
         repo.post("4.0", 0)
