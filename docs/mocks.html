@@ -81,6 +81,13 @@ code{font-family:var(--f-data);font-size:.85em;background:var(--chip);padding:.1
 .chips.meal .chip{padding:16px 0;font-size:16px}
 .chips.meal .chip[data-g="other"]{background:var(--dev-accent);color:var(--dev-on-accent);border:0}
 .arw{display:inline-flex;vertical-align:middle}
+.livechip{display:inline-flex;align-items:center;gap:3px;background:var(--low);color:#fff;border-radius:99px;padding:1px 7px 1px 5px;font:700 10.5px var(--f-data)}
+.notif.live{border-color:var(--low)}
+.notif.mini{padding:6px 12px;font-size:11px;color:var(--dev-muted);border-radius:12px}
+.pbar{position:relative;display:flex;height:8px;border-radius:4px;margin-top:10px}
+.pbar span:first-child{border-radius:4px 0 0 4px}.pbar span:nth-child(3){border-radius:0 4px 4px 0}
+.pbar i{position:absolute;top:50%;width:14px;height:14px;border-radius:50%;background:var(--dev-surface);border:3px solid var(--low);transform:translate(-50%,-50%)}
+.pscale{display:flex;justify-content:space-between;font:10px var(--f-data);color:var(--dev-muted);margin-top:4px}
 .seg{display:inline-flex;border:1px solid var(--line);border-radius:10px;overflow:hidden;margin-top:.5rem;background:var(--surface)}
 .seg button{border:0;background:transparent;color:var(--ink);font:500 .9rem var(--f-body);padding:.45rem .9rem;cursor:pointer}
 .seg button[aria-pressed="true"]{background:var(--accent);color:var(--accent-ink)}
@@ -244,30 +251,42 @@ pre.mermaid{background:var(--surface);border:1px solid var(--line);border-radius
   <div class="bench">
     <figure class="figure">
       <div class="phone wallpaper" aria-label="Lock screen notifications mock">
-        <div class="status"><span style="display:flex;align-items:center;gap:4px">19:27 <span class="arw" data-a="flat" data-s="12" data-c="var(--dev-ink)"></span></span><span>5G ▮▮▮ 74%</span></div>
+        <div class="status"><span style="display:flex;align-items:center;gap:4px">19:27 <span class="arw" data-a="down" data-s="12" data-c="var(--dev-ink)"></span></span><span>5G ▮▮▮ 74%</span></div>
         <div class="screen">
           <div style="text-align:center;font:600 48px var(--f-display);margin:10px 0 4px">19:27</div>
           <div style="text-align:center" class="small">Thursday 27 November</div>
           <div style="height:10px"></div>
-          <div class="notif">
-            <div class="app"><span class="icon" style="color:var(--dev-accent)">◆</span>Steadmo · now</div>
-            <b>Food arriving in ~8 min</b>
-            <div>Deliveroo says your rider is nearby. BG 6.4, steady. Pre-bolus now?</div>
-            <div class="acts"><span>Bolus 45g</span><span>Other</span><span>Ate already</span></div>
-          </div>
           <div class="notif" style="border-color:rgba(255,92,115,.5)">
-            <div class="app"><span class="arw" data-a="double_down" data-s="16" data-c="var(--low)"></span>Steadmo · 4 min ago</div>
-            <b style="display:flex;align-items:center;gap:6px"><span class="arw" data-a="down" data-s="20" data-c="var(--low)"></span>Low in about 8 min</b>
-            <div>5.1, −0.15/min. Heading below 3.9.</div>
-            <div class="acts"><span>Ease-off</span><span>Logged 15g</span><span>Snooze 30m</span></div>
+            <div class="app"><span class="arw" data-a="down" data-s="14" data-c="var(--low)"></span>Steadmo · 1 min ago</div>
+            <div style="display:flex;gap:10px;align-items:flex-start"><div style="flex:1"><b>Low in about 8 min</b>
+            <div>5.1, −0.15/min. Heading below 3.9.</div></div><span class="arw" data-a="down" data-s="34" data-c="var(--low)"></span></div>
+            <div class="acts"><span>Ease-off</span><span>Treated</span><span>Snooze 30m</span></div>
           </div>
-          <div class="notif dimmed">
-            <div class="app">CamAPS FX · ongoing</div>
-            <div>6.4 mmol/L · Auto mode On</div>
-          </div>
+          <div class="notif mini">CamAPS FX · 5.1 mmol/L · Auto mode On</div>
         </div>
       </div>
-      <figcaption>Steadmo's trend arrow is the status bar icon. Alerts say what is coming. The takeaway prompt (top) is Phase 3. Each one gives the rate, a projection, and the relevant context (IOB, recent carbs), with actions on the notification.</figcaption>
+      <figcaption>Steadmo's trend arrow is the status bar icon, and the same arrow is the alert's icon. Alerts give the rate and a projection. "Treated" records a hypo treatment in Steadmo only and reminds you to recheck in 15 minutes; it is not sent to CamAPS FX. CamAPS FX's own notification is minimized to one line: Steadmo still reads it.</figcaption>
+    </figure>
+
+    <figure class="figure">
+      <div class="phone wallpaper" aria-label="Live Update mock">
+        <div class="status"><span style="display:flex;align-items:center;gap:6px">19:41 <span class="livechip"><span class="arw" data-a="down_slight" data-s="11" data-c="#ffffff"></span>3.6</span></span><span>5G ▮▮▮ 72%</span></div>
+        <div class="screen">
+          <div class="notif live">
+            <div class="app"><span class="arw" data-a="down_slight" data-s="14" data-c="var(--low)"></span>Steadmo · Live</div>
+            <div style="display:flex;gap:10px;align-items:flex-start"><div style="flex:1"><b>Low: 3.6 mmol/L</b>
+            <div>Falling slowly, −0.07/min. Below 3.9 for 6 min.</div></div><span class="arw" data-a="down_slight" data-s="34" data-c="var(--low)"></span></div>
+            <div class="pbar" aria-label="Glucose on a 2 to 14 scale">
+              <span style="width:15.8%;background:var(--low)"></span><span style="width:50.8%;background:var(--inrange)"></span><span style="width:33.4%;background:var(--high)"></span>
+              <i style="left:13.3%"></i>
+            </div>
+            <div class="pscale"><span>2</span><span>3.9</span><span>10</span><span>14</span></div>
+            <div class="acts"><span>Treated</span><span>Ease-off</span></div>
+          </div>
+          <div class="notif mini">CamAPS FX · 3.6 mmol/L · Auto mode On</div>
+        </div>
+      </div>
+      <figcaption>Android 16 Live Update while out of range. The status bar chip shows the value and arrow; the promoted card shows where the value sits against the 3.9–10 range. It goes back to an ordinary notification once a reading is in range.</figcaption>
     </figure>
 
     <figure class="figure">
