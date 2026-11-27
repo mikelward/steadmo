@@ -41,6 +41,8 @@ class WidgetScreenshotTest {
             capture("widget-full-$theme.png", DpSize(360.dp, 480.dp), dark) { WidgetContent(model, Samples.NOW) }
             // The narrowest width at full height: meal buttons in two rows.
             capture("widget-narrow-$theme.png", DpSize(250.dp, 480.dp), dark) { WidgetContent(model, Samples.NOW) }
+            // The smallest size with buttons: narrow, so three button rows and no graph.
+            capture("widget-narrow-short-$theme.png", DpSize(250.dp, 320.dp), dark) { WidgetContent(model, Samples.NOW) }
         }
     }
 

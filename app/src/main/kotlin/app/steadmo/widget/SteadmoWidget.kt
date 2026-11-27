@@ -86,6 +86,29 @@ private val StaleColor = Color(0xFF8A8A8A)
 /** The narrowest widget that fits all four meal buttons in one row. */
 internal val WIDE_MEAL_ROW = 280.dp
 
+/**
+ * What fits at [size]: buttons from 320 dp tall, and the graph in whatever
+ * height is left over (up to 120 dp, and not at all below 48 dp), so the
+ * button rows are never pushed off the bottom.
+ */
+internal data class WidgetLayout(val buttons: Boolean, val mealRows: Int, val graph: androidx.compose.ui.unit.Dp?) {
+    companion object {
+        private val PADDING = 24.dp
+        private val HEADER = 90.dp
+        private val BUTTON_ROW = 52.dp
+        private val GAP = 8.dp
+
+        fun of(size: DpSize): WidgetLayout {
+            val buttons = size.height >= 320.dp
+            val mealRows = if (size.width >= WIDE_MEAL_ROW) 1 else 2
+            val buttonSpace = if (buttons) BUTTON_ROW * (1 + mealRows) + GAP else 0.dp
+            val left = size.height - PADDING - HEADER - buttonSpace - GAP
+            val graph = minOf(left, 120.dp).takeIf { it >= 48.dp && size.height >= 200.dp }
+            return WidgetLayout(buttons, mealRows, graph)
+        }
+    }
+}
+
 private fun color(side: RangeSide, stale: Boolean) = when {
     stale -> StaleColor
     side == RangeSide.LOW -> LowColor
@@ -157,10 +180,11 @@ private fun ColumnScope.Showing(model: WidgetModel.Showing, now: Long, size: DpS
     if (status.isNotEmpty()) {
         Text(status, style = TextStyle(color = GlanceTheme.colors.onSurfaceVariant, fontSize = 13.sp))
     }
-    if (size.height >= 200.dp) {
+    val layout = WidgetLayout.of(size)
+    if (layout.graph != null) {
         Spacer(GlanceModifier.height(8.dp))
         val density = context.resources.displayMetrics.density
-        val graphHeight = if (size.height >= 320.dp) 120.dp else 80.dp
+        val graphHeight = layout.graph
         val widthPx = ((size.width - 24.dp).value * density).toInt()
         val heightPx = (graphHeight.value * density).toInt()
         val bitmap = WidgetGraph.draw(
@@ -177,7 +201,7 @@ private fun ColumnScope.Showing(model: WidgetModel.Showing, now: Long, size: DpS
             modifier = GlanceModifier.fillMaxWidth().height(graphHeight).clickable(openApp),
         )
     }
-    if (size.height >= 320.dp) {
+    if (layout.buttons) {
         Spacer(GlanceModifier.defaultWeight())
         Row(modifier = GlanceModifier.fillMaxWidth()) {
             Button("Boost", widgetAction(context, "camaps/boost"), modifier = GlanceModifier.defaultWeight())
@@ -187,7 +211,7 @@ private fun ColumnScope.Showing(model: WidgetModel.Showing, now: Long, size: DpS
         Spacer(GlanceModifier.height(8.dp))
         val meals = listOf("20 g" to "meal/20", "40 g" to "meal/40", "45 g" to "meal/45", "Other" to "camaps/meal")
         // Four across needs room for each label; narrower widgets get two rows of two.
-        val rows = if (size.width >= WIDE_MEAL_ROW) listOf(meals) else meals.chunked(2)
+        val rows = if (layout.mealRows == 1) listOf(meals) else meals.chunked(2)
         rows.forEachIndexed { i, row ->
             if (i > 0) Spacer(GlanceModifier.height(6.dp))
             Row(modifier = GlanceModifier.fillMaxWidth()) {
