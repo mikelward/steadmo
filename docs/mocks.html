@@ -7,7 +7,8 @@
   --bg:#f3f5f7; --surface:#ffffff; --ink:#14202b; --muted:#5a6b7a; --line:#d8dfe6;
   --accent:#0a7c8c; --accent-ink:#ffffff;
   --inrange:#1f9d55; --high:#d98a00; --low:#d6334a;
-  --dev-bg:#0f1720; --dev-surface:#18232f; --dev-ink:#eaf1f6; --dev-muted:#8ea1b2; --dev-line:#263545;
+  --dev-bg:#f6f8fa; --dev-surface:#ffffff; --dev-ink:#14202b; --dev-muted:#5a6b7a; --dev-line:#d3dce4;
+  --dev-wall:radial-gradient(120% 70% at 20% 0%,#d6ecf0 0%,#f6f8fa 60%),#f6f8fa; --dev-accent:#0a8a9c; --dev-on-accent:#ffffff;
   --f-display:"Sora", system-ui, sans-serif;
   --f-body:"Inter", system-ui, sans-serif;
   --f-data:"JetBrains Mono", ui-monospace, monospace;
@@ -16,6 +17,8 @@
 @media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
   --bg:#0b1117; --surface:#121b24; --ink:#e3eaf0; --muted:#94a5b4; --line:#243241;
   --accent:#3cc2d3; --accent-ink:#04252a; --chip:#14303a;
+  --dev-bg:#0f1720; --dev-surface:#18232f; --dev-ink:#eaf1f6; --dev-muted:#8ea1b2; --dev-line:#263545; --dev-wall:radial-gradient(120% 70% at 20% 0%,#1d3b4a 0%,#0f1720 60%),#0f1720; --dev-accent:#3cc2d3; --dev-on-accent:#04252a;
+  --dev-bg:#0f1720; --dev-surface:#18232f; --dev-ink:#eaf1f6; --dev-muted:#8ea1b2; --dev-line:#263545; --dev-wall:radial-gradient(120% 70% at 20% 0%,#1d3b4a 0%,#0f1720 60%),#0f1720; --dev-accent:#3cc2d3; --dev-on-accent:#04252a;
   --inrange:#3ccf7a; --high:#f2a93b; --low:#ff5c73; color-scheme:dark}}
 :root[data-theme="dark"]{
   --bg:#0b1117; --surface:#121b24; --ink:#e3eaf0; --muted:#94a5b4; --line:#243241;
@@ -45,7 +48,7 @@ code{font-family:var(--f-data);font-size:.85em;background:var(--chip);padding:.1
 .phone{width:300px;max-width:100%;aspect-ratio:9/19.5;border-radius:38px;background:var(--dev-bg);border:8px solid #222c36;box-shadow:0 20px 40px rgba(10,20,30,.25);overflow:hidden;position:relative;color:var(--dev-ink);font-family:var(--f-body);display:flex;flex-direction:column}
 .phone .status{display:flex;justify-content:space-between;font-size:11px;color:var(--dev-muted);padding:8px 18px 4px;font-family:var(--f-data)}
 .phone .screen{flex:1;padding:6px 12px 12px;display:flex;flex-direction:column;gap:8px;min-height:0}
-.wallpaper{background:radial-gradient(120% 70% at 20% 0%,#1d3b4a 0%,#0f1720 60%),#0f1720}
+.wallpaper{background:var(--dev-wall)}
 
 .bg-row{display:flex;align-items:flex-end;justify-content:space-between}
 .bg-val{font-family:var(--f-data);font-size:56px;font-weight:700;line-height:1;letter-spacing:-.03em}
@@ -68,14 +71,18 @@ code{font-family:var(--f-data);font-size:.85em;background:var(--chip);padding:.1
 .btn.on small{color:#ffe3cc}
 .btn.ease.on{background:#4f7fd6}
 .btn.ease.on small{color:#dde8ff}
-.bolus{background:#3cc2d3;color:#04252a;border:0;border-radius:20px;padding:14px;font:700 20px var(--f-display);display:flex;justify-content:center;align-items:center;gap:8px;cursor:pointer}
+.bolus{background:var(--dev-accent);color:var(--dev-on-accent);border:0;border-radius:20px;padding:14px;font:700 20px var(--f-display);display:flex;justify-content:center;align-items:center;gap:8px;cursor:pointer}
 .bolus:focus-visible{outline:2px solid #fff;outline-offset:2px}
 .chips{display:grid;grid-template-columns:repeat(4,1fr);gap:6px}
 .chip{background:var(--dev-surface);border:1px solid var(--dev-line);color:var(--dev-ink);border-radius:12px;padding:9px 0;font:600 14px var(--f-data);text-align:center;cursor:pointer}
 .chip:focus-visible{outline:2px solid var(--accent)}
 .chips.meal .chip{padding:16px 0;font-size:16px}
-.chips.meal .chip[data-g="other"]{background:#3cc2d3;color:#04252a;border:0}
+.chips.meal .chip[data-g="other"]{background:var(--dev-accent);color:var(--dev-on-accent);border:0}
 .arw{display:inline-flex;vertical-align:middle}
+.seg{display:inline-flex;border:1px solid var(--line);border-radius:10px;overflow:hidden;margin-top:.5rem;background:var(--surface)}
+.seg button{border:0;background:transparent;color:var(--ink);font:500 .9rem var(--f-body);padding:.45rem .9rem;cursor:pointer}
+.seg button[aria-pressed="true"]{background:var(--accent);color:var(--accent-ink)}
+.seg button:focus-visible{outline:2px solid var(--accent);outline-offset:-2px}
 .alert{border-radius:12px;padding:8px 10px;font-size:12.5px;line-height:1.35;display:flex;gap:8px;align-items:flex-start}
 .alert.fall{background:rgba(214,51,74,.18);border:1px solid rgba(255,92,115,.5)}
 .alert.rise{background:rgba(217,138,0,.16);border:1px solid rgba(242,169,59,.5)}
@@ -100,13 +107,13 @@ code{font-family:var(--f-data);font-size:.85em;background:var(--chip);padding:.1
 .stepper .chip{width:52px}
 .notif{background:var(--dev-surface);border-radius:16px;padding:10px 12px;font-size:12.5px;border:1px solid var(--dev-line)}
 .notif .app{font-size:11px;color:var(--dev-muted);display:flex;gap:6px;align-items:center;margin-bottom:4px}
-.notif .acts{display:flex;gap:14px;margin-top:8px;font-weight:600;color:#3cc2d3;font-size:12.5px}
+.notif .acts{display:flex;gap:14px;margin-top:8px;font-weight:600;color:var(--dev-accent);font-size:12.5px}
 .dimmed{opacity:.45}
 
 .watch{width:220px;height:220px;border-radius:50%;background:var(--dev-bg);border:10px solid #222c36;box-shadow:0 14px 30px rgba(10,20,30,.25);color:var(--dev-ink);display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:22px;gap:6px}
 .watch .w-title{font:600 14px var(--f-display)}
 .watch .w-body{font-size:11.5px;color:var(--dev-muted);line-height:1.35}
-.watch .w-btn{background:#3cc2d3;color:#04252a;border-radius:99px;padding:7px 16px;font:700 13px var(--f-body)}
+.watch .w-btn{background:var(--dev-accent);color:var(--dev-on-accent);border-radius:99px;padding:7px 16px;font:700 13px var(--f-body)}
 .watch .w-btn2{font-size:11px;color:var(--dev-muted)}
 
 /* Tables */
@@ -138,7 +145,8 @@ pre.mermaid{background:var(--surface);border:1px solid var(--line);border-radius
 
   <!-- ============ MOCKS ============ -->
   <h2>The mocks</h2>
-  <p class="prose">Sample data, mmol/L. The buttons are live: try Boost, Ease-off and the meal presets.</p>
+  <p class="prose">Sample data, mmol/L. The buttons are live: try Boost, Ease-off and the meal presets. The app follows the phone's light or dark setting; preview either here.</p>
+  <div class="seg" role="group" aria-label="Theme"><button type="button" data-theme-pick="system" aria-pressed="true">System</button><button type="button" data-theme-pick="light" aria-pressed="false">Light</button><button type="button" data-theme-pick="dark" aria-pressed="false">Dark</button></div>
 
   <div class="bench">
     <figure class="figure">
@@ -146,10 +154,10 @@ pre.mermaid{background:var(--surface);border:1px solid var(--line);border-radius
         <div class="status"><span>18:42</span><span>5G ▮▮▮ 81%</span></div>
         <div class="screen">
           <div class="bg-row">
-            <div><span class="bg-val" id="w-bg">8.9</span><span class="arw" data-a="up" data-s="44" data-c="#3ccf7a"></span><div class="unit">mmol/L</div></div>
+            <div><span class="bg-val" id="w-bg">8.9</span><span class="arw" data-a="up" data-s="44" data-c="var(--inrange)"></span><div class="unit">mmol/L</div></div>
             <div class="bg-meta"><b id="w-delta">+0.6</b> /5 min<br>2 min ago<br>IOB 1.8 U</div>
           </div>
-          <div class="alert rise"><span class="arw" data-a="up" data-s="22" data-c="#f2a93b"></span><div><b>Rising 0.12 mmol/L/min</b>Likely above 10 in about 10 min. No carbs logged in the last hour.</div></div>
+          <div class="alert rise"><span class="arw" data-a="up" data-s="22" data-c="var(--high)"></span><div><b>Rising 0.12 mmol/L/min</b>Likely above 10 in about 10 min. No carbs logged in the last hour.</div></div>
           <div class="graph"><svg id="g1" viewBox="0 0 280 120" role="img" aria-label="Glucose over the last 3 hours"></svg></div>
           <div style="display:flex;gap:6px;flex-wrap:wrap">
             <span class="pill"><span class="dot"></span>Auto mode on</span>
@@ -206,7 +214,7 @@ pre.mermaid{background:var(--surface);border:1px solid var(--line);border-radius
       <div class="phone" aria-label="Bolus sheet mock">
         <div class="status"><span>18:42</span><span>5G ▮▮▮ 81%</span></div>
         <div class="screen">
-          <div class="bg-row dimmed"><div><span class="bg-val" style="font-size:40px">8.9</span><span class="arw" data-a="up" data-s="30" data-c="#3ccf7a"></span></div><div class="bg-meta">IOB 1.8 U</div></div>
+          <div class="bg-row dimmed"><div><span class="bg-val" style="font-size:40px">8.9</span><span class="arw" data-a="up" data-s="30" data-c="var(--inrange)"></span></div><div class="bg-meta">IOB 1.8 U</div></div>
           <div class="graph dimmed"><svg id="g3" viewBox="0 0 280 120" aria-hidden="true"></svg></div>
           <div class="sheet">
             <div class="grab"></div>
@@ -234,20 +242,20 @@ pre.mermaid{background:var(--surface);border:1px solid var(--line);border-radius
   <div class="bench">
     <figure class="figure">
       <div class="phone wallpaper" aria-label="Lock screen notifications mock">
-        <div class="status"><span style="display:flex;align-items:center;gap:4px">19:27 <span class="arw" data-a="flat" data-s="12" data-c="#eaf1f6"></span></span><span>5G ▮▮▮ 74%</span></div>
+        <div class="status"><span style="display:flex;align-items:center;gap:4px">19:27 <span class="arw" data-a="flat" data-s="12" data-c="var(--dev-ink)"></span></span><span>5G ▮▮▮ 74%</span></div>
         <div class="screen">
           <div style="text-align:center;font:600 48px var(--f-display);margin:10px 0 4px">19:27</div>
           <div style="text-align:center" class="small">Thursday 27 November</div>
           <div style="height:10px"></div>
           <div class="notif">
-            <div class="app"><span class="icon" style="color:#3cc2d3">◆</span>Steadmo · now</div>
+            <div class="app"><span class="icon" style="color:var(--dev-accent)">◆</span>Steadmo · now</div>
             <b>Food arriving in ~8 min</b>
             <div>Deliveroo says your rider is nearby. BG 6.4, steady. Pre-bolus now?</div>
             <div class="acts"><span>Bolus 45g</span><span>Other</span><span>Ate already</span></div>
           </div>
           <div class="notif" style="border-color:rgba(255,92,115,.5)">
-            <div class="app"><span class="arw" data-a="double_down" data-s="16" data-c="#ff5c73"></span>Steadmo · 4 min ago</div>
-            <b style="display:flex;align-items:center;gap:6px"><span class="arw" data-a="down" data-s="20" data-c="#ff5c73"></span>Low in about 8 min</b>
+            <div class="app"><span class="arw" data-a="double_down" data-s="16" data-c="var(--low)"></span>Steadmo · 4 min ago</div>
+            <b style="display:flex;align-items:center;gap:6px"><span class="arw" data-a="down" data-s="20" data-c="var(--low)"></span>Low in about 8 min</b>
             <div>5.1, −0.15/min. Heading below 3.9.</div>
             <div class="acts"><span>Ease-off</span><span>Logged 15g</span><span>Snooze 30m</span></div>
           </div>
@@ -263,22 +271,22 @@ pre.mermaid{background:var(--surface);border:1px solid var(--line);border-radius
     <figure class="figure">
       <div class="watch" aria-label="Wear OS notification mock">
         <div class="w-title">Deliveroo nearby</div>
-        <div style="font:700 26px var(--f-data);display:flex;align-items:center;gap:6px">6.4 <span class="arw" data-a="flat" data-s="22" data-c="#3ccf7a"></span></div>
+        <div style="font:700 26px var(--f-data);display:flex;align-items:center;gap:6px">6.4 <span class="arw" data-a="flat" data-s="22" data-c="var(--inrange)"></span></div>
         <div class="w-body">Pre-bolus for dinner?</div>
         <div class="w-btn">Bolus 45g</div>
         <div class="w-btn2">Other amount · Dismiss</div>
       </div>
-      <figcaption>Later (Phase 3). Wear OS. The takeaway prompt is mirrored to the watch. Tapping "Bolus 45g" opens CamAPS FX on the phone with 45 copied, ready to confirm.</figcaption>
+      <figcaption>Not in the MVP. Wear OS: the takeaway prompt mirrored to the watch. Tapping "Bolus 45g" opens CamAPS FX on the phone with 45 copied, ready to confirm.</figcaption>
     </figure>
 
     <figure class="figure">
       <div class="watch" aria-label="Watch tile mock" style="gap:4px">
         <div class="small" style="font-family:var(--f-data)">AUTO · BOOST 1:12</div>
-        <div style="font:700 40px var(--f-data);line-height:1;display:flex;align-items:center;gap:4px">8.9<span class="arw" data-a="up" data-s="28" data-c="#3ccf7a"></span></div>
+        <div style="font:700 40px var(--f-data);line-height:1;display:flex;align-items:center;gap:4px">8.9<span class="arw" data-a="up" data-s="28" data-c="var(--inrange)"></span></div>
         <svg id="g4" viewBox="0 0 280 120" style="width:150px;height:auto" aria-hidden="true"></svg>
         <div class="small">+0.6 · IOB 1.8</div>
       </div>
-      <figcaption>Wear OS tile and complication. Reading, trend, a 3-hour sparkline and loop mode.</figcaption>
+      <figcaption>Not in the MVP. Wear OS tile and complication. Reading, trend, a 3-hour sparkline and loop mode.</figcaption>
     </figure>
   </div>
 
@@ -359,7 +367,7 @@ flowchart LR
       <p>A notification listener matches "picked up" and "nearby" messages from Deliveroo, Uber Eats and Just Eat. Steadmo suggests your usual takeaway amount (it learns from past meals) and mirrors the prompt to the watch. If you bolus in the next 20 minutes it marks the prompt done.</p>
     </div>
     <div class="card">
-      <h3>Watch</h3>
+      <h3>Watch (not in the MVP)</h3>
       <p>Phone notifications bridge to Wear OS automatically. A small Wear app adds a tile and a complication fed by the Data Layer API. Actions run on the phone, because CamAPS FX does.</p>
     </div>
   </div>
@@ -409,28 +417,35 @@ function drawGraph(svg, data, opts={}){
   const ymin=2,ymax=14;
   const x=i=>pl+(W-pl-pr)*i/(data.length-1);
   const y=v=>pt+(H-pt-pb)*(1-(v-ymin)/(ymax-ymin));
-  const muted='#8ea1b2', line='#263545';
+  const muted=css('--dev-muted'), line=css('--dev-line'), ink=css('--dev-ink'), acc=css('--dev-accent');
   let s='';
   // target band 3.9–10
-  s+=`<rect x="${pl}" y="${y(10)}" width="${W-pl-pr}" height="${y(3.9)-y(10)}" fill="#1f9d55" fill-opacity=".14"/>`;
+  s+=`<rect x="${pl}" y="${y(10)}" width="${W-pl-pr}" height="${y(3.9)-y(10)}" fill="${css('--inrange')}" fill-opacity=".14"/>`;
   [4,10].forEach(v=>{s+=`<line x1="${pl}" x2="${W-pr}" y1="${y(v)}" y2="${y(v)}" stroke="${line}" stroke-dasharray="2 3"/>`;});
   [4,7,10,13].forEach(v=>{s+=`<text x="${pl-4}" y="${y(v)+3}" font-size="8" fill="${muted}" text-anchor="end" font-family="JetBrains Mono, monospace">${v}</text>`;});
   (opts.xlabels||['-3h','-2h','-1h','now']).forEach((t,i,a)=>{const xx=pl+(W-pl-pr)*i/(a.length-1);s+=`<text x="${xx}" y="${H-3}" font-size="8" fill="${muted}" text-anchor="${i===0?'start':i===a.length-1?'end':'middle'}" font-family="JetBrains Mono, monospace">${t}</text>`;});
-  (opts.events||[]).forEach(e=>{const xx=x(e.i);s+=`<line x1="${xx}" x2="${xx}" y1="${pt}" y2="${H-pb}" stroke="#3cc2d3" stroke-opacity=".5"/><text x="${xx+2}" y="${pt+8}" font-size="7.5" fill="#3cc2d3" font-family="JetBrains Mono, monospace">${e.t}</text>`;});
-  data.forEach((v,i)=>{const c=v<3.9?'#ff5c73':v>10?'#f2a93b':'#3ccf7a';const last=i===data.length-1;s+=`<circle cx="${x(i)}" cy="${y(v)}" r="${last?3.6:1.9}" fill="${c}"${last?' stroke="#eaf1f6" stroke-width="1.2"':''}/>`;});
+  (opts.events||[]).forEach(e=>{const xx=x(e.i);s+=`<line x1="${xx}" x2="${xx}" y1="${pt}" y2="${H-pb}" stroke="${acc}" stroke-opacity=".5"/><text x="${xx+2}" y="${pt+8}" font-size="7.5" fill="${acc}" font-family="JetBrains Mono, monospace">${e.t}</text>`;});
+  data.forEach((v,i)=>{const c=v<3.9?css('--low'):v>10?css('--high'):css('--inrange');const last=i===data.length-1;s+=`<circle cx="${x(i)}" cy="${y(v)}" r="${last?3.6:1.9}" fill="${c}"${last?' stroke="${ink}" stroke-width="1.2"':''}/>`;});
   svg.innerHTML=s;
 }
+function drawAll(){
 drawGraph(document.getElementById('g1'),series);
 drawGraph(document.getElementById('g2'),day,{xlabels:['06','10','14','18'],events:[{i:13,t:'15g'},{i:20,t:'40g'},{i:36,t:'45g'}]});
 drawGraph(document.getElementById('g3'),series);
-drawGraph(document.getElementById('g4'),series,{xlabels:[]});
+drawGraph(document.getElementById('g4'),series,{xlabels:[]});}
+drawAll();
+matchMedia('(prefers-color-scheme: dark)').addEventListener('change',drawAll);
+// Preview either theme; "System" follows the device, as the app does.
+document.querySelectorAll('[data-theme-pick]').forEach(b=>b.onclick=()=>{const t=b.dataset.themePick;
+  if(t==='system')document.documentElement.removeAttribute('data-theme');else document.documentElement.setAttribute('data-theme',t);
+  document.querySelectorAll('[data-theme-pick]').forEach(x=>x.setAttribute('aria-pressed',x===b));drawAll();});
 
 
 // ---- trend arrows: one shape, rotated, like the app's vector drawables ----
 const ARROWS={flat:[0,1],up_slight:[-45,1],up:[-90,1],double_up:[-90,2],down_slight:[45,1],down:[90,1],double_down:[90,2]};
 function arrowSvg(kind,size,color){const [rot,n]=ARROWS[kind];
   const d=n===1?'M4,12 L19,12 M13,6 L19,12 L13,18':'M4,7.5 L19,7.5 M14.5,3 L19,7.5 L14.5,12 M4,16.5 L19,16.5 M14.5,12 L19,16.5 L14.5,21';
-  return `<svg width="${size}" height="${size}" viewBox="0 0 24 24" aria-hidden="true"><g transform="rotate(${rot} 12 12)"><path d="${d}" fill="none" stroke="${color}" stroke-width="${n===1?2.75:2.25}" stroke-linecap="round" stroke-linejoin="round"/></g></svg>`;}
+  return `<svg width="${size}" height="${size}" viewBox="0 0 24 24" aria-hidden="true"><g transform="rotate(${rot} 12 12)"><path d="${d}" fill="none" style="stroke:${color}" stroke-width="${n===1?2.75:2.25}" stroke-linecap="round" stroke-linejoin="round"/></g></svg>`;}
 document.querySelectorAll('.arw').forEach(el=>{el.innerHTML=arrowSvg(el.dataset.a,+el.dataset.s||24,el.dataset.c||'currentColor');el.setAttribute('role','img');el.setAttribute('aria-label',el.dataset.a.replace('_',' '));});
 
 // ---- interactions ----

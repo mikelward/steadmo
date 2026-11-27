@@ -13,7 +13,7 @@ CamAPS FX. The integration research is in `docs/EXPLORATION.md`; mocks are in
 ### Goals
 
 1. The current value, a standard trend arrow and the reading's age, at a glance: app,
-   status bar and (later) a full-page widget and the watch.
+   status bar and (later) a full-page widget.
 2. Alerts that say what is happening and when it will matter: rate, projection, action.
 3. One tap into CamAPS FX for a meal bolus, Boost or Ease-off.
 
@@ -22,6 +22,12 @@ CamAPS FX. The integration research is in `docs/EXPLORATION.md`; mocks are in
 - Dosing. Steadmo never delivers insulin or confirms anything in CamAPS FX.
 - Replacing CamAPS FX or Dexcom alarms.
 - Cloud sync or accounts.
+- Wear OS, for the MVP.
+
+### Appearance
+
+The app follows the system light or dark setting, with Material You colors. Range colors
+(low, in range, high) are the same in both.
 
 ## 2. Key decisions
 
