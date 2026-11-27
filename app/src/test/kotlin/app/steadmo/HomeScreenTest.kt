@@ -27,6 +27,7 @@ class HomeScreenTest {
     private var minimizeAsked = 0
     private var bugReports = 0
     private var latestAsked = 0
+    private var issuesAsked = 0
     private var disclaimerShown = 0
 
     private fun show(state: GlucoseState, listener: Boolean = true, notifications: Boolean = true, now: Long = Samples.NOW) {
@@ -43,6 +44,7 @@ class HomeScreenTest {
                     onMinimizeCamaps = { minimizeAsked++ },
                     onReportBug = { bugReports++ },
                     onGetLatest = { latestAsked++ },
+                    onKnownIssues = { issuesAsked++ },
                     onShowDisclaimer = { disclaimerShown++ },
                     clock = { now },
                     ticking = false,
@@ -109,6 +111,9 @@ class HomeScreenTest {
         compose.onNodeWithContentDescription("More options").performClick()
         compose.onNodeWithText("Get latest version").performClick()
         assertEquals(1, latestAsked)
+        compose.onNodeWithContentDescription("More options").performClick()
+        compose.onNodeWithText("Known issues").performClick()
+        assertEquals(1, issuesAsked)
         compose.onNodeWithContentDescription("More options").performClick()
         compose.onNodeWithText("Disclaimer").performClick()
         assertEquals(1, disclaimerShown)

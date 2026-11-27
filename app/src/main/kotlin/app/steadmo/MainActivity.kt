@@ -63,6 +63,7 @@ class MainActivity : ComponentActivity() {
                     onShowDisclaimer = { showingDisclaimer = true },
                     onOpenAppInfo = ::openAppInfo,
                     onGetLatest = ::openLatestRelease,
+                    onKnownIssues = ::openKnownIssues,
                     onMinimizeCamaps = { Camaps.openChannelSettings(this, state.camapsPackage, state.camapsChannelId) },
                 )
             }
@@ -83,8 +84,15 @@ class MainActivity : ComponentActivity() {
         startActivity(Intent(Intent.ACTION_VIEW, android.net.Uri.parse(LATEST_RELEASE_URL)))
     }
 
+    /** Open issues on GitHub: what's known to be wrong, and whether a report is already filed. */
+    private fun openKnownIssues() {
+        SteadmoLog.event("ui: opening known issues")
+        startActivity(Intent(Intent.ACTION_VIEW, android.net.Uri.parse(KNOWN_ISSUES_URL)))
+    }
+
     companion object {
         const val LATEST_RELEASE_URL = "https://github.com/mikelward/steadmo/releases/latest"
+        const val KNOWN_ISSUES_URL = "https://github.com/mikelward/steadmo/issues"
     }
 
     /** App info, where Android 13+ hides "Allow restricted settings" for sideloaded apps. */
