@@ -32,6 +32,17 @@ class WidgetContentTest {
         onNode(hasText("Other")).assertExists()
     }
 
+    // Through WidgetRoot, as provideGlance renders it: Glance has no lifecycle owner,
+    // so a lifecycle-aware collector would throw here.
+    @Test fun `the real entry point renders`() = runGlanceAppWidgetUnitTest {
+        setContext(ApplicationProvider.getApplicationContext())
+        app.steadmo.Disclaimer.accept(ApplicationProvider.getApplicationContext())
+        setAppWidgetSize(DpSize(320.dp, 420.dp))
+        val states = kotlinx.coroutines.flow.MutableStateFlow(Samples.rising())
+        provideComposable { WidgetRoot(states, ApplicationProvider.getApplicationContext(), { Samples.NOW }) }
+        onNode(hasText("9.4")).assertExists()
+    }
+
     @Test fun `small shows just the reading`() = runGlanceAppWidgetUnitTest {
         setContext(ApplicationProvider.getApplicationContext())
         setAppWidgetSize(DpSize(180.dp, 90.dp))
