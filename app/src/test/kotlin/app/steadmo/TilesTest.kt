@@ -38,11 +38,15 @@ class TilesTest {
         glucose.onStartListening()
         assertEquals("Glucose", glucose.qsTile.label)
         assertEquals(Tile.STATE_UNAVAILABLE, glucose.qsTile.state)
-        assertEquals(MainActivity::class.java.name, shadowOf(glucose.target()).savedIntent.component!!.className)
+        val glucoseIntent = shadowOf(glucose.target()).savedIntent
+        assertEquals(MainActivity::class.java.name, glucoseIntent.component!!.className)
+        assertEquals(android.content.Intent.FLAG_ACTIVITY_NEW_TASK, glucoseIntent.flags and android.content.Intent.FLAG_ACTIVITY_NEW_TASK)
 
         val meal = Robolectric.setupService(MealTileService::class.java)
         meal.onStartListening()
         assertEquals(Tile.STATE_INACTIVE, meal.qsTile.state)
-        assertEquals("steadmo://widget/camaps/meal", shadowOf(meal.target()).savedIntent.dataString)
+        val mealIntent = shadowOf(meal.target()).savedIntent
+        assertEquals("steadmo://widget/camaps/meal", mealIntent.dataString)
+        assertEquals(android.content.Intent.FLAG_ACTIVITY_NEW_TASK, mealIntent.flags and android.content.Intent.FLAG_ACTIVITY_NEW_TASK)
     }
 }

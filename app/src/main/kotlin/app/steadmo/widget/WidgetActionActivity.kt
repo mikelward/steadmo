@@ -6,6 +6,7 @@ import androidx.activity.ComponentActivity
 import app.steadmo.Camaps
 import app.steadmo.Disclaimer
 import app.steadmo.MainActivity
+import app.steadmo.StatusNotifier
 import app.steadmo.core.CamapsGoal
 import app.steadmo.core.SteadmoLog
 import app.steadmo.repository
@@ -18,6 +19,7 @@ import app.steadmo.repository
 class WidgetActionActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        if (intent.getBooleanExtra(EXTRA_CANCEL_PRE_BOLUS, false)) StatusNotifier(this).cancelPreBolus()
         val path = intent.data?.pathSegments.orEmpty()
         SteadmoLog.event("widget: %s", path.joinToString("/"))
         val seen = repository.state.value.camapsPackage
@@ -38,5 +40,6 @@ class WidgetActionActivity : ComponentActivity() {
 
     companion object {
         const val SCHEME = "steadmo"
+        const val EXTRA_CANCEL_PRE_BOLUS = "app.steadmo.cancel_pre_bolus"
     }
 }
