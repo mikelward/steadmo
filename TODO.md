@@ -19,6 +19,17 @@
 
 ## Phase 2: glanceable surfaces
 
+- [ ] Live Update (Android 16) while out of range: status bar chip with value and arrow,
+      promoted card with a ProgressStyle bar on the 2–14 scale (red, green, amber), demoted
+      once a reading is back in range. Needs `POST_PROMOTED_NOTIFICATIONS`, a Play policy
+      question for the maintainer.
+- [ ] Setup step to minimize CamAPS FX's "My diabetes info" channel (Silent + Minimize,
+      not off: a channel that is off posts nothing to read), opening its channel settings
+      with the channel id Steadmo has seen.
+- [ ] "Treated" action on low alerts: records a hypo treatment in Steadmo only (not
+      CamAPS FX), keeps it on the timeline, holds off rise alerts it explains, and reminds
+      you to recheck after 15 minutes.
+
 - [ ] Full-page home screen widget (Glance): value, arrow, graph, Auto mode, Boost,
       Ease-off, 20/40/45/Other.
 - [ ] Launcher shortcuts and Quick Settings tiles for the meal presets.
