@@ -52,7 +52,12 @@ class GlucoseRepository(
     private val file = File(context.filesDir, "readings.csv")
     private val settings = context.getSharedPreferences("settings", Context.MODE_PRIVATE)
     private val log = load()
-    private val alerts = AlertPolicy()
+    private val alertPrefs = context.getSharedPreferences("alerts", Context.MODE_PRIVATE)
+    /** When each kind last alerted, kept across restarts so a restart can't repeat one early. */
+    private val lastAlerted: MutableMap<AlertKind, Long> = AlertKind.entries
+        .mapNotNull { kind -> alertPrefs.getLong(kind.name, 0L).takeIf { it > 0 }?.let { kind to it } }
+        .toMap(mutableMapOf())
+    private val alerts = AlertPolicy(lastAlerted)
     private var shownAlert: AlertKind? = null
     /** When the reading behind [shownAlert] was taken, so it can be redrawn with the same expiry. */
     private var shownAlertTime: Long? = null
@@ -161,6 +166,7 @@ class GlucoseRepository(
                     notifier.showAlert(alert, it.timeMillis)
                     shownAlert = alert.kind
                     shownAlertTime = it.timeMillis
+                    alertPrefs.edit().putLong(alert.kind.name, lastAlerted.getValue(alert.kind)).apply()
                 }
             }
         }

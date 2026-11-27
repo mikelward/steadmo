@@ -15,7 +15,7 @@
 - [ ] Map CamAPS FX's arrow image (logged as a pixel hash) to `TrendArrow`, and show
       both if they disagree.
 - [ ] Read Boost and Ease-off state, if the notification shows it.
-- [ ] Persist alert repeat times across process restarts.
+- [x] Persist alert repeat times across process restarts.
 
 ## Phase 2: glanceable surfaces
 
