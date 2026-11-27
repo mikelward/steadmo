@@ -94,6 +94,8 @@ fun HomeScreen(
     mealReminderTime: String = "18:00",
     onMealReminderOn: (Boolean) -> Unit = {},
     onPickMealReminderTime: () -> Unit = {},
+    calendarMealsOn: Boolean = false,
+    onCalendarMealsOn: (Boolean) -> Unit = {},
     fullScreenAllowed: Boolean = true,
     onAllowFullScreen: () -> Unit = {},
     onOpenAlertSettings: () -> Unit = {},
@@ -138,6 +140,8 @@ fun HomeScreen(
                     time = mealReminderTime,
                     onToggle = onMealReminderOn,
                     onPickTime = onPickMealReminderTime,
+                    calendarOn = calendarMealsOn,
+                    onCalendar = onCalendarMealsOn,
                     onDismiss = { showingReminder = false },
                 )
             }
@@ -443,6 +447,8 @@ internal fun MealReminderDialog(
     onToggle: (Boolean) -> Unit,
     onPickTime: () -> Unit,
     onDismiss: () -> Unit,
+    calendarOn: Boolean = false,
+    onCalendar: (Boolean) -> Unit = {},
 ) {
     AlertDialog(
         onDismissRequest = onDismiss,
@@ -460,6 +466,22 @@ internal fun MealReminderDialog(
                     Switch(checked = on, onCheckedChange = null)
                 }
                 OutlinedButton(onClick = onPickTime, enabled = on) { Text("At $time") }
+                Row(
+                    modifier = Modifier.fillMaxWidth()
+                        .toggleable(value = calendarOn, role = Role.Switch, onValueChange = onCalendar)
+                        .padding(vertical = 8.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    Column(modifier = Modifier.weight(1f)) {
+                        Text("Calendar meals", style = MaterialTheme.typography.bodyLarge)
+                        Text(
+                            "15 minutes before events like \"Dinner with Sam\" or a restaurant booking.",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
+                    }
+                    Switch(checked = calendarOn, onCheckedChange = null)
+                }
             }
         },
         confirmButton = { TextButton(onClick = onDismiss) { Text("Close") } },

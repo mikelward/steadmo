@@ -36,6 +36,7 @@ open class SteadmoApp : Application() {
         watchSignal()
         LauncherShortcuts.publish(this)
         MealReminders.schedule(this)
+        CalendarMealReminders.scan(this)
     }
 
     /**

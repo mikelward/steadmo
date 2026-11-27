@@ -255,6 +255,20 @@ two, and Android may delay them up to about 10 minutes. App start re-arms the da
 each day's reminder sets the next, and a time zone or clock change sets it again, so it
 stays at 18:00 local. Turning it off cancels any snooze and clears a shown reminder.
 
+### 4.14 Calendar meals
+
+Off until turned on in ⋮ → Meal reminder, which asks for calendar access. Steadmo reads the
+next day's events, on the device, for timed events named for a meal (breakfast, brunch,
+lunch, dinner, supper, meal) or a restaurant booking (reservation, restaurant, "table for
+N"), which Gmail adds from booking emails. 15 minutes before the soonest, it posts "Dinner
+with Sam at 19:00. Bolus before you eat?" on the Reminders channel, with Bolus, In 30 min
+and In 60 min. It rescans every 3 hours (WorkManager), on start and after each reminder.
+A reminder that's due but hasn't gone off (a delayed alarm, or an event added late) goes
+off at once, until the meal starts; each event reminds once. A snooze keeps the event's
+name. Only the event's title, start and ID are kept, in the pending alarm and in the list of
+events already reminded. It works whether or not
+the daily reminder is on.
+
 ### 4.4 CamAPS FX's notification
 
 Steadmo reads CamAPS FX's "My diabetes info" notification, so the user keeps it on but can
@@ -265,7 +279,7 @@ notification" card, with a button to that channel's settings, until it is minimi
 ## 5. Privacy
 
 Glucose data stays on the device. Delivery apps' notifications are read on the device and
-not stored. The app has no `INTERNET` permission. CamAPS FX shortcuts
+not stored; so is the calendar, when calendar meals are on. The app has no `INTERNET` permission. CamAPS FX shortcuts
 reads CamAPS FX's screens only while filling a meal, and logs them with digits masked. The only way
 anything leaves is a bug report the user sends themselves (§6).
 
