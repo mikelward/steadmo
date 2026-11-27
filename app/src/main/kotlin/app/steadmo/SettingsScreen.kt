@@ -41,6 +41,8 @@ fun SettingsScreen(
     onPickMealReminderTime: () -> Unit = {},
     calendarMealsOn: Boolean = false,
     onCalendarMealsOn: (Boolean) -> Unit = {},
+    remindersOnTime: Boolean = true,
+    onAllowRemindersOnTime: () -> Unit = {},
     shortcutsOn: Boolean = false,
     onOpenShortcutsSettings: () -> Unit = {},
     onOpenAppInfo: () -> Unit = {},
@@ -75,6 +77,8 @@ fun SettingsScreen(
             onPickTime = onPickMealReminderTime,
             calendarOn = calendarMealsOn,
             onCalendar = onCalendarMealsOn,
+            onTime = remindersOnTime,
+            onAllowOnTime = onAllowRemindersOnTime,
             onDismiss = close,
         )
         SHORTCUTS -> ShortcutsDialog(

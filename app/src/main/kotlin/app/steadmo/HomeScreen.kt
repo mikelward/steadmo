@@ -429,6 +429,8 @@ internal fun MealReminderDialog(
     onDismiss: () -> Unit,
     calendarOn: Boolean = false,
     onCalendar: (Boolean) -> Unit = {},
+    onTime: Boolean = true,
+    onAllowOnTime: () -> Unit = {},
 ) {
     AlertDialog(
         onDismissRequest = onDismiss,
@@ -461,6 +463,19 @@ internal fun MealReminderDialog(
                         )
                     }
                     Switch(checked = calendarOn, onCheckedChange = null)
+                }
+                if (!onTime && (on || calendarOn)) {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Column(modifier = Modifier.weight(1f)) {
+                            Text("On time", style = MaterialTheme.typography.bodyLarge)
+                            Text(
+                                "Without Alarms & reminders, Android may remind you up to an hour late.",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            )
+                        }
+                        TextButton(onClick = onAllowOnTime) { Text("Allow") }
+                    }
                 }
             }
         },

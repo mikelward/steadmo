@@ -118,7 +118,7 @@ CamAPS FX's. Each step needs the maintainer's sign-off: these are safety decisio
 - minSdk 35, as in snoozemo.
 - Signal loss warns after 15 minutes without a reading, repeats every 30 minutes, and stops
   after 2 hours (CamAPS FX is likely off on purpose by then; the app still says so). The
-  check is an inexact alarm allowed while idle, so it can land a few minutes late.
+  check is exact once "Alarms & reminders" is allowed, else inexact and possibly late.
 - Urgent low is below 3.0 mmol/L (54 mg/dL) or under the sensor's range. It sounds on every
   new reading until OK; swiping it away counts as OK. OK quiets it for 15 minutes.
 - Launcher shortcuts are 20 g, 40 g, 45 g and Boost: launchers show about four, so Ease-off
@@ -131,6 +131,7 @@ CamAPS FX's. Each step needs the maintainer's sign-off: these are safety decisio
 - Delivery prompts go on a new Reminders channel (default importance), at most one per app
   per hour, expire after 45 minutes, and don't fire once the order says it has arrived.
 - The meal reminder is on by default at 18:00 (the maintainer asked for a 6 pm reminder);
-  it's an inexact alarm allowed while idle, so it can land up to about 10 minutes late.
+  it's exact once the user allows "Alarms & reminders" (asked for in the Meal reminder
+  dialog; the maintainer approved asking), else inexact and up to an hour late.
 - Calendar meals look a day ahead, rescan every 3 hours and after each reminder, and skip
   all-day events.

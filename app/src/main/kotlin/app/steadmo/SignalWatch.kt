@@ -56,9 +56,7 @@ object SignalWatch {
 
     private fun schedule(context: Context, at: Long) {
         SteadmoLog.verbose("signal: next check at %s", at)
-        // Inexact but allowed while idle: within minutes is enough, and needs no exact-alarm permission.
-        context.getSystemService(AlarmManager::class.java)
-            .setAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, at, pending(context))
+        Alarms.set(context, at, pending(context))
     }
 
     private fun cancel(context: Context) = context.getSystemService(AlarmManager::class.java).cancel(pending(context))

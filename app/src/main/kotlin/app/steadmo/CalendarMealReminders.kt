@@ -72,8 +72,8 @@ object CalendarMealReminders {
         }
         val (event, at) = next
         SteadmoLog.event("calendar meals: next reminder at %s", at)
-        // Allowed while idle, so Doze can't hold it until the phone wakes; a time already past goes off at once.
-        alarms.setAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, at, pending(context, event.title, event.start, event.key))
+        // On time with "Alarms & reminders" allowed, else within about an hour; a time already past goes off at once.
+        Alarms.set(context, at, pending(context, event.title, event.start, event.key))
     }
 
     /** An event's reminder went off: don't set it again, even after a restart. Keeps only events still ahead. */

@@ -273,6 +273,24 @@ class HomeScreenTest {
         compose.onNodeWithText("Remind me").assertDoesNotExist()
     }
 
+    @Test fun `Meal reminder offers on-time reminders until they're allowed`() {
+        var allowed = 0
+        val onTime = androidx.compose.runtime.mutableStateOf(false)
+        compose.setContent {
+            SteadmoTheme(dark = false) {
+                MealReminderDialog(
+                    on = true, time = "18:00", onToggle = {}, onPickTime = {}, onDismiss = {},
+                    onTime = onTime.value, onAllowOnTime = { allowed++ },
+                )
+            }
+        }
+        compose.onNodeWithText("up to an hour late", substring = true).performScrollTo().assertIsDisplayed()
+        compose.onNodeWithText("Allow").performScrollTo().performClick()
+        assertEquals(1, allowed)
+        onTime.value = true
+        compose.onNodeWithText("On time").assertDoesNotExist()
+    }
+
     @Test fun `Settings picks mmol per L or mg per dL, and Back returns`() {
         val picked = mutableListOf<GlucoseUnit>()
         var back = 0

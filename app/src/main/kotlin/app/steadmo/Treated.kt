@@ -1,6 +1,5 @@
 package app.steadmo
 
-import android.app.AlarmManager
 import android.app.PendingIntent
 import android.content.BroadcastReceiver
 import android.content.Context
@@ -26,13 +25,23 @@ class RecheckReceiver : BroadcastReceiver() {
 }
 
 internal object Recheck {
+    /**
+     * Sets the recheck again on start if it's still ahead: taking away "Alarms
+     * & reminders" stops Steadmo and cancels its exact alarms.
+     */
+    fun restore(context: Context, treatments: List<Long>, now: Long = System.currentTimeMillis()) {
+        val last = treatments.maxOrNull() ?: return
+        if (last + Treatment.RECHECK_MILLIS > now) {
+            SteadmoLog.event("treated: restoring the recheck for %s", last + Treatment.RECHECK_MILLIS)
+            schedule(context, last)
+        }
+    }
+
     fun schedule(context: Context, treatedAt: Long) {
         val pending = PendingIntent.getBroadcast(
             context, 1, Intent(context, RecheckReceiver::class.java),
             PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT,
         )
-        // Inexact but allowed while idle: within a few minutes is fine for a recheck.
-        context.getSystemService(AlarmManager::class.java)
-            .setAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, treatedAt + Treatment.RECHECK_MILLIS, pending)
+        Alarms.set(context, treatedAt + Treatment.RECHECK_MILLIS, pending)
     }
 }
