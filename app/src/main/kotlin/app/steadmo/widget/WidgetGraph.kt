@@ -8,7 +8,9 @@ import androidx.core.graphics.createBitmap
 import app.steadmo.core.HIGH_MMOL
 import app.steadmo.core.LOW_MMOL
 import app.steadmo.core.GlucoseUnit
+import app.steadmo.core.RangeSide
 import app.steadmo.core.Reading
+import app.steadmo.core.side
 import app.steadmo.axis
 import app.steadmo.gutter
 
@@ -58,10 +60,10 @@ object WidgetGraph {
             canvas.drawLine(x(t), heightPx.toFloat(), x(t), heightPx * 0.8f, mark)
         }
         shown.forEachIndexed { i, r ->
-            fill.color = when {
-                r.mmol < LOW_MMOL -> colors.low
-                r.mmol > HIGH_MMOL -> colors.high
-                else -> colors.inRange
+            fill.color = when (r.side()) {
+                RangeSide.LOW -> colors.low
+                RangeSide.HIGH -> colors.high
+                RangeSide.IN_RANGE -> colors.inRange
             }
             canvas.drawCircle(x(r.timeMillis), y(r.mmol), (if (i == shown.lastIndex) 4f else 2.5f) * density, fill)
         }

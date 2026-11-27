@@ -81,4 +81,18 @@ class WidgetContentTest {
         provideComposable { GlanceTheme { WidgetContent(WidgetModel.Waiting, Samples.NOW) } }
         onNode(hasText("Waiting for CamAPS FX.")).assertExists()
     }
+
+    @org.robolectric.annotation.GraphicsMode(org.robolectric.annotation.GraphicsMode.Mode.NATIVE)
+    @Test fun `widget graph treats 70 and 180 mg per dL as in range`() {
+        val colors = WidgetGraph.Colors(
+            low = 0xFFFF0000.toInt(), inRange = 0xFF00FF00.toInt(), high = 0xFF0000FF.toInt(),
+            band = 0x00000000, grid = 0x00000000, label = 0x00000000,
+        )
+        val seventy = app.steadmo.core.Reading(Samples.NOW, 70.0 / app.steadmo.core.MGDL_PER_MMOL)
+        val bitmap = WidgetGraph.draw(listOf(seventy), Samples.NOW, 200, 100, 1f, colors)
+        val pixels = IntArray(bitmap.width * bitmap.height)
+        bitmap.getPixels(pixels, 0, bitmap.width, 0, 0, bitmap.width, bitmap.height)
+        org.junit.Assert.assertTrue("70 mg/dL should draw in-range green", pixels.any { it == colors.inRange })
+        org.junit.Assert.assertFalse("70 mg/dL should not draw low red", pixels.any { it == colors.low })
+    }
 }
