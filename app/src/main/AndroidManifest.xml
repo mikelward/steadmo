@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+
+    <!-- Package visibility, to open CamAPS FX from the Boost, Ease-off and bolus buttons. -->
+    <queries>
+        <package android:name="com.camdiab.fx_alert.mmoll" />
+        <package android:name="com.camdiab.fx_alert.mgdl" />
+        <package android:name="com.camdiab.fx_alert.hx.mmoll" />
+        <package android:name="com.camdiab.fx_alert.hx.mgdl" />
+    </queries>
+
+    <application
+        android:name=".SteadmoApp"
+        android:allowBackup="false"
+        android:icon="@mipmap/ic_launcher"
+        android:label="@string/app_name"
+        android:supportsRtl="true"
+        android:theme="@android:style/Theme.Material.NoActionBar">
+
+        <activity
+            android:name=".MainActivity"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity>
+
+        <service
+            android:name=".CamapsListener"
+            android:exported="true"
+            android:label="@string/app_name"
+            android:permission="android.permission.BIND_NOTIFICATION_LISTENER_SERVICE">
+            <intent-filter>
+                <action android:name="android.service.notification.NotificationListenerService" />
+            </intent-filter>
+            <!-- Only CamAPS FX matters; ongoing and silent are where its status lives. -->
+            <meta-data
+                android:name="android.service.notification.default_filter_types"
+                android:value="ongoing|silent|alerting" />
+        </service>
+    </application>
+</manifest>
