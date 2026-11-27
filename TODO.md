@@ -35,6 +35,24 @@
       Ease-off, 20/40/45/Other.
 - [ ] Launcher shortcuts and Quick Settings tiles for the meal presets.
 
+## Phase 2b: Steadmo as the alerting app (to consider)
+
+Goal: alerts come from Steadmo's own logic, without double alarms, and never weaker than
+CamAPS FX's. Each step needs the maintainer's sign-off: these are safety decisions.
+
+- [ ] Decide which CamAPS FX high and low alerts can be silenced (its own settings, or
+      its channels set to Silent) and which must stay on. An urgent low must always reach
+      the user, from CamAPS FX or Steadmo, even if Steadmo is killed or loses notification
+      access.
+- [ ] Before relying on Steadmo's alerts, prove they fire: a heartbeat that warns when
+      CamAPS FX hasn't posted for 15 minutes, and a check that notification access,
+      notification permission and the alert channel's importance are intact.
+- [ ] Do Not Disturb: let urgent low alerts through (channel bypass needs notification
+      policy access, which the user grants), and decide whether highs may stay quiet.
+- [ ] Escalation for an unacknowledged urgent low: repeat, louder, then full screen.
+- [ ] Tests for each alert path, including DND on and off, before any CamAPS FX alert is
+      silenced.
+
 ## Phase 3: more sources
 
 - [ ] Deliveroo, Uber Eats and Just Eat order notifications: suggest a pre-bolus when the
