@@ -68,11 +68,14 @@ more readings at least 5 minutes apart. Thresholds are the standard CGM ones:
 
 Arrows are vector drawables, so the same image is the status bar icon, the
 notification's large icon and the in-app arrow. A reading older than 10 minutes greys
-out in the app; Steadmo's notification times out after 15.
+out in the app, and so does an Auto mode report older than 10 minutes, which also says how
+old it is. Steadmo's notification disappears 15 minutes after its reading.
 
 ### 4.2 Alerts
 
-In priority order, each kind at most every 30 minutes:
+Only for a reading under 2 minutes old: a replayed reading is history, and its
+projection would be about a time already past. Each alert disappears 15 minutes after its
+reading. In priority order, each kind at most every 30 minutes:
 
 1. **Low soon**: falling, and projected below 3.9 within 20 minutes.
 2. **Falling fast**: a double down arrow.
