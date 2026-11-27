@@ -43,9 +43,16 @@ class WidgetContentTest {
         onNode(hasText("9.4")).assertExists()
     }
 
+    @Test fun `narrow and tall still shows every meal button`() = runGlanceAppWidgetUnitTest {
+        setContext(ApplicationProvider.getApplicationContext())
+        setAppWidgetSize(DpSize(250.dp, 420.dp))
+        provideComposable { GlanceTheme { WidgetContent(showing(), Samples.NOW) } }
+        listOf("20 g", "40 g", "45 g", "Other", "Boost", "Ease-off").forEach { onNode(hasText(it)).assertExists() }
+    }
+
     @Test fun `small shows just the reading`() = runGlanceAppWidgetUnitTest {
         setContext(ApplicationProvider.getApplicationContext())
-        setAppWidgetSize(DpSize(180.dp, 90.dp))
+        setAppWidgetSize(DpSize(250.dp, 90.dp))
         provideComposable { GlanceTheme { WidgetContent(showing(), Samples.NOW) } }
         onNode(hasText("9.4")).assertExists()
         onNode(hasContentDescription("Glucose over the last 3 hours")).assertDoesNotExist()

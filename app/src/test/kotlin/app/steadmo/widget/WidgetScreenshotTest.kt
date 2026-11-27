@@ -36,9 +36,11 @@ class WidgetScreenshotTest {
         listOf(false, true).forEach { dark ->
             val theme = if (dark) "dark" else "light"
             // The minimum size in steadmo_widget_info.xml.
-            capture("widget-small-$theme.png", DpSize(180.dp, 90.dp), dark) { WidgetContent(model, Samples.NOW) }
+            capture("widget-small-$theme.png", DpSize(250.dp, 90.dp), dark) { WidgetContent(model, Samples.NOW) }
             capture("widget-medium-$theme.png", DpSize(320.dp, 240.dp), dark) { WidgetContent(model, Samples.NOW) }
             capture("widget-full-$theme.png", DpSize(360.dp, 480.dp), dark) { WidgetContent(model, Samples.NOW) }
+            // The narrowest width at full height: meal buttons in two rows.
+            capture("widget-narrow-$theme.png", DpSize(250.dp, 480.dp), dark) { WidgetContent(model, Samples.NOW) }
         }
     }
 
