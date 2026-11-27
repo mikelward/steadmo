@@ -39,8 +39,22 @@ object UrgentLowAck {
 /** OK on the urgent low alarm, or the alarm swiped away: quiet it for a while. */
 class UrgentLowAckReceiver : BroadcastReceiver() {
     override fun onReceive(context: Context, intent: Intent) {
+        val expires = intent.getLongExtra(EXTRA_EXPIRES, Long.MAX_VALUE)
+        if (intent.action == ACTION_DISMISSED && System.currentTimeMillis() >= expires - EXPIRY_SLACK_MILLIS) {
+            // Removed because its reading went stale, not by the user: the next reading may sound again.
+            SteadmoLog.event("urgent low: timed out with its reading; not an acknowledgement")
+            return
+        }
         SteadmoLog.event("urgent low: acknowledged")
         UrgentLowAck.acknowledge(context, System.currentTimeMillis())
         StatusNotifier(context).cancelUrgentLow()
+    }
+
+    companion object {
+        const val ACTION_DISMISSED = "app.steadmo.URGENT_LOW_DISMISSED"
+        const val EXTRA_EXPIRES = "expires"
+
+        /** The timeout's broadcast can arrive a moment before the expiry Steadmo worked out. */
+        private const val EXPIRY_SLACK_MILLIS = 5_000L
     }
 }

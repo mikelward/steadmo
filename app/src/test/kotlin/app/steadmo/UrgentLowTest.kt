@@ -106,6 +106,33 @@ class UrgentLowTest {
         assertNull(app.posted(4))
     }
 
+    private fun dismissed(expires: Long) = Intent(app, UrgentLowAckReceiver::class.java)
+        .setAction(UrgentLowAckReceiver.ACTION_DISMISSED).putExtra(UrgentLowAckReceiver.EXTRA_EXPIRES, expires)
+
+    @Test fun `timing out with its reading isn't an acknowledgement`() {
+        post("2.8", 0)
+        val n = app.posted(4)!!
+        assertEquals(UrgentLowAckReceiver.ACTION_DISMISSED, org.robolectric.Shadows.shadowOf(n.deleteIntent).savedIntent.action)
+        UrgentLowAckReceiver().onReceive(app, dismissed(expires = System.currentTimeMillis() - MINUTE))
+        assertNull(UrgentLowAck.get(app))
+        assertNotNull(UrgentLowAck.alertingSince(app))
+    }
+
+    @Test fun `swiping it away acknowledges it`() {
+        post("2.8", 0)
+        UrgentLowAckReceiver().onReceive(app, dismissed(expires = System.currentTimeMillis() + 10 * MINUTE))
+        assertNotNull(UrgentLowAck.get(app))
+        assertNull(app.posted(4))
+    }
+
+    @Test fun `changing units keeps a full-screen takeover`() {
+        post("2.8", 0)
+        post("2.7", 6 * MINUTE)
+        assertNotNull(app.posted(4)!!.fullScreenIntent)
+        repo.setUnit(GlucoseUnit.MGDL)
+        assertNotNull(app.posted(4)!!.fullScreenIntent)
+    }
+
     @Test fun `an old reading doesn't sound`() {
         now = System.currentTimeMillis()
         val dump = NotificationDump.of(app, camapsPost(app, "2.8", now - 20 * MINUTE))

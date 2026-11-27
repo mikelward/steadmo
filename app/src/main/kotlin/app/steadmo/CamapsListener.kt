@@ -33,8 +33,11 @@ class CamapsListener : NotificationListenerService() {
      * up its new importance now, rather than at CamAPS FX's next post.
      */
     override fun onNotificationRankingUpdate(rankingMap: RankingMap) {
+        val channel = repository.state.value.camapsChannelId ?: return
         val camaps = try {
-            activeNotifications?.firstOrNull { it.packageName.startsWith(CamapsParser.PACKAGE_PREFIX) }
+            activeNotifications?.firstOrNull {
+                it.packageName.startsWith(CamapsParser.PACKAGE_PREFIX) && it.notification.channelId == channel
+            }
         } catch (e: SecurityException) {
             SteadmoLog.failure(e, "listener: couldn't read active notifications on a ranking update")
             null
