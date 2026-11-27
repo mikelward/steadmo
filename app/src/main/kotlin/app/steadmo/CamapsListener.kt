@@ -5,6 +5,7 @@ import android.content.ComponentName
 import android.service.notification.NotificationListenerService
 import android.service.notification.StatusBarNotification
 import app.steadmo.core.CamapsParser
+import app.steadmo.core.DeliveryApp
 
 /** Reads CamAPS FX's notifications as the system posts them (SPEC.md §3). */
 class CamapsListener : NotificationListenerService() {
@@ -34,6 +35,16 @@ class CamapsListener : NotificationListenerService() {
     }
 
     private fun handle(sbn: StatusBarNotification) {
+        DeliveryApp.of(sbn.packageName)?.let { app ->
+            try {
+                val texts = NotificationDump.of(this, sbn).extrasTexts
+                DeliveryPrompts.onNotification(this, app, texts, sbn.postTime, System.currentTimeMillis(), StatusNotifier(this))
+            } catch (e: RuntimeException) {
+                // A delivery app's post is only a hint; failing to read one costs a suggestion, nothing more.
+                SteadmoLog.failure(e, "listener: couldn't read a %s notification", app.label)
+            }
+            return
+        }
         if (!sbn.packageName.startsWith(CamapsParser.PACKAGE_PREFIX)) return
         try {
             val dump = NotificationDump.of(this, sbn, channelImportance(sbn))

@@ -84,8 +84,15 @@ CamAPS FX's. Each step needs the maintainer's sign-off: these are safety decisio
 
 ## Phase 3: more sources
 
-- [ ] Deliveroo, Uber Eats and Just Eat order notifications: suggest a pre-bolus when the
-      rider is nearby.
+- [x] Deliveroo, Uber Eats, Just Eat and DoorDash: suggest a pre-bolus when the rider is
+      nearby (SPEC.md §4.12). Pre-bolus only: no detection of unannounced meals afterwards.
+- [ ] Check the delivery apps' real wording and package names from bug reports (the last
+      delivery notification is in the report), and tune the matching.
+- [ ] Daily meal reminder (default 18:00, adjustable) with Bolus, In 30 min and In 60 min.
+- [ ] Pre-bolus prompt on arriving at a restaurant (needs location; a privacy and permission
+      decision for the maintainer).
+- [ ] Pre-bolus prompt at calendar events named for a meal ("Dinner", "Lunch with ...";
+      needs calendar access).
 - [ ] Glooko history (boluses, carbs) for the timeline.
 - [ ] Deep links into CamAPS FX's Boost and Ease-off screens, if it ever has them (v1.4
       exposes only its launcher).
@@ -120,3 +127,5 @@ CamAPS FX's. Each step needs the maintainer's sign-off: these are safety decisio
 - "Treated" holds off rise alerts for 45 minutes and quiets the urgent low alarm as OK does;
   it is Steadmo's own note, kept for a day, and not sent to CamAPS FX.
 - The urgent low alarm takes over the screen after 5 minutes without OK or Treated.
+- Delivery prompts go on a new Reminders channel (default importance), at most one per app
+  per hour, expire after 45 minutes, and don't fire once the order says it has arrived.

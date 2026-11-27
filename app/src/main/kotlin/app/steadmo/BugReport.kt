@@ -77,6 +77,11 @@ object BugReport {
             appendLine("--- last CamAPS FX notification ---")
             appendLine(it.describe())
         }
+        DeliveryPrompts.lastSeen?.let {
+            appendLine()
+            appendLine("--- last delivery app notification ---")
+            appendLine(it)
+        }
         if (facts.camapsEntryPoints.isNotEmpty()) {
             appendLine()
             appendLine("--- CamAPS FX screens other apps can open ---")
