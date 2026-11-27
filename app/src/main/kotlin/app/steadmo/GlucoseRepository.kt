@@ -87,7 +87,11 @@ class GlucoseRepository(
             notifier.showAlert(redrawn, time, quiet = true)
         }
         // Likewise the urgent low alarm, without restarting its sound.
-        if (notifier.urgentLowShowing()) notifier.showUrgentLow(latest, unit, quiet = true)
+        if (notifier.urgentLowShowing()) {
+            // Keeping the full-screen takeover if it had escalated.
+            val takeOver = UrgentLow.escalates(UrgentLowAck.alertingSince(appContext), latest.timeMillis)
+            notifier.showUrgentLow(latest, unit, quiet = true, fullScreen = takeOver)
+        }
     }
 
     /** The urgent low alarm for a fresh reading (SPEC.md §4.8). */
@@ -163,7 +167,9 @@ class GlucoseRepository(
     /** CamAPS FX's channel settings changed: the minimize card follows at once. */
     fun onCamapsChannel(channelId: String?, importance: Int) {
         val now = _state.value
-        if (now.camapsChannelId == channelId && now.camapsChannelImportance == importance) return
+        // Only "My diabetes info"'s channel, learned from a readable post; never an alarm's.
+        if (channelId == null || channelId != now.camapsChannelId) return
+        if (now.camapsChannelImportance == importance) return
         SteadmoLog.event("listener: CamAPS FX channel %s importance now %s", channelId, importance)
         _state.update { it.copy(camapsChannelId = channelId, camapsChannelImportance = importance) }
     }
@@ -171,12 +177,9 @@ class GlucoseRepository(
     @Synchronized
     fun onCamapsNotification(dump: NotificationDump, status: CamapsStatus?) {
         if (status == null) {
-            _state.update {
-                it.copy(
-                    lastDump = dump, camapsPackage = dump.packageName,
-                    camapsChannelId = dump.channelId, camapsChannelImportance = dump.channelImportance,
-                )
-            }
+            // Its channel isn't tracked: an unreadable post may be a CamAPS FX alarm, which the
+            // minimize card must never point at.
+            _state.update { it.copy(lastDump = dump, camapsPackage = dump.packageName) }
             return
         }
         val mmol = status.mmol

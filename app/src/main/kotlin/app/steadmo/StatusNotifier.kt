@@ -184,6 +184,14 @@ class StatusNotifier(private val context: Context, private val clock: () -> Long
         val ok = PendingIntent.getBroadcast(
             context, 0, Intent(context, UrgentLowAckReceiver::class.java), PendingIntent.FLAG_IMMUTABLE,
         )
+        // Android also sends the delete intent when the alarm times out with its reading;
+        // the expiry lets the receiver tell that from a swipe (SPEC.md §4.8).
+        val dismissed = PendingIntent.getBroadcast(
+            context, 0,
+            Intent(context, UrgentLowAckReceiver::class.java).setAction(UrgentLowAckReceiver.ACTION_DISMISSED)
+                .putExtra(UrgentLowAckReceiver.EXTRA_EXPIRES, latest.timeMillis + STALE_MILLIS),
+            PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT,
+        )
         val notification = Notification.Builder(context, CHANNEL_URGENT)
             .setSmallIcon(R.drawable.ic_trend_double_down)
             .setColor(LowColor.toArgb())
@@ -192,7 +200,7 @@ class StatusNotifier(private val context: Context, private val clock: () -> Long
             .setCategory(Notification.CATEGORY_ALARM)
             .setTimeoutAfter(remaining)
             .setContentIntent(openApp())
-            .setDeleteIntent(ok)
+            .setDeleteIntent(dismissed)
             .addAction(Notification.Action.Builder(null, "OK", ok).build())
             .addAction(treatedAction())
             .setOnlyAlertOnce(quiet)

@@ -216,10 +216,14 @@ class GlucoseRepositoryTest {
         assertEquals("info", repo.state.value.camapsChannelId)
     }
 
-    @Test fun `an unreadable post still updates the channel`() {
+    @Test fun `an unreadable post, maybe an alarm, never becomes the channel to minimize`() {
         val repo = repository()
-        val dump = NotificationDump.of(app, camapsPost(app, null, 0), channelImportance = 1).copy(channelId = "info")
-        repo.onCamapsNotification(dump, null)
+        val info = NotificationDump.of(app, camapsPost(app, "6.0", 0), channelImportance = 1).copy(channelId = "info")
+        repo.onCamapsNotification(info, CamapsParser.parse(info.viewTexts))
+        val alarm = NotificationDump.of(app, camapsPost(app, null, 0), channelImportance = 4).copy(channelId = "alarms")
+        repo.onCamapsNotification(alarm, null)
+        repo.onCamapsChannel("alarms", 4)
+        assertEquals("info", repo.state.value.camapsChannelId)
         assertEquals(1, repo.state.value.camapsChannelImportance)
     }
 
