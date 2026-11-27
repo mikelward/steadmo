@@ -26,10 +26,12 @@ CamAPS FX. The integration research is in `docs/EXPLORATION.md`; mocks are in
 
 ### Disclaimer
 
-On first open, and again whenever its wording changes, Steadmo shows a disclaimer: use at
-your own risk, no warranty, made for the developer's family and not tested for anyone
-else's circumstances, not a medical device and not approved by any regulator, no treatment
-decisions from it, and it never doses. Continue stays disabled until the user ticks "I have
+On first open, and again whenever its wording changes (`Disclaimer.VERSION`, now 2),
+Steadmo shows a disclaimer: use at your own risk, no warranty, made for the developer's
+family and not tested for anyone else's circumstances, not a medical device and not
+approved by any regulator; it can be wrong or out of date, its alerts can be late or
+missing, and its trends are its own estimates; no treatment decisions from it, and it never
+doses. Continue stays disabled until the user ticks "I have
 read this and accept the risk"; Leave closes the app. The home screen links back to it.
 
 ### Appearance

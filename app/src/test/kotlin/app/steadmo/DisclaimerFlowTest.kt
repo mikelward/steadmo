@@ -31,7 +31,7 @@ class DisclaimerFlowTest {
         assertFalse(Disclaimer.accepted(context))
 
         compose.onNodeWithText(AGREEMENT).performScrollTo().performClick()
-        compose.onNodeWithText("Continue").assertIsEnabled().performClick()
+        compose.onNodeWithText("Continue").performScrollTo().assertIsEnabled().performClick()
 
         assertTrue(Disclaimer.accepted(context))
         compose.onNodeWithText("Allow notification access").assertExists()
@@ -51,7 +51,7 @@ class DisclaimerFlowTest {
 
     @Test fun `once accepted it can be read again and closed`() {
         compose.onNodeWithText(AGREEMENT).performScrollTo().performClick()
-        compose.onNodeWithText("Continue").performClick()
+        compose.onNodeWithText("Continue").performScrollTo().performClick()
         compose.onNodeWithContentDescription("More options").performClick()
         compose.onNodeWithText("Disclaimer").performClick()
         compose.onNodeWithText("Before you use Steadmo").assertExists()
