@@ -78,7 +78,7 @@ class MainActivity : ComponentActivity() {
         SteadmoLog.event("ui: resumed; notification access %s, notifications %s", listenerAllowed, notificationsAllowed)
     }
 
-    /** The newest signed APK, on GitHub (docs/RELEASES.md); the browser downloads it. */
+    /** The GitHub releases, newest first (docs/RELEASES.md); the browser downloads the APK. */
     private fun openLatestRelease() {
         SteadmoLog.event("ui: opening the latest release")
         startActivity(Intent(Intent.ACTION_VIEW, android.net.Uri.parse(LATEST_RELEASE_URL)))
@@ -91,7 +91,8 @@ class MainActivity : ComponentActivity() {
     }
 
     companion object {
-        const val LATEST_RELEASE_URL = "https://github.com/mikelward/steadmo/releases/latest"
+        // The releases list, not /releases/latest: builds are prereleases, which GitHub never marks latest.
+        const val LATEST_RELEASE_URL = "https://github.com/mikelward/steadmo/releases"
         const val KNOWN_ISSUES_URL = "https://github.com/mikelward/steadmo/issues"
     }
 
