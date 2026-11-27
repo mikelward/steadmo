@@ -171,7 +171,16 @@ private fun Reading(state: GlucoseState, now: Long, stale: Boolean) {
         color = MaterialTheme.colorScheme.onSurfaceVariant,
     )
     state.status?.autoMode?.let { mode ->
-        AssistChip(onClick = {}, label = { Text("Auto mode ${mode.lowercase()}") })
+        val statusTime = state.statusTime ?: latest.timeMillis
+        val modeStale = now - statusTime > STALE_MILLIS
+        // An old Auto mode report must not look like confirmation the loop is running.
+        val label = if (modeStale) {
+            "Auto mode ${mode.lowercase()}, " +
+                DateUtils.getRelativeTimeSpanString(statusTime, now, DateUtils.MINUTE_IN_MILLIS)
+        } else {
+            "Auto mode ${mode.lowercase()}"
+        }
+        AssistChip(onClick = {}, enabled = !modeStale, label = { Text(label) })
     }
     if (stale) {
         Text("No new reading from CamAPS FX for over 10 minutes.", color = MaterialTheme.colorScheme.error)

@@ -2,6 +2,7 @@ package app.steadmo
 
 import androidx.activity.ComponentActivity
 import androidx.compose.ui.test.assertIsDisplayed
+import androidx.compose.ui.test.assertIsNotEnabled
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
@@ -75,6 +76,11 @@ class HomeScreenTest {
     @Test fun `old readings say so`() {
         show(Samples.rising(), now = Samples.NOW + 20 * MINUTE)
         compose.onNodeWithText("No new reading from CamAPS FX for over 10 minutes.").performScrollTo().assertIsDisplayed()
+    }
+
+    @Test fun `an old Auto mode report says how old it is`() {
+        show(Samples.rising(), now = Samples.NOW + 20 * MINUTE)
+        compose.onNodeWithText("Auto mode on, 20 minutes ago").assertIsDisplayed().assertIsNotEnabled()
     }
 
     @Test fun `a bound shows its sign`() {

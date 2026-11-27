@@ -59,6 +59,15 @@ class StatusNotifierTest {
     }
 
     @Test
+    fun `an alert for an old reading is not shown`() {
+        app.allowNotifications()
+        StatusNotifier(app, clock = { StatusNotifier.STALE_MILLIS }).showAlert(
+            TrendAlert(AlertKind.RISING_FAST, TrendArrow.DOUBLE_UP, "Rising fast", ""), 0,
+        )
+        assertNull(app.posted(2))
+    }
+
+    @Test
     fun `a bound shows its sign`() {
         app.allowNotifications()
         notifier.showStatus(state.copy(readings = listOf(Reading(5 * MINUTE, 2.2, Bound.BELOW)), trend = null))
@@ -81,8 +90,9 @@ class StatusNotifierTest {
     @Test
     fun `alert uses its arrow and the alerts channel`() {
         app.allowNotifications()
-        notifier.showAlert(TrendAlert(AlertKind.LOW_SOON, TrendArrow.DOWN, "Low in about 8 min", "5.1"))
+        notifier.showAlert(TrendAlert(AlertKind.LOW_SOON, TrendArrow.DOWN, "Low in about 8 min", "5.1"), 6 * MINUTE)
         val n = app.posted(2)!!
+        assertEquals(StatusNotifier.STALE_MILLIS - MINUTE, n.timeoutAfter)
         assertEquals(R.drawable.ic_trend_down, n.smallIcon.resId)
         assertEquals("Low in about 8 min", n.extras.getString(Notification.EXTRA_TITLE))
         assertEquals(StatusNotifier.CHANNEL_ALERTS, n.channelId)
@@ -91,7 +101,7 @@ class StatusNotifierTest {
     @Test
     fun `rising alert posts too`() {
         app.allowNotifications()
-        notifier.showAlert(TrendAlert(AlertKind.RISING_FAST, TrendArrow.DOUBLE_UP, "Rising fast", ""))
+        notifier.showAlert(TrendAlert(AlertKind.RISING_FAST, TrendArrow.DOUBLE_UP, "Rising fast", ""), 7 * MINUTE)
         assertEquals(R.drawable.ic_trend_double_up, app.posted(2)!!.smallIcon.resId)
     }
 }

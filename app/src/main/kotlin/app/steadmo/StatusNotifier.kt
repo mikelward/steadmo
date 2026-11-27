@@ -68,7 +68,10 @@ class StatusNotifier(private val context: Context, private val clock: () -> Long
         post(ID_STATUS, notification)
     }
 
-    fun showAlert(alert: TrendAlert) {
+    /** Shows [alert] until its reading, taken at [readingTime], is stale. */
+    fun showAlert(alert: TrendAlert, readingTime: Long) {
+        val remaining = STALE_MILLIS - (clock() - readingTime)
+        if (remaining <= 0) return
         val color = (if (alert.arrow.name.contains("DOWN")) LowColor else HighColor).toArgb()
         val notification = Notification.Builder(context, CHANNEL_ALERTS)
             .setSmallIcon(alert.arrow.drawable())
@@ -78,7 +81,7 @@ class StatusNotifier(private val context: Context, private val clock: () -> Long
             .setContentText(alert.text)
             .setCategory(Notification.CATEGORY_ALARM)
             .setAutoCancel(true)
-            .setTimeoutAfter(STALE_MILLIS)
+            .setTimeoutAfter(remaining)
             .setContentIntent(openApp())
             .build()
         post(ID_ALERT, notification)

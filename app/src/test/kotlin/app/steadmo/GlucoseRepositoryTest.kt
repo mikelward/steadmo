@@ -30,7 +30,9 @@ class GlucoseRepositoryTest {
         app, StatusNotifier(app, clock = { now }), writer = { it.run() }, clock = { now },
     )
 
-    private fun GlucoseRepository.post(value: String?, time: Long, mode: String = "On") {
+    /** Posts as CamAPS would at [time]; [live] false replays it at the current [now]. */
+    private fun GlucoseRepository.post(value: String?, time: Long, mode: String = "On", live: Boolean = true) {
+        if (live) now = time
         val dump = NotificationDump.of(app, camapsPost(app, value, time, mode))
         onCamapsNotification(dump, CamapsParser.parse(dump.viewTexts))
     }
@@ -70,11 +72,20 @@ class GlucoseRepositoryTest {
     @Test fun `old posts replayed on reconnect neither alert nor show`() {
         now = 3 * 60 * MINUTE
         val repo = repository()
-        repo.post("15.0", 0)
-        repo.post("14.0", 5 * MINUTE)
+        repo.post("15.0", 0, live = false)
+        repo.post("14.0", 5 * MINUTE, live = false)
         assertEquals(2, repo.state.value.readings.size)
         assertNull(app.posted(2))
         assertNull(app.posted(1))
+    }
+
+    @Test fun `a replayed reading a few minutes old shows but does not predict`() {
+        now = 12 * MINUTE
+        val repo = repository()
+        repo.post("7.0", 0, live = false)
+        repo.post("6.0", 5 * MINUTE, live = false)
+        assertEquals(R.drawable.ic_trend_double_down, app.posted(1)!!.smallIcon.resId)
+        assertNull(app.posted(2))
     }
 
     @Test fun `a bound is kept, shown, and left out of the trend`() {

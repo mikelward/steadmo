@@ -70,11 +70,17 @@ class GlucoseRepository(
         notifier.showStatus(_state.value)
         if (added) {
             save(log.encode())
-            // A replayed old post (e.g. on reconnect) is history, not news.
-            log.latest?.takeIf { clock() - it.timeMillis < StatusNotifier.STALE_MILLIS }?.let { latest ->
-                alerts.evaluate(latest, trend)?.let(notifier::showAlert)
+            // Only a reading posted just now alerts. A replay (e.g. on reconnect)
+            // is history: its projection was about a moment that has passed.
+            log.latest?.takeIf { clock() - it.timeMillis < ALERT_MAX_AGE_MILLIS }?.let { latest ->
+                alerts.evaluate(latest, trend)?.let { notifier.showAlert(it, latest.timeMillis) }
             }
         }
+    }
+
+    companion object {
+        /** CamAPS posts as a reading arrives; anything older is a replay. */
+        const val ALERT_MAX_AGE_MILLIS = 2 * 60_000L
     }
 
     private fun load(): ReadingLog = try {
