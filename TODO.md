@@ -112,8 +112,8 @@ CamAPS FX's. Each step needs the maintainer's sign-off: these are safety decisio
   meal, as on v1.4.
 - Shortcuts don't repeat within a minute (the maintainer's ask): any meal blocks the next
   meal, and Boost and Ease-off each block themselves.
-- Meal shortcuts tap the Carbohydrates dialog's Confirm only up to 60 g (the maintainer's
-  limit), and only once the field shows exactly the grams typed.
+- Meal shortcuts prefill only: they type the grams and never tap Confirm (the maintainer's
+  choice, replacing the earlier confirm up to 60 g).
 - Repeat interval for alerts is 30 minutes.
 - minSdk 35, as in snoozemo.
 - Signal loss warns after 15 minutes without a reading, repeats every 30 minutes, and stops

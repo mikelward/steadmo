@@ -19,7 +19,7 @@ class CamapsTaskTest {
         button("Deliver"),
     )
 
-    @Test fun `over 60 g, types the grams and leaves Confirm to the user`() {
+    @Test fun `types the grams into a form and leaves the rest to the user`() {
         val fill = CamapsTask(CamapsGoal.Meal(61), startedAt = 0)
         assertEquals(CamapsStep.Fill(listOf(0, 1), "61"), fill.next(mealForm, now = 1_000))
         assertTrue(fill.finished)
@@ -141,8 +141,6 @@ class CamapsTaskTest {
         assertEquals(CamapsStep.Tap(listOf(2, 1), "tab 2 of 3"), fill.next(camapsHome, 0))
         assertEquals(CamapsStep.Tap(listOf(4, 5), "Carbs g CHO ---"), fill.next(camapsMeal, 100))
         assertEquals(CamapsStep.Fill(listOf(2, 0), "45"), fill.next(camapsDialog, 200))
-        assertFalse(fill.finished)
-        assertEquals(CamapsStep.Tap(listOf(5), "Confirm"), fill.next(typed("45"), 300))
         assertTrue(fill.finished)
     }
 
@@ -150,52 +148,15 @@ class CamapsTaskTest {
         children = camapsDialog.children.toMutableList().also { it[2] = row(field(hint = "Value").copy(text = text)) },
     )
 
-    @Test fun `never confirms a form that also has insulin on it`() {
-        val fill = CamapsTask(CamapsGoal.Meal(20), startedAt = 0)
-        val form = screen(row(label("Carbs (g)"), field()), row(label("Insulin (U)"), field()), button("Confirm"))
-        assertEquals(CamapsStep.Fill(listOf(0, 1), "20"), fill.next(form, 0))
-        assertTrue(fill.finished)
-        assertFalse(CamapsTask.isCarbsDialog(form))
-        assertFalse(CamapsTask.isCarbsDialog(screen(label("Carbs"), field(id = "pkg:id/dose"))))
-        assertTrue(CamapsTask.isCarbsDialog(camapsDialog))
-    }
-
-    @Test fun `stops if the dialog changes before Confirm`() {
-        val fill = CamapsTask(CamapsGoal.Meal(20), startedAt = 0)
-        fill.next(camapsDialog, 0)
-        val changed = typed("20").let { it.copy(children = it.children + label("Total Units")) }
-        // Insulin on screen means it isn't a carbs field any more: no Confirm, just wait it out.
-        assertEquals(CamapsStep.Wait, fill.next(changed, 10))
-
-        val other = CamapsTask(CamapsGoal.Meal(20), startedAt = 0)
-        assertTrue(other.next(screen(row(field(hint = "Carbs")), button("Confirm")), 0) is CamapsStep.Fill)
-        val second = screen(row(field(hint = "Carbs").copy(text = "20")), row(field(hint = "Note")), button("Confirm"))
-        assertEquals(CamapsStep.GiveUp("not the carbs dialog any more"), other.next(second, 10))
-    }
-
-    @Test fun `confirms up to 60 g, only once the field shows them`() {
-        val sixty = CamapsTask(CamapsGoal.Meal(60), startedAt = 0)
-        assertTrue(sixty.next(camapsDialog, 0) is CamapsStep.Fill)
-        assertEquals(CamapsStep.Tap(listOf(5), "Confirm"), sixty.next(typed("60"), 10))
-
-        val wrong = CamapsTask(CamapsGoal.Meal(20), startedAt = 0)
-        wrong.next(camapsDialog, 0)
-        assertEquals(CamapsStep.GiveUp("the carbs field shows \"2\", not 20"), wrong.next(typed("2"), 10))
-
-        val twice = CamapsTask(CamapsGoal.Meal(20), startedAt = 0)
-        twice.next(camapsDialog, 0)
-        val two = typed("20").let { it.copy(children = it.children + button("Confirm")) }
-        assertEquals(CamapsStep.GiveUp("2 Confirm buttons by the carbs field"), twice.next(two, 10))
-
-        val gone = CamapsTask(CamapsGoal.Meal(20), startedAt = 0)
-        gone.next(camapsDialog, 0)
-        assertEquals(CamapsStep.Wait, gone.next(camapsMeal, 10))
-
-        // Focusing the field can post an event before ACTION_SET_TEXT updates it.
-        val pending = CamapsTask(CamapsGoal.Meal(20), startedAt = 0)
-        assertTrue(pending.next(camapsDialog, 0) is CamapsStep.Fill)
-        assertEquals(CamapsStep.Wait, pending.next(camapsDialog, 10))
-        assertEquals(CamapsStep.Tap(listOf(5), "Confirm"), pending.next(typed("20"), 20))
+    @Test fun `prefill only - never taps Confirm, whatever the grams`() {
+        for (grams in listOf(20, 60, 61)) {
+            val fill = CamapsTask(CamapsGoal.Meal(grams), startedAt = 0)
+            assertEquals(CamapsStep.Fill(listOf(2, 0), "$grams"), fill.next(camapsDialog, 0))
+            assertTrue(fill.finished)
+            assertTrue(fill.entered)
+            assertEquals(CamapsStep.Wait, fill.next(typed("$grams"), 10))
+            assertEquals(CamapsStep.Wait, fill.next(camapsDialog, 20))
+        }
     }
 
     @Test fun `never taps a slider or switch, or a tab once labeled`() {

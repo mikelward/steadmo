@@ -85,9 +85,9 @@ class CamapsShortcutsService : AccessibilityService() {
                         finish(task, "tapped ${step.label}, done", fail = false)
                         toast(
                             when (val goal = task.goal) {
-                                is CamapsGoal.Meal -> "${goal.grams} g entered. Check the bolus in CamAPS FX, then tap Next."
                                 is CamapsGoal.Mode -> "Set ${goal.name} in CamAPS FX, then confirm."
-                                CamapsGoal.MealEntry -> "Enter the grams in CamAPS FX, then confirm."
+                                // A meal's last step is typing, never a tap: only Other gets here.
+                                else -> "Enter the grams in CamAPS FX, then confirm."
                             },
                         )
                     }
@@ -102,16 +102,10 @@ class CamapsShortcutsService : AccessibilityService() {
                 val ok = field?.performAction(AccessibilityNodeInfo.ACTION_SET_TEXT, args) == true
                 if (!ok) {
                     finish(task, "gave up: couldn't type into the field at ${step.path}", fail = true, entered = false)
-                } else if (task.finished) {
-                    val why = if (step.text.toInt() > CamapsTask.MAX_CONFIRM_GRAMS) {
-                        "over ${CamapsTask.MAX_CONFIRM_GRAMS} g"
-                    } else {
-                        "not the Carbohydrates dialog"
-                    }
-                    finish(task, "typed ${step.text} g at ${step.path}; $why, so not confirming", fail = false)
-                    toast("${step.text} g entered. Check it, then confirm in CamAPS FX.")
                 } else {
-                    SteadmoLog.event("shortcuts: typed %s g at %s; confirming next", step.text, step.path)
+                    // Prefill only: Confirm stays with the user.
+                    finish(task, "typed ${step.text} g at ${step.path}; done, the user confirms", fail = false)
+                    toast("${step.text} g entered. Check it, then confirm in CamAPS FX.")
                 }
             }
             is CamapsStep.Done -> {
@@ -122,19 +116,17 @@ class CamapsShortcutsService : AccessibilityService() {
         }
     }
 
-    /** [entered] is whether the grams reached CamAPS FX: then they may be confirmed. */
+    /** [entered] is whether the grams reached CamAPS FX: then the user may confirm them. */
     private fun finish(task: CamapsTask, outcome: String, fail: Boolean, entered: Boolean = task.entered) {
         CamapsShortcuts.clear(task)
         if (fail) {
             SteadmoLog.warning("shortcuts: %s", outcome)
-            // Once grams are typed they may be confirmed (by Steadmo or the user),
-            // so the one-minute guard stays; before that, trying again is fine.
+            // Once grams are typed the user may confirm them, so the one-minute
+            // guard stays; before that, trying again is fine.
             if (!entered) CamapsShortcuts.forget(this, task)
             val goal = task.goal
             toast(
                 when {
-                    entered && goal is CamapsGoal.Meal ->
-                        "${goal.grams} g was typed in CamAPS FX, but Steadmo didn't confirm it. Check it there."
                     goal is CamapsGoal.Meal -> "Couldn't find CamAPS FX's meal entry. ${goal.grams} g is copied to paste."
                     goal is CamapsGoal.Mode -> "Couldn't find ${goal.name} in CamAPS FX."
                     else -> "Couldn't find CamAPS FX's meal entry."

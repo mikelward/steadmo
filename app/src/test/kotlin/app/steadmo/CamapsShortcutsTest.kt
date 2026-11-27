@@ -62,7 +62,7 @@ class CamapsShortcutsTest {
         assertTrue(CamapsShortcuts.enabled(app))
     }
 
-    @Test fun `taps to the meal screen, types the grams, confirms them and presses nothing else`() {
+    @Test fun `taps to the meal screen, types the grams and presses nothing else`() {
         val meal = node(text = "Meal", clickable = true)
         showing(node(null, null, false, false, node(text = "Boost", clickable = true), meal))
         CamapsShortcuts.start(CamapsGoal.Meal(45))
@@ -70,39 +70,30 @@ class CamapsShortcutsTest {
         assertEquals(listOf(AccessibilityNodeInfo.ACTION_CLICK), shadowOf(meal).performedActions)
 
         val carbs = node(hint = "Carbs (g)", editable = true)
+        val confirm = node(text = "Confirm", clickable = true)
         val deliver = node(text = "Deliver", clickable = true)
-        showing(node(null, null, false, false, carbs, deliver))
+        showing(node(null, null, false, false, carbs, confirm, deliver))
         service.onAccessibilityEvent(event())
 
         val typed = shadowOf(carbs).performedActionsWithArgs.last()
         assertEquals(AccessibilityNodeInfo.ACTION_SET_TEXT, typed.first)
         assertEquals("45", typed.second.getCharSequence(AccessibilityNodeInfo.ACTION_ARGUMENT_SET_TEXT_CHARSEQUENCE))
-        assertTrue(CamapsShortcuts.pending != null)
-
+        // Prefill only: Confirm stays with the user.
+        assertNull(CamapsShortcuts.pending)
         val shown = node(hint = "Carbs (g)", editable = true).apply { text = "45" }
-        val confirm = node(text = "Confirm", clickable = true)
         showing(node(null, null, false, false, shown, confirm, deliver))
         service.onAccessibilityEvent(event(type = AccessibilityEvent.TYPE_WINDOW_CONTENT_CHANGED))
-        assertEquals(listOf(AccessibilityNodeInfo.ACTION_CLICK), shadowOf(confirm).performedActions)
+        assertTrue(shadowOf(confirm).performedActions.isEmpty())
         assertTrue(shadowOf(deliver).performedActions.isEmpty())
-        assertNull(CamapsShortcuts.pending)
-        assertEquals("45 g entered. Check the bolus in CamAPS FX, then tap Next.", ShadowToast.getTextOfLatestToast())
+        assertEquals("45 g entered. Check it, then confirm in CamAPS FX.", ShadowToast.getTextOfLatestToast())
     }
 
-    @Test fun `once the grams are typed, a failure keeps the one-minute guard`() {
+    @Test fun `once the grams are typed, the same meal can't be sent again for a minute`() {
         val carbs = node(hint = "Carbs", editable = true)
         showing(node(null, null, false, false, carbs, node(text = "Confirm", clickable = true)))
         assertTrue(CamapsShortcuts.begin(app, CamapsGoal.Meal(20)))
         service.onAccessibilityEvent(event())
-        // The user confirms by hand, so the field is gone; Steadmo times out.
-        showing(node(null, null, false, false, node(text = "Meal size")))
-        val task = CamapsShortcuts.pending!!
-        service.step(task, newScreen = true, now = task.startedAt + CamapsTask.TIMEOUT_MILLIS + 1)
         assertNull(CamapsShortcuts.pending)
-        assertEquals(
-            "20 g was typed in CamAPS FX, but Steadmo didn't confirm it. Check it there.",
-            ShadowToast.getTextOfLatestToast(),
-        )
         assertFalse(CamapsShortcuts.begin(app, CamapsGoal.Meal(20)))
     }
 
@@ -114,18 +105,6 @@ class CamapsShortcutsTest {
         service.onAccessibilityEvent(event())
         assertNull(CamapsShortcuts.pending)
         assertTrue(CamapsShortcuts.begin(app, CamapsGoal.Meal(20)))
-    }
-
-    @Test fun `over 60 g, types the grams and leaves Confirm to the user`() {
-        val carbs = node(hint = "Carbs (g)", editable = true)
-        val confirm = node(text = "Confirm", clickable = true)
-        showing(node(null, null, false, false, carbs, confirm))
-        CamapsShortcuts.start(CamapsGoal.Meal(75))
-        service.onAccessibilityEvent(event())
-        assertEquals(AccessibilityNodeInfo.ACTION_SET_TEXT, shadowOf(carbs).performedActionsWithArgs.last().first)
-        assertTrue(shadowOf(confirm).performedActions.isEmpty())
-        assertNull(CamapsShortcuts.pending)
-        assertEquals("75 g entered. Check it, then confirm in CamAPS FX.", ShadowToast.getTextOfLatestToast())
     }
 
     @Test fun `Boost taps CamAPS FX's Boost and leaves its dialog to the user`() {

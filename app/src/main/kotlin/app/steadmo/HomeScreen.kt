@@ -337,7 +337,7 @@ internal fun ShortcutsDialog(on: Boolean, onOpenSettings: () -> Unit, onOpenAppI
             DialogBody {
                 Text(
                     "Steadmo's meal, Boost and Ease-off buttons go straight to that screen in CamAPS FX. " +
-                        "Meal buttons enter the carbs, up to 60 g. You check the bolus and deliver it in " +
+                        "Meal buttons type the carbs in. You confirm them, check the bolus and deliver it in " +
                         "CamAPS FX, and confirm Boost and Ease-off there. Steadmo never delivers insulin.",
                 )
                 Text(
