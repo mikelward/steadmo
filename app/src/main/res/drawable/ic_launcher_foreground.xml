@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Target Ribbon (1A): a settling glucose curve inside a soft target-range band
+  ending in a live in-range green dot. Scaled into the central 72dp visible
+  region (all strokes and halo within the 66dp safe zone, x 27.36..82.80,
+  y 42.48..65.52) of the 108dp adaptive icon viewport.
+-->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+    <!-- Target range shaded corridor -->
+    <path
+        android:fillColor="#E8F6F7"
+        android:pathData="M33.12,42.48 L74.88,42.48 A5.76,5.76 0 0,1 80.64,48.24 L80.64,59.76 A5.76,5.76 0 0,1 74.88,65.52 L33.12,65.52 A5.76,5.76 0 0,1 27.36,59.76 L27.36,48.24 A5.76,5.76 0 0,1 33.12,42.48 Z" />
+    <!-- Upper dashed target rail -->
+    <path
+        android:pathData="M29.50,42.48 L32.50,42.48 M35.25,42.48 L38.25,42.48 M41.00,42.48 L44.00,42.48 M46.75,42.48 L49.75,42.48 M52.50,42.48 L55.50,42.48 M58.25,42.48 L61.25,42.48 M64.00,42.48 L67.00,42.48 M69.75,42.48 L72.75,42.48 M75.50,42.48 L78.50,42.48"
+        android:strokeColor="#8CC8CF"
+        android:strokeWidth="1.44"
+        android:strokeLineCap="round" />
+    <!-- Lower dashed target rail -->
+    <path
+        android:pathData="M29.50,65.52 L32.50,65.52 M35.25,65.52 L38.25,65.52 M41.00,65.52 L44.00,65.52 M46.75,65.52 L49.75,65.52 M52.50,65.52 L55.50,65.52 M58.25,65.52 L61.25,65.52 M64.00,65.52 L67.00,65.52 M69.75,65.52 L72.75,65.52 M75.50,65.52 L78.50,65.52"
+        android:strokeColor="#8CC8CF"
+        android:strokeWidth="1.44"
+        android:strokeLineCap="round" />
+    <!-- Smooth settling glucose line -->
+    <path
+        android:pathData="M30.96,61.92 C38.16,61.92 39.60,46.08 48.24,48.24 C55.44,49.68 56.88,54.72 64.80,54.00 L74.88,54.00"
+        android:strokeColor="#0A7C8C"
+        android:strokeWidth="4.68"
+        android:strokeLineCap="round"
+        android:strokeLineJoin="round" />
+    <!-- Current reading halo -->
+    <path
+        android:fillColor="#2E1F9D55"
+        android:pathData="M74.88,46.08 A7.92,7.92 0 1,1 74.88,61.92 A7.92,7.92 0 1,1 74.88,46.08 Z" />
+    <!-- Current reading dot -->
+    <path
+        android:fillColor="#1F9D55"
+        android:pathData="M74.88,49.68 A4.32,4.32 0 1,1 74.88,58.32 A4.32,4.32 0 1,1 74.88,49.68 Z" />
+</vector>
