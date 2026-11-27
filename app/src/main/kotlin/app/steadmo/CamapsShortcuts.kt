@@ -77,7 +77,7 @@ class CamapsShortcutsService : AccessibilityService() {
         when (step) {
             CamapsStep.Wait -> if (newScreen) SteadmoLog.event("shortcuts: waiting; nothing to do on this screen")
             is CamapsStep.Tap -> {
-                val ok = CamapsShortcuts.find(root, step.path)?.performAction(AccessibilityNodeInfo.ACTION_CLICK) == true
+                val ok = CamapsShortcuts.find(root, step.path, screen)?.performAction(AccessibilityNodeInfo.ACTION_CLICK) == true
                 SteadmoLog.event("shortcuts: tapped \"%s\" at %s: %s", step.label, step.path, if (ok) "done" else "failed")
                 when {
                     !ok -> finish(task, "gave up: couldn't tap \"${step.label}\"", fail = true)
@@ -94,7 +94,7 @@ class CamapsShortcutsService : AccessibilityService() {
                 }
             }
             is CamapsStep.Fill -> {
-                val field = CamapsShortcuts.find(root, step.path)
+                val field = CamapsShortcuts.find(root, step.path, screen)
                 val args = Bundle().apply {
                     putCharSequence(AccessibilityNodeInfo.ACTION_ARGUMENT_SET_TEXT_CHARSEQUENCE, step.text)
                 }
@@ -103,7 +103,12 @@ class CamapsShortcutsService : AccessibilityService() {
                 if (!ok) {
                     finish(task, "gave up: couldn't type into the field at ${step.path}", fail = true, entered = false)
                 } else if (task.finished) {
-                    finish(task, "typed ${step.text} g at ${step.path}; over ${CamapsTask.MAX_CONFIRM_GRAMS} g, so not confirming", fail = false)
+                    val why = if (step.text.toInt() > CamapsTask.MAX_CONFIRM_GRAMS) {
+                        "over ${CamapsTask.MAX_CONFIRM_GRAMS} g"
+                    } else {
+                        "not the Carbohydrates dialog"
+                    }
+                    finish(task, "typed ${step.text} g at ${step.path}; $why, so not confirming", fail = false)
                     toast("${step.text} g entered. Check it, then confirm in CamAPS FX.")
                 } else {
                     SteadmoLog.event("shortcuts: typed %s g at %s; confirming next", step.text, step.path)
@@ -192,7 +197,8 @@ object CamapsShortcuts {
     }
 
     fun read(node: AccessibilityNodeInfo): ScreenNode = ScreenNode(
-        text = node.text?.toString(),
+        // An empty field reports its hint as its text; that's not what's typed in it.
+        text = node.text?.toString()?.takeUnless { node.isShowingHintText },
         description = node.contentDescription?.toString(),
         hint = node.hintText?.toString(),
         viewId = node.viewIdResourceName,
@@ -202,9 +208,20 @@ object CamapsShortcuts {
         children = visibleChildren(node).map(::read),
     )
 
-    /** The view at [path], counting only children [read] saw. */
-    fun find(root: AccessibilityNodeInfo, path: List<Int>): AccessibilityNodeInfo? =
-        path.fold(root as AccessibilityNodeInfo?) { node, i -> node?.let { visibleChildren(it).getOrNull(i) } }
+    /**
+     * The view at [path], counting only children [read] saw, if it's still the
+     * one [screen] had there: the screen can change between reading it and
+     * acting, and Steadmo must never tap or type into a different view.
+     */
+    fun find(root: AccessibilityNodeInfo, path: List<Int>, screen: ScreenNode): AccessibilityNodeInfo? {
+        val node = path.fold(root as AccessibilityNodeInfo?) { node, i -> node?.let { visibleChildren(it).getOrNull(i) } }
+            ?: return null
+        val expected = path.fold(screen as ScreenNode?) { s, i -> s?.children?.getOrNull(i) } ?: return null
+        val now = read(node)
+        val same = now.copy(children = emptyList()) == expected.copy(children = emptyList())
+        if (!same) SteadmoLog.warning("shortcuts: the view at %s changed before acting on it", path)
+        return node.takeIf { same }
+    }
 
     /** Children on screen: a pager keeps its other pages in the tree, and they must not be tapped. */
     private fun visibleChildren(node: AccessibilityNodeInfo) =
