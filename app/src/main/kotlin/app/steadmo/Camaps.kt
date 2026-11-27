@@ -50,11 +50,16 @@ object Camaps {
             context.startActivity(channel)
         } catch (e: ActivityNotFoundException) {
             SteadmoLog.failure(e, "camaps: no channel settings page; opening app notification settings")
-            context.startActivity(
-                Intent(Settings.ACTION_APP_NOTIFICATION_SETTINGS)
-                    .putExtra(Settings.EXTRA_APP_PACKAGE, target)
-                    .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK),
-            )
+            try {
+                context.startActivity(
+                    Intent(Settings.ACTION_APP_NOTIFICATION_SETTINGS)
+                        .putExtra(Settings.EXTRA_APP_PACKAGE, target)
+                        .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK),
+                )
+            } catch (e: ActivityNotFoundException) {
+                SteadmoLog.failure(e, "camaps: no app notification settings page either")
+                Toast.makeText(context, "Couldn't open CamAPS FX's notification settings.", Toast.LENGTH_LONG).show()
+            }
         }
     }
 

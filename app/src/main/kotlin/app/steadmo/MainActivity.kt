@@ -144,7 +144,7 @@ class MainActivity : ComponentActivity() {
      */
     private fun openLatestRelease() {
         SteadmoLog.event("ui: opening the latest release")
-        startActivity(Intent(Intent.ACTION_VIEW, android.net.Uri.parse(LATEST_RELEASE_URL)))
+        launch("the download page", Intent(Intent.ACTION_VIEW, android.net.Uri.parse(LATEST_RELEASE_URL)))
     }
 
     /** "Not now" on the CamAPS FX shortcuts card: don't suggest it again (Settings still has it). */
@@ -156,13 +156,13 @@ class MainActivity : ComponentActivity() {
 
     private fun openSourceCode() {
         SteadmoLog.event("ui: opening the source code")
-        startActivity(Intent(Intent.ACTION_VIEW, android.net.Uri.parse(SOURCE_URL)))
+        launch("the source code", Intent(Intent.ACTION_VIEW, android.net.Uri.parse(SOURCE_URL)))
     }
 
     /** Open issues on GitHub: what's known to be wrong, and whether a report is already filed. */
     private fun openKnownIssues() {
         SteadmoLog.event("ui: opening known issues")
-        startActivity(Intent(Intent.ACTION_VIEW, android.net.Uri.parse(KNOWN_ISSUES_URL)))
+        launch("known issues", Intent(Intent.ACTION_VIEW, android.net.Uri.parse(KNOWN_ISSUES_URL)))
     }
 
     companion object {
@@ -204,7 +204,8 @@ class MainActivity : ComponentActivity() {
     /** Android 14+'s "Full screen intents" page for Steadmo. */
     private fun openFullScreenSettings() {
         SteadmoLog.event("ui: opening full screen intent settings")
-        startActivity(
+        launch(
+            "full screen settings",
             Intent(Settings.ACTION_MANAGE_APP_USE_FULL_SCREEN_INTENT, android.net.Uri.fromParts("package", packageName, null)),
         )
     }
@@ -212,23 +213,26 @@ class MainActivity : ComponentActivity() {
     /** Steadmo's alerts channel, where the user can raise its importance again. */
     private fun openAlertSettings() {
         SteadmoLog.event("ui: opening alert channel settings")
-        startActivity(
+        launch(
+            "alert settings",
             Intent(Settings.ACTION_CHANNEL_NOTIFICATION_SETTINGS)
                 .putExtra(Settings.EXTRA_APP_PACKAGE, packageName)
                 .putExtra(Settings.EXTRA_CHANNEL_ID, StatusNotifier.CHANNEL_ALERTS),
+            Intent(Settings.ACTION_APP_NOTIFICATION_SETTINGS).putExtra(Settings.EXTRA_APP_PACKAGE, packageName),
         )
     }
 
     /** Accessibility settings, where the user turns CamAPS FX shortcuts on or off. */
     private fun openAccessibilitySettings() {
         SteadmoLog.event("ui: opening accessibility settings for CamAPS FX shortcuts")
-        startActivity(Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS))
+        launch("Accessibility settings", Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS))
     }
 
     /** App info, where Android 13+ hides "Allow restricted settings" for sideloaded apps. */
     private fun openAppInfo() {
         SteadmoLog.event("ui: opening app info for restricted settings")
-        startActivity(
+        launch(
+            "App info",
             Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS, android.net.Uri.fromParts("package", packageName, null)),
         )
     }
@@ -236,9 +240,29 @@ class MainActivity : ComponentActivity() {
     private fun openListenerSettings() {
         SteadmoLog.event("ui: opening notification access settings")
         val component = ComponentName(this, CamapsListener::class.java).flattenToString()
-        startActivity(
+        launch(
+            "notification access settings",
             Intent(Settings.ACTION_NOTIFICATION_LISTENER_DETAIL_SETTINGS)
                 .putExtra(Settings.EXTRA_NOTIFICATION_LISTENER_COMPONENT_NAME, component),
+            // Some phones have no page for one app: the list of all.
+            Intent(Settings.ACTION_NOTIFICATION_LISTENER_SETTINGS),
         )
+    }
+
+    /**
+     * Opens the first of [intents] the phone can, e.g. a settings page, then a
+     * broader one. With none (no browser, a missing settings page), says so
+     * instead of crashing.
+     */
+    private fun launch(what: String, vararg intents: Intent) {
+        for (intent in intents) {
+            try {
+                startActivity(intent)
+                return
+            } catch (e: android.content.ActivityNotFoundException) {
+                SteadmoLog.failure(e, "ui: nothing opens %s", intent.action)
+            }
+        }
+        android.widget.Toast.makeText(this, "Couldn't open $what on this phone.", android.widget.Toast.LENGTH_LONG).show()
     }
 }
