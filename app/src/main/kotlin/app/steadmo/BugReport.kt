@@ -36,6 +36,8 @@ object BugReport {
         val now: Long,
         /** What CamAPS FX lets other apps open ([CamapsEntryPoints]). */
         val camapsEntryPoints: String = "",
+        /** When the disclaimer was accepted, or null. */
+        val disclaimerAcceptedAt: Long? = null,
     )
 
     fun facts(context: Context, state: GlucoseState, now: Long = System.currentTimeMillis()) = Facts(
@@ -48,12 +50,14 @@ object BugReport {
         state = state,
         now = now,
         camapsEntryPoints = CamapsEntryPoints.describe(context, state.camapsPackage),
+        disclaimerAcceptedAt = Disclaimer.acceptedAt(context),
     )
 
     /** The app's section of the report: facts, then the newest log lines that fit. */
     fun section(facts: Facts, logLines: List<String>): String = buildString {
         val s = facts.state
         appendLine("Steadmo ${facts.version} on ${facts.device}, Android SDK ${facts.sdk}")
+        appendLine("Disclaimer: version ${Disclaimer.VERSION}, ${facts.disclaimerAcceptedAt?.let { "accepted at $it" } ?: "not accepted"}")
         appendLine("Notification access: ${yesNo(facts.listenerAllowed)}; notifications: ${yesNo(facts.notificationsAllowed)}; listener connected: ${yesNo(s.listenerConnected)}")
         appendLine("CamAPS FX: ${s.camapsPackage ?: "not seen"}; channel ${s.camapsChannelId ?: "unknown"}, importance ${importance(s.camapsChannelImportance)}")
         val latest = s.latest

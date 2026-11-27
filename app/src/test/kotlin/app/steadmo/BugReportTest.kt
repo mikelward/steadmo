@@ -34,12 +34,18 @@ class BugReportTest {
         val text = BugReport.section(facts(state), listOf("line one", "line two"))
         assertTrue(text, text.startsWith("Steadmo 21+abc on Google Pixel 9, Android SDK 36"))
         assertTrue(text, text.contains("Notification access: yes; notifications: no; listener connected: yes"))
+        assertTrue(text, text.contains("Disclaimer: version ${Disclaimer.VERSION}, not accepted"))
         assertTrue(text, text.contains("CamAPS FX: $CAMAPS; channel info, importance silent"))
         assertTrue(text, text.contains("latest 9.4 mmol/L, 30s old"))
         assertTrue(text, text.contains("Trend: UP, 0.12 mmol/L/min"))
         assertTrue(text, text.contains("Auto mode: On"))
         assertTrue(text, text.contains("--- last CamAPS FX notification ---\npackage: $CAMAPS"))
         assertTrue(text, text.endsWith("--- log ---\nline one\nline two"))
+    }
+
+    @Test fun `the disclaimer acceptance time is in the report`() {
+        val text = BugReport.section(facts(GlucoseState()).copy(disclaimerAcceptedAt = 42L), emptyList())
+        assertTrue(text, text.contains("Disclaimer: version ${Disclaimer.VERSION}, accepted at 42"))
     }
 
     @Test fun `CamAPS FX's screens are listed when known`() {
