@@ -20,6 +20,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 class MainActivity : ComponentActivity() {
     private var listenerAllowed by mutableStateOf(false)
     private var notificationsAllowed by mutableStateOf(false)
+    private var shortcutsOn by mutableStateOf(false)
     private var disclaimerAccepted by mutableStateOf(false)
     private var showingDisclaimer by mutableStateOf(false)
 
@@ -59,11 +60,14 @@ class MainActivity : ComponentActivity() {
                     onAllowNotifications = { requestNotifications.launch(Manifest.permission.POST_NOTIFICATIONS) },
                     onOpenCamaps = { Camaps.open(this, state.camapsPackage) },
                     onMeal = { grams -> Camaps.openForMeal(this, state.camapsPackage, grams) },
+                    onMode = { mode -> Camaps.openForMode(this, state.camapsPackage, mode) },
                     onReportBug = { Thread { BugReport.share(this) }.start() },
                     onShowDisclaimer = { showingDisclaimer = true },
                     onOpenAppInfo = ::openAppInfo,
                     onGetLatest = ::openLatestRelease,
                     onKnownIssues = ::openKnownIssues,
+                    shortcutsOn = shortcutsOn,
+                    onOpenShortcutsSettings = ::openAccessibilitySettings,
                     onMinimizeCamaps = { Camaps.openChannelSettings(this, state.camapsPackage, state.camapsChannelId) },
                 )
             }
@@ -75,7 +79,11 @@ class MainActivity : ComponentActivity() {
         listenerAllowed = packageName in NotificationManagerCompat.getEnabledListenerPackages(this)
         notificationsAllowed =
             checkSelfPermission(Manifest.permission.POST_NOTIFICATIONS) == PackageManager.PERMISSION_GRANTED
-        SteadmoLog.event("ui: resumed; notification access %s, notifications %s", listenerAllowed, notificationsAllowed)
+        shortcutsOn = CamapsShortcuts.enabled(this)
+        SteadmoLog.event(
+            "ui: resumed; notification access %s, notifications %s, CamAPS FX shortcuts %s",
+            listenerAllowed, notificationsAllowed, shortcutsOn,
+        )
     }
 
     /**
@@ -96,6 +104,12 @@ class MainActivity : ComponentActivity() {
     companion object {
         const val LATEST_RELEASE_URL = BuildConfig.LATEST_DOWNLOAD_URL
         const val KNOWN_ISSUES_URL = "https://github.com/mikelward/steadmo/issues"
+    }
+
+    /** Accessibility settings, where the user turns CamAPS FX shortcuts on or off. */
+    private fun openAccessibilitySettings() {
+        SteadmoLog.event("ui: opening accessibility settings for CamAPS FX shortcuts")
+        startActivity(Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS))
     }
 
     /** App info, where Android 13+ hides "Allow restricted settings" for sideloaded apps. */

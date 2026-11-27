@@ -36,6 +36,20 @@ class HomeScreenScreenshotTest {
     @Test fun disclaimer() = both("disclaimer") { { DisclaimerScreen(onAccept = {}, onLeave = {}) } }
     @Test fun setup() = both("home-setup") { home(GlucoseState(), listener = false, notifications = false) }
 
+    @Test fun shortcutsLight() = shortcuts(dark = false)
+    @Test fun shortcutsDark() = shortcuts(dark = true)
+
+    /** A dialog has its own window, so each theme gets its own activity. */
+    private fun shortcuts(dark: Boolean) {
+        compose.activity.setContent {
+            SteadmoTheme(dark = dark) {
+                ShortcutsDialog(on = false, onOpenSettings = {}, onOpenAppInfo = {}, onDismiss = {})
+            }
+        }
+        compose.onNode(androidx.compose.ui.test.isDialog())
+            .captureRoboImage("src/test/snapshots/images/camaps-shortcuts-${if (dark) "dark" else "light"}.png")
+    }
+
     private fun both(name: String, content: () -> @Composable () -> Unit) {
         capture(this, compose, "$name-light.png", dark = false, content())
         capture(this, compose, "$name-dark.png", dark = true, content())

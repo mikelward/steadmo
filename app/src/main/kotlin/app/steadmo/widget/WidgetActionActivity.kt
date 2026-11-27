@@ -6,6 +6,7 @@ import androidx.activity.ComponentActivity
 import app.steadmo.Camaps
 import app.steadmo.Disclaimer
 import app.steadmo.MainActivity
+import app.steadmo.core.CamapsGoal
 import app.steadmo.core.SteadmoLog
 import app.steadmo.repository
 
@@ -26,6 +27,8 @@ class WidgetActionActivity : ComponentActivity() {
                 val grams = path.getOrNull(1)?.toIntOrNull()
                 if (grams != null) Camaps.openForMeal(this, seen, grams) else Camaps.open(this, seen)
             }
+            path == listOf("camaps", "boost") -> Camaps.openForMode(this, seen, CamapsGoal.BOOST)
+            path == listOf("camaps", "ease-off") -> Camaps.openForMode(this, seen, CamapsGoal.EASE_OFF)
             path.firstOrNull() == "camaps" -> Camaps.open(this, seen)
             else -> startActivity(Intent(this, MainActivity::class.java))
         }

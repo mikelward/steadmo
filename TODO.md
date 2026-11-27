@@ -35,6 +35,13 @@
       Ease-off, 20/40/45/Other.
 - [ ] Display units setting: mmol/L or mg/dL.
 - [ ] Launcher shortcuts and Quick Settings tiles for the meal presets.
+- [x] CamAPS FX shortcuts: an accessibility service, limited to CamAPS FX, that takes the
+      meal, Boost and Ease-off buttons (app and widget) to their CamAPS FX screens and types
+      a meal's carbs, never delivering (SPEC.md §4.6). Mapped from v1.4 screenshots.
+- [ ] Check the shortcuts on a real phone against the logged screens (tab class names, the
+      Carbs cell, the dialog field), and what Boost does when it's already on.
+- [ ] Play policy check for the AccessibilityService API (declaration form, prominent
+      disclosure) before a Play release (maintainer's call).
 
 ## Diagnostics
 
@@ -67,7 +74,8 @@ CamAPS FX's. Each step needs the maintainer's sign-off: these are safety decisio
 - [ ] Deliveroo, Uber Eats and Just Eat order notifications: suggest a pre-bolus when the
       rider is nearby.
 - [ ] Glooko history (boluses, carbs) for the timeline.
-- [ ] Deep links into CamAPS FX's meal, Boost and Ease-off screens, if it has them.
+- [ ] Deep links into CamAPS FX's Boost and Ease-off screens, if it ever has them (v1.4
+      exposes only its launcher).
 - [ ] Optional Accessibility reader for IOB and Boost/Ease-off time left.
 
 ## Not in the MVP
@@ -77,5 +85,13 @@ CamAPS FX's. Each step needs the maintainer's sign-off: these are safety decisio
 ## Decisions needing review
 
 - Meal presets are grams of carbs (20, 40, 45), copied to the clipboard.
+- CamAPS FX shortcuts give up after 3 taps or 20 seconds, and treat any screen with a field
+  but no carbs field as a form not to touch.
+- With three unlabeled tabs, CamAPS FX shortcuts take the first as home and the second as
+  meal, as on v1.4.
+- Shortcuts don't repeat within a minute (the maintainer's ask): any meal blocks the next
+  meal, and Boost and Ease-off each block themselves.
+- Meal shortcuts tap the Carbohydrates dialog's Confirm only up to 60 g (the maintainer's
+  limit), and only once the field shows exactly the grams typed.
 - Repeat interval for alerts is 30 minutes.
 - minSdk 35, as in snoozemo.

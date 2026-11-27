@@ -1,5 +1,6 @@
 package app.steadmo
 
+import app.steadmo.core.CamapsGoal
 import app.steadmo.core.SteadmoLog
 import android.content.ActivityNotFoundException
 import android.content.ClipData
@@ -57,13 +58,40 @@ object Camaps {
         }
     }
 
-    /** Copies [grams] so it can be pasted into CamAPS FX's meal entry, then opens it. */
+    /**
+     * Copies [grams] so it can be pasted into CamAPS FX's meal entry, then opens
+     * it. With CamAPS FX shortcuts on, Steadmo also types them in (SPEC.md §4.6); the
+     * copy stays as the fallback.
+     */
     fun openForMeal(context: Context, seenPackage: String?, grams: Int) {
         val clipboard = context.getSystemService(ClipboardManager::class.java)
         clipboard.setPrimaryClip(ClipData.newPlainText("Carbs", grams.toString()))
         SteadmoLog.event("camaps: meal %s g copied", grams)
+        val shortcuts = CamapsShortcuts.enabled(context)
+        val started = shortcuts && CamapsShortcuts.begin(context, CamapsGoal.Meal(grams))
         if (open(context, seenPackage)) {
-            Toast.makeText(context, "$grams g copied. Enter it in CamAPS FX.", Toast.LENGTH_SHORT).show()
+            val text = when {
+                started -> "Entering $grams g in CamAPS FX…"
+                shortcuts -> "A meal was entered under a minute ago, so Steadmo won't enter this one. $grams g is copied."
+                else -> "$grams g copied. Enter it in CamAPS FX."
+            }
+            Toast.makeText(context, text, Toast.LENGTH_LONG).show()
+        } else {
+            CamapsShortcuts.clear()
+        }
+    }
+
+    /**
+     * Opens CamAPS FX and, with shortcuts on, its [mode] (Boost or Ease-off)
+     * dialog, for the user to set and confirm there (SPEC.md §4.6).
+     */
+    fun openForMode(context: Context, seenPackage: String?, mode: CamapsGoal.Mode) {
+        val shortcuts = CamapsShortcuts.enabled(context)
+        val started = shortcuts && CamapsShortcuts.begin(context, mode)
+        if (!open(context, seenPackage)) {
+            CamapsShortcuts.clear()
+        } else if (shortcuts && !started) {
+            Toast.makeText(context, "${mode.name} was opened under a minute ago. Opening CamAPS FX only.", Toast.LENGTH_LONG).show()
         }
     }
 }

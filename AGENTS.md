@@ -126,8 +126,10 @@ Shared by every mikelward repo and the user-level agent config; canonical in mik
 
 ### Principles, in order
 
-1. Never dose. Bolus, Boost and Ease-off are set and confirmed in CamAPS FX; Steadmo only
-   opens it, and never automates a tap inside it.
+1. Never dose. Bolus, Boost and Ease-off are set and confirmed in CamAPS FX. Steadmo opens
+   it; CamAPS FX shortcuts may tap through to the meal entry and enter the carbs (confirming
+   them in the Carbohydrates dialog only up to 60 g), or open Boost or Ease-off's dialog, but
+   never tap Next, deliver, start Boost or Ease-off, or change a setting (`SPEC.md` §4.6).
 2. Never show stale data as current: every value carries its age, and old ones grey out
    or disappear.
 3. Never fail silently: when CamAPS FX stops updating, say so.

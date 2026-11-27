@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- CamAPS FX shortcuts (SPEC.md §4.6): CamAPS FX's screens only, no gestures, no other apps. -->
+<accessibility-service xmlns:android="http://schemas.android.com/apk/res/android"
+    android:accessibilityEventTypes="typeWindowStateChanged|typeWindowContentChanged"
+    android:accessibilityFeedbackType="feedbackGeneric"
+    android:accessibilityFlags="flagReportViewIds"
+    android:canPerformGestures="false"
+    android:canRetrieveWindowContent="true"
+    android:description="@string/shortcuts_description"
+    android:isAccessibilityTool="false"
+    android:notificationTimeout="200"
+    android:packageNames="com.camdiab.fx_alert.mmoll,com.camdiab.fx_alert.mgdl,com.camdiab.fx_alert.hx.mmoll,com.camdiab.fx_alert.hx.mgdl"
+    android:summary="@string/shortcuts_summary" />

@@ -1,5 +1,6 @@
 package app.steadmo
 
+import app.steadmo.core.CamapsGoal
 import android.app.NotificationManager
 import androidx.activity.ComponentActivity
 import androidx.compose.ui.test.assertIsDisplayed
@@ -29,8 +30,16 @@ class HomeScreenTest {
     private var latestAsked = 0
     private var issuesAsked = 0
     private var disclaimerShown = 0
+    private var shortcutsSettings = 0
+    private var appInfo = 0
 
-    private fun show(state: GlucoseState, listener: Boolean = true, notifications: Boolean = true, now: Long = Samples.NOW) {
+    private fun show(
+        state: GlucoseState,
+        listener: Boolean = true,
+        notifications: Boolean = true,
+        now: Long = Samples.NOW,
+        shortcuts: Boolean = false,
+    ) {
         compose.setContent {
             SteadmoTheme(dark = false) {
                 HomeScreen(
@@ -46,6 +55,9 @@ class HomeScreenTest {
                     onGetLatest = { latestAsked++ },
                     onKnownIssues = { issuesAsked++ },
                     onShowDisclaimer = { disclaimerShown++ },
+                    onOpenAppInfo = { appInfo++ },
+                    shortcutsOn = shortcuts,
+                    onOpenShortcutsSettings = { shortcutsSettings++ },
                     clock = { now },
                     ticking = false,
                 )
@@ -62,11 +74,22 @@ class HomeScreenTest {
         assertEquals(1, opened)
     }
 
-    @Test fun `Boost and Ease-off open CamAPS FX`() {
-        show(Samples.rising())
+    @Test fun `Boost and Ease-off ask for their CamAPS FX dialogs`() {
+        val modes = mutableListOf<CamapsGoal.Mode>()
+        compose.setContent {
+            SteadmoTheme(dark = false) {
+                HomeScreen(Samples.rising(), true, true, {}, {}, { opened++ }, {}, onMode = { modes += it }, ticking = false)
+            }
+        }
         compose.onNodeWithText("Boost").performScrollTo().performClick()
         compose.onNodeWithText("Ease-off").performScrollTo().performClick()
-        assertEquals(2, opened)
+        assertEquals(listOf(CamapsGoal.BOOST, CamapsGoal.EASE_OFF), modes)
+    }
+
+    @Test fun `Boost opens CamAPS FX by default`() {
+        show(Samples.rising())
+        compose.onNodeWithText("Boost").performScrollTo().performClick()
+        assertEquals(1, opened)
     }
 
     @Test fun `shows value, arrow and rate`() {
@@ -117,6 +140,32 @@ class HomeScreenTest {
         compose.onNodeWithContentDescription("More options").performClick()
         compose.onNodeWithText("Disclaimer").performClick()
         assertEquals(1, disclaimerShown)
+    }
+
+    @Test fun `CamAPS FX shortcuts explains itself before opening settings`() {
+        show(Samples.rising())
+        compose.onNodeWithContentDescription("More options").performClick()
+        compose.onNodeWithText("CamAPS FX shortcuts").performClick()
+        compose.onNodeWithText("Steadmo never delivers insulin", substring = true).assertIsDisplayed()
+        compose.onNodeWithText("They're off", substring = true).assertIsDisplayed()
+        compose.onNodeWithText("App info").performClick()
+        assertEquals(1, appInfo)
+
+        compose.onNodeWithContentDescription("More options").performClick()
+        compose.onNodeWithText("CamAPS FX shortcuts").performClick()
+        compose.onNodeWithText("Open settings").performClick()
+        assertEquals(1, shortcutsSettings)
+        compose.onNodeWithText("Open settings").assertDoesNotExist()
+    }
+
+    @Test fun `CamAPS FX shortcuts says when it's on`() {
+        show(Samples.rising(), shortcuts = true)
+        compose.onNodeWithContentDescription("More options").performClick()
+        compose.onNodeWithText("CamAPS FX shortcuts").performClick()
+        compose.onNodeWithText("They're on.").assertIsDisplayed()
+        compose.onNodeWithText("App info").assertDoesNotExist()
+        compose.onNodeWithText("Close").performClick()
+        compose.onNodeWithText("They're on.").assertDoesNotExist()
     }
 
     @Test fun `Report a bug asks for a report`() {

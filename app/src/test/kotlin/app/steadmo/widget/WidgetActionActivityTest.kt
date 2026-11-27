@@ -1,5 +1,8 @@
 package app.steadmo.widget
 
+import app.steadmo.CamapsShortcuts
+import app.steadmo.CamapsShortcutsService
+import app.steadmo.core.CamapsGoal
 import android.app.Application
 import android.content.ClipboardManager
 import android.content.ComponentName
@@ -50,6 +53,20 @@ class WidgetActionActivityTest {
             val activity = tap(it)
             assertEquals(it, CAMAPS, shadowOf(activity).nextStartedActivity.component!!.packageName)
         }
+    }
+
+    @Test fun `with shortcuts on, Boost and Ease-off ask CamAPS FX for their dialogs`() {
+        Disclaimer.accept(app)
+        android.provider.Settings.Secure.putString(
+            app.contentResolver,
+            android.provider.Settings.Secure.ENABLED_ACCESSIBILITY_SERVICES,
+            android.content.ComponentName(app, CamapsShortcutsService::class.java).flattenToString(),
+        )
+        tap("camaps/boost")
+        assertEquals(CamapsGoal.BOOST, CamapsShortcuts.pending!!.goal)
+        tap("camaps/ease-off")
+        assertEquals(CamapsGoal.EASE_OFF, CamapsShortcuts.pending!!.goal)
+        CamapsShortcuts.clear()
     }
 
     @Test fun `before the disclaimer, every button opens Steadmo`() {

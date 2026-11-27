@@ -38,6 +38,7 @@ object BugReport {
         val camapsEntryPoints: String = "",
         /** When the disclaimer was accepted, or null. */
         val disclaimerAcceptedAt: Long? = null,
+        val shortcutsOn: Boolean = false,
     )
 
     fun facts(context: Context, state: GlucoseState, now: Long = System.currentTimeMillis()) = Facts(
@@ -51,6 +52,7 @@ object BugReport {
         now = now,
         camapsEntryPoints = CamapsEntryPoints.describe(context, state.camapsPackage),
         disclaimerAcceptedAt = Disclaimer.acceptedAt(context),
+        shortcutsOn = CamapsShortcuts.enabled(context),
     )
 
     /** The app's section of the report: facts, then the newest log lines that fit. */
@@ -58,7 +60,7 @@ object BugReport {
         val s = facts.state
         appendLine("Steadmo ${facts.version} on ${facts.device}, Android SDK ${facts.sdk}")
         appendLine("Disclaimer: version ${Disclaimer.VERSION}, ${facts.disclaimerAcceptedAt?.let { "accepted at $it" } ?: "not accepted"}")
-        appendLine("Notification access: ${yesNo(facts.listenerAllowed)}; notifications: ${yesNo(facts.notificationsAllowed)}; listener connected: ${yesNo(s.listenerConnected)}")
+        appendLine("Notification access: ${yesNo(facts.listenerAllowed)}; notifications: ${yesNo(facts.notificationsAllowed)}; listener connected: ${yesNo(s.listenerConnected)}; CamAPS FX shortcuts: ${yesNo(facts.shortcutsOn)}")
         appendLine("CamAPS FX: ${s.camapsPackage ?: "not seen"}; channel ${s.camapsChannelId ?: "unknown"}, importance ${importance(s.camapsChannelImportance)}")
         val latest = s.latest
         if (latest == null) {
