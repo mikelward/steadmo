@@ -17,6 +17,9 @@ import androidx.compose.runtime.setValue
 import androidx.core.app.NotificationManagerCompat
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 
+/** MainActivity's pages, besides first-run's disclaimer. */
+enum class Screen { HOME, SETTINGS, DISCLAIMER }
+
 class MainActivity : ComponentActivity() {
     private var listenerAllowed by mutableStateOf(false)
     private var notificationsAllowed by mutableStateOf(false)
@@ -34,7 +37,6 @@ class MainActivity : ComponentActivity() {
     private var suggestShortcuts by mutableStateOf(false)
     private var shortcutsOn by mutableStateOf(false)
     private var disclaimerAccepted by mutableStateOf(false)
-    private var showingDisclaimer by mutableStateOf(false)
 
     private val requestNotifications =
         registerForActivityResult(ActivityResultContracts.RequestPermission()) { notificationsAllowed = it }
@@ -44,6 +46,8 @@ class MainActivity : ComponentActivity() {
         enableEdgeToEdge()
         disclaimerAccepted = Disclaimer.accepted(this)
         setContent {
+            // Which page is showing; saved, so rotation keeps it. Back returns home from each.
+            var screen by androidx.compose.runtime.saveable.rememberSaveable { mutableStateOf(Screen.HOME) }
             SteadmoTheme {
                 if (!disclaimerAccepted) {
                     DisclaimerScreen(
@@ -59,11 +63,15 @@ class MainActivity : ComponentActivity() {
                     )
                     return@SteadmoTheme
                 }
-                if (showingDisclaimer) {
-                    DisclaimerScreen(onAccept = null, onLeave = { showingDisclaimer = false })
+                if (screen == Screen.DISCLAIMER) {
+                    DisclaimerScreen(onAccept = null, onLeave = { screen = Screen.HOME })
                     return@SteadmoTheme
                 }
                 val state by repository.state.collectAsStateWithLifecycle()
+                if (screen == Screen.SETTINGS) {
+                    SettingsScreen(unit = state.unit, onSetUnit = repository::setUnit, onBack = { screen = Screen.HOME })
+                    return@SteadmoTheme
+                }
                 HomeScreen(
                     state = state,
                     listenerAllowed = listenerAllowed,
@@ -79,13 +87,13 @@ class MainActivity : ComponentActivity() {
                     version = BuildConfig.VERSION_NAME,
                     onSourceCode = ::openSourceCode,
                     onReportBug = { Thread { BugReport.share(this) }.start() },
-                    onShowDisclaimer = { showingDisclaimer = true },
+                    onShowDisclaimer = { screen = Screen.DISCLAIMER },
                     onOpenAppInfo = ::openAppInfo,
                     onGetLatest = ::openLatestRelease,
                     onKnownIssues = ::openKnownIssues,
                     shortcutsOn = shortcutsOn,
                     onOpenShortcutsSettings = ::openAccessibilitySettings,
-                    onSetUnit = repository::setUnit,
+                    onSettings = { screen = Screen.SETTINGS },
                     alertsSilenced = alertsSilenced,
                     mealReminderOn = mealReminderOn,
                     mealReminderTime = android.text.format.DateFormat.getTimeFormat(this).format(

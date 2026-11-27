@@ -33,7 +33,7 @@
 
 - [x] Full-page home screen widget (Glance): value, arrow, graph, Auto mode, Boost,
       Ease-off, 20/40/45/Other.
-- [x] Display units setting: mmol/L or mg/dL (⋮ → Units).
+- [x] Display units setting: mmol/L or mg/dL (⋮ → Settings → Units).
 - [ ] Bolus progress: if CamAPS FX shows a notification while a bolus is delivering,
       mirror its progress as a Live Update (check on a real phone first).
 - [x] Launcher shortcuts: 20 g, 40 g, 45 g and Boost on a long press of Steadmo's icon.

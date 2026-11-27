@@ -36,7 +36,7 @@ read this and accept the risk"; Leave closes the app. The home screen links back
 
 ### Units
 
-Readings are stored and computed in mmol/L. ⋮ → Units shows them in mmol/L (one
+Readings are stored and computed in mmol/L. ⋮ → Settings → Units shows them in mmol/L (one
 decimal, the default) or mg/dL (whole numbers) everywhere: the app, graph labels, widget,
 status notification, Live Update chip and alert text. Rates are per minute in the same
 unit (0.01 mmol/L, 0.1 mg/dL). The choice is kept on the device and redraws the status
@@ -244,6 +244,13 @@ hour, only for posts under 15 minutes old (not old ones replayed on reconnect); 
 after 45 minutes. It is for a pre-bolus only: Steadmo doesn't try to detect unannounced
 meals from a rise. What the delivery app says is never stored or logged; the last one is
 kept in memory for a bug report the user sends.
+
+### 4.15 Navigation
+
+⋮ opens dialogs (Meal reminder, CamAPS FX shortcuts, About) and pages (Settings, Disclaimer).
+Back closes a dialog, and from a page returns home; only home's back leaves the app. On first
+run, back on the disclaimer leaves, as Leave does. The open page and dialog survive rotation.
+Dialog content scrolls when it doesn't fit.
 
 ### 4.13 Meal reminder
 
