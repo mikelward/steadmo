@@ -1,44 +1,41 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!--
-  Target Ribbon (1A): a settling glucose curve inside a soft target-range band
-  ending in a live in-range green dot. Scaled into the central 72dp visible
-  region (all strokes and halo within the 66dp safe zone, x 27.36..82.80,
-  y 42.48..65.52) of the 108dp adaptive icon viewport.
+  Target Ribbon (2A): open horizontal dashed target rails (no surrounding box)
+  framing a High -> Low -> High -> Flat settling glucose curve (stroke 4.0 in
+  the 100x100 design grid) ending in a live in-range green dot. Scaled into the
+  central 72dp visible region (all strokes and halo within the 66dp safe zone,
+  x 26.64..82.44, y 41.76..66.24) of the 108dp adaptive icon viewport.
 -->
 <vector xmlns:android="http://schemas.android.com/apk/res/android"
     android:width="108dp"
     android:height="108dp"
     android:viewportWidth="108"
     android:viewportHeight="108">
-    <!-- Target range shaded corridor -->
+    <!-- Upper open dashed target rail -->
     <path
-        android:fillColor="#E8F6F7"
-        android:pathData="M33.12,42.48 L74.88,42.48 A5.76,5.76 0 0,1 80.64,48.24 L80.64,59.76 A5.76,5.76 0 0,1 74.88,65.52 L33.12,65.52 A5.76,5.76 0 0,1 27.36,59.76 L27.36,48.24 A5.76,5.76 0 0,1 33.12,42.48 Z" />
-    <!-- Upper dashed target rail -->
-    <path
-        android:pathData="M29.50,42.48 L32.50,42.48 M35.25,42.48 L38.25,42.48 M41.00,42.48 L44.00,42.48 M46.75,42.48 L49.75,42.48 M52.50,42.48 L55.50,42.48 M58.25,42.48 L61.25,42.48 M64.00,42.48 L67.00,42.48 M69.75,42.48 L72.75,42.48 M75.50,42.48 L78.50,42.48"
-        android:strokeColor="#8CC8CF"
-        android:strokeWidth="1.44"
+        android:pathData="M26.64,41.76 L29.52,41.76 M32.40,41.76 L35.28,41.76 M38.16,41.76 L41.04,41.76 M43.92,41.76 L46.80,41.76 M49.68,41.76 L52.56,41.76 M55.44,41.76 L58.32,41.76 M61.20,41.76 L64.08,41.76 M66.96,41.76 L69.84,41.76 M72.72,41.76 L75.60,41.76 M78.48,41.76 L81.36,41.76"
+        android:strokeColor="#9FD0D6"
+        android:strokeWidth="1.15"
         android:strokeLineCap="round" />
-    <!-- Lower dashed target rail -->
+    <!-- Lower open dashed target rail -->
     <path
-        android:pathData="M29.50,65.52 L32.50,65.52 M35.25,65.52 L38.25,65.52 M41.00,65.52 L44.00,65.52 M46.75,65.52 L49.75,65.52 M52.50,65.52 L55.50,65.52 M58.25,65.52 L61.25,65.52 M64.00,65.52 L67.00,65.52 M69.75,65.52 L72.75,65.52 M75.50,65.52 L78.50,65.52"
-        android:strokeColor="#8CC8CF"
-        android:strokeWidth="1.44"
+        android:pathData="M26.64,66.24 L29.52,66.24 M32.40,66.24 L35.28,66.24 M38.16,66.24 L41.04,66.24 M43.92,66.24 L46.80,66.24 M49.68,66.24 L52.56,66.24 M55.44,66.24 L58.32,66.24 M61.20,66.24 L64.08,66.24 M66.96,66.24 L69.84,66.24 M72.72,66.24 L75.60,66.24 M78.48,66.24 L81.36,66.24"
+        android:strokeColor="#9FD0D6"
+        android:strokeWidth="1.15"
         android:strokeLineCap="round" />
-    <!-- Smooth settling glucose line -->
+    <!-- High -> Low -> High -> Flat settling glucose line -->
     <path
-        android:pathData="M30.96,61.92 C38.16,61.92 39.60,46.08 48.24,48.24 C55.44,49.68 56.88,54.72 64.80,54.00 L74.88,54.00"
+        android:pathData="M28.08,43.20 C33.12,43.20 35.28,63.36 41.04,63.36 C46.80,63.36 48.96,46.08 54.72,46.08 C59.76,46.08 61.92,54.00 66.96,54.00 L76.32,54.00"
         android:strokeColor="#0A7C8C"
-        android:strokeWidth="4.68"
+        android:strokeWidth="2.88"
         android:strokeLineCap="round"
         android:strokeLineJoin="round" />
     <!-- Current reading halo -->
     <path
         android:fillColor="#2E1F9D55"
-        android:pathData="M74.88,46.08 A7.92,7.92 0 1,1 74.88,61.92 A7.92,7.92 0 1,1 74.88,46.08 Z" />
+        android:pathData="M76.32,47.88 A6.12,6.12 0 1,1 76.32,60.12 A6.12,6.12 0 1,1 76.32,47.88 Z" />
     <!-- Current reading dot -->
     <path
         android:fillColor="#1F9D55"
-        android:pathData="M74.88,49.68 A4.32,4.32 0 1,1 74.88,58.32 A4.32,4.32 0 1,1 74.88,49.68 Z" />
+        android:pathData="M76.32,50.69 A3.31,3.31 0 1,1 76.32,57.31 A3.31,3.31 0 1,1 76.32,50.69 Z" />
 </vector>
