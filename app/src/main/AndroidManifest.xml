@@ -51,6 +51,11 @@
                 android:resource="@xml/steadmo_widget_info" />
         </receiver>
 
+        <!-- The no-glucose check (SPEC.md §4.7), set by Steadmo's own alarm. -->
+        <receiver
+            android:name=".SignalWatchReceiver"
+            android:exported="false" />
+
         <!-- Shares bug report screenshots with the app the user picks. -->
         <provider
             android:name="androidx.core.content.FileProvider"

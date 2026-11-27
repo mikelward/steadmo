@@ -47,6 +47,7 @@ class GlucoseRepository(
     private val writer: Executor = Executors.newSingleThreadExecutor(),
     private val clock: () -> Long = System::currentTimeMillis,
 ) {
+    private val appContext = context.applicationContext
     private val file = File(context.filesDir, "readings.csv")
     private val settings = context.getSharedPreferences("settings", Context.MODE_PRIVATE)
     private val log = load()
@@ -122,6 +123,7 @@ class GlucoseRepository(
         if (added) {
             save(log.encode())
             val latest = log.latest
+            latest?.let { SignalWatch.onReading(appContext, it.timeMillis, notifier, clock()) }
             // A newer reading that no longer calls for the shown alert clears it.
             if (shownAlert != null && latest != null && alerts.applying(latest, trend, _state.value.unit)?.kind != shownAlert) {
                 SteadmoLog.event("alerts: %s no longer applies; cleared", shownAlert)

@@ -168,6 +168,16 @@ does the navigation, from the app's buttons and the widget's:
 - Each screen it acts on is logged as its structure, with every digit masked, so its
   matching can be tuned from a bug report without recording glucose or doses.
 
+### 4.7 Signal loss
+
+Separate from glucose out of range: when no reading has come from CamAPS FX for 15
+minutes (three missed readings), Steadmo posts "No glucose for 15 min" on the alerts
+channel. The cause can be the sensor's signal, Bluetooth, CamAPS FX itself, or Steadmo's
+notification access; when access is off, the warning says so. It repeats every 30 minutes
+for 2 hours, and the next reading clears it. Each reading sets an inexact alarm, allowed
+while idle, for 15 minutes later; the app re-arms it on start. It adds to CamAPS FX's
+own signal loss alarm and never replaces it.
+
 ### 4.4 CamAPS FX's notification
 
 Steadmo reads CamAPS FX's "My diabetes info" notification, so the user keeps it on but can
