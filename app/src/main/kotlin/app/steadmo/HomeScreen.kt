@@ -457,7 +457,7 @@ internal fun MealReminderDialog(
                     Column(modifier = Modifier.weight(1f)) {
                         Text("Calendar meals", style = MaterialTheme.typography.bodyLarge)
                         Text(
-                            "15 minutes before events like \"Dinner with Sam\" or a restaurant booking.",
+                            "When events like \"Dinner with Sam\" or a restaurant booking start.",
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                         )

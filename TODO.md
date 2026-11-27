@@ -133,5 +133,6 @@ CamAPS FX's. Each step needs the maintainer's sign-off: these are safety decisio
 - The meal reminder is on by default at 18:00 (the maintainer asked for a 6 pm reminder);
   it's exact once the user allows "Alarms & reminders" (asked for in the Meal reminder
   dialog; the maintainer approved asking), else inexact and up to an hour late.
-- Calendar meals look a day ahead, rescan every 3 hours and after each reminder, and skip
-  all-day events.
+- Calendar meals remind when the event starts (the maintainer's choice), look a day ahead,
+  rescan on any calendar change, every 3 hours and after each reminder, still remind up to
+  30 minutes late, and skip all-day events.

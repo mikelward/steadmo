@@ -20,21 +20,23 @@ class CalendarMealsTest {
             .forEach { assertFalse(it, CalendarMeals.isMeal(it)) }
     }
 
-    @Test fun `reminds 15 minutes before the soonest timed meal`() {
+    @Test fun `reminds when the soonest timed meal starts`() {
         val events = listOf(
             Event(1, "Dentist", 30 * min, false),
             Event(2, "Dinner with Sam", 300 * min, false),
             Event(3, "Lunch", 120 * min, false),
             Event(4, "Team dinner", 60 * min, true),
         )
-        assertEquals(Event(3, "Lunch", 120 * min, false) to 105 * min, CalendarMeals.next(events, 0))
+        assertEquals(Event(3, "Lunch", 120 * min, false) to 120 * min, CalendarMeals.next(events, 0))
     }
 
-    @Test fun `a due reminder that hasn't gone off is kept until the meal starts`() {
+    @Test fun `a due reminder that hasn't gone off is kept until 30 minutes after the start`() {
         val lunch = Event(1, "Lunch", 10 * min, false)
-        assertEquals(lunch to -5 * min, CalendarMeals.next(listOf(lunch), 0))
-        assertNull(CalendarMeals.next(listOf(lunch), 0, reminded = setOf(lunch.key)))
-        assertNull(CalendarMeals.next(listOf(lunch), 10 * min))
+        // Moved to just before now (an edit late in the day): due at once.
+        assertEquals(lunch to 10 * min, CalendarMeals.next(listOf(lunch), 11 * min))
+        assertNull(CalendarMeals.next(listOf(lunch), 11 * min, reminded = setOf(lunch.key)))
+        assertEquals(lunch to 10 * min, CalendarMeals.next(listOf(lunch), 39 * min))
+        assertNull(CalendarMeals.next(listOf(lunch), 40 * min))
     }
 
     @Test fun `not beyond a day`() {

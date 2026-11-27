@@ -5,6 +5,7 @@ import android.app.PendingIntent
 import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
+import app.steadmo.core.CalendarMeals
 import app.steadmo.core.MealReminder
 import app.steadmo.core.SteadmoLog
 import java.time.LocalTime
@@ -130,8 +131,9 @@ class MealReminderReceiver : BroadcastReceiver() {
             val start = intent.getLongExtra(CalendarMealReminders.EXTRA_START, 0)
             when {
                 title == null || !CalendarMealReminders.enabled(context) -> SteadmoLog.event("calendar meals: off; not reminding")
-                // Delivered late: too late to bolus before eating.
-                start <= System.currentTimeMillis() -> SteadmoLog.event("calendar meals: meal already started; not reminding")
+                // Delivered long after it started: the meal is well underway.
+                !CalendarMeals.current(start, System.currentTimeMillis()) ->
+                    SteadmoLog.event("calendar meals: meal started too long ago; not reminding")
                 else -> {
                     SteadmoLog.event("calendar meals: reminder")
                     notifier.showMealReminder(calendarTitle(context, title, start))
