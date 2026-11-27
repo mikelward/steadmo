@@ -1,36 +1,45 @@
 package app.steadmo
 
-import android.graphics.Bitmap
-import android.graphics.Canvas
 import android.graphics.drawable.AdaptiveIconDrawable
-import androidx.test.core.app.ApplicationProvider
-import com.github.takahirom.roborazzi.captureRoboImage
+import android.widget.ImageView
+import androidx.activity.ComponentActivity
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.material3.Surface
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.test.junit4.createAndroidComposeRule
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.viewinterop.AndroidView
 import org.junit.Assert.assertNotNull
+import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.annotation.Config
 import org.robolectric.annotation.GraphicsMode
 
-/** The launcher icon, full color and the themed (monochrome) layer. */
+/**
+ * The launcher icon and its themed (monochrome) layer, drawn through the same
+ * window path as the other screenshots so the PNG is byte-stable across machines.
+ */
 @RunWith(RobolectricTestRunner::class)
-@Config(sdk = [36])
+@Config(sdk = [36], qualifiers = "w411dp-h914dp-420dpi")
 @GraphicsMode(GraphicsMode.Mode.NATIVE)
 class LauncherIconScreenshotTest {
-    private val context = ApplicationProvider.getApplicationContext<android.content.Context>()
+    @get:Rule val compose = createAndroidComposeRule<ComponentActivity>()
 
     @Test fun icon() {
-        val icon = context.getDrawable(R.mipmap.ic_launcher) as AdaptiveIconDrawable
+        val icon = compose.activity.getDrawable(R.mipmap.ic_launcher) as AdaptiveIconDrawable
         assertNotNull(icon.monochrome)
-        draw(icon, "launcher-icon.png")
-        draw(icon.monochrome!!, "launcher-icon-monochrome.png")
-    }
-
-    private fun draw(drawable: android.graphics.drawable.Drawable, name: String) {
-        val size = 432
-        val bitmap = Bitmap.createBitmap(size, size, Bitmap.Config.ARGB_8888)
-        drawable.setBounds(0, 0, size, size)
-        drawable.draw(Canvas(bitmap))
-        bitmap.captureRoboImage(filePath = "src/test/snapshots/images/$name")
+        capture(this, compose, "launcher-icon.png", dark = false) {
+            Surface {
+                Row(Modifier.padding(24.dp), horizontalArrangement = Arrangement.spacedBy(24.dp)) {
+                    AndroidView({ ImageView(it).apply { setImageResource(R.mipmap.ic_launcher) } }, Modifier.size(144.dp))
+                    AndroidView({ ImageView(it).apply { setImageDrawable(icon.monochrome) } }, Modifier.size(144.dp))
+                }
+            }
+        }
     }
 }
