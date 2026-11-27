@@ -42,14 +42,17 @@ class CalendarMealRemindersTest {
         assertTrue(calendarAlarms().isEmpty())
     }
 
-    @Test fun `reminds 15 minutes before the next meal event, and looks again every few hours`() {
+    @Test fun `reminds when the next meal event starts, and looks again on changes and every few hours`() {
         shadowOf(app).grantPermissions(Manifest.permission.READ_CALENDAR)
         CalendarMealReminders.set(app, true)
         CalendarMealReminders.scan(app, now) { listOf(dinner) }
         val alarm = calendarAlarms().single()
-        assertEquals(dinner.start - CalendarMeals.LEAD_MILLIS, alarm.triggerAtTime)
+        assertEquals(dinner.start, alarm.triggerAtTime)
         assertEquals("Dinner with Sam", shadowOf(alarm.operation).savedIntent.getStringExtra(CalendarMealReminders.EXTRA_TITLE))
         assertEquals(1, WorkManager.getInstance(app).getWorkInfosForUniqueWork("calendar-meals").get().size)
+        val watch = WorkManager.getInstance(app).getWorkInfosForUniqueWork("calendar-meals-changes").get().single()
+        assertEquals(androidx.work.WorkInfo.State.ENQUEUED, watch.state)
+        assertEquals(1, watch.constraints.contentUriTriggers.size)
 
         CalendarMealReminders.scan(app, now) { emptyList() }
         assertTrue(calendarAlarms().isEmpty())
@@ -82,7 +85,7 @@ class CalendarMealRemindersTest {
     @Test fun `a due reminder survives a rescan until it goes off, and then isn't set again`() {
         shadowOf(app).grantPermissions(Manifest.permission.READ_CALENDAR)
         CalendarMealReminders.set(app, true)
-        val due = dinner.start - CalendarMeals.LEAD_MILLIS
+        val due = dinner.start
         CalendarMealReminders.scan(app, due + MINUTE) { listOf(dinner) }
         val alarm = calendarAlarms().single()
         assertEquals(due, alarm.triggerAtTime)
@@ -120,13 +123,24 @@ class CalendarMealRemindersTest {
         assertTrue(app.posted(7) != null)
     }
 
-    @Test fun `a reminder delivered after the meal started says nothing`() {
+    @Test fun `a reminder delivered just after the start still shows, long after says nothing`() {
         CalendarMealReminders.set(app, true)
         MealReminderReceiver().onReceive(
             app,
             Intent(app, MealReminderReceiver::class.java).setAction(CalendarMealReminders.ACTION)
                 .putExtra(CalendarMealReminders.EXTRA_TITLE, "Lunch")
                 .putExtra(CalendarMealReminders.EXTRA_START, System.currentTimeMillis() - MINUTE),
+        )
+        assertTrue(app.posted(7) != null)
+    }
+
+    @Test fun `a reminder delivered over 30 minutes after the start says nothing`() {
+        CalendarMealReminders.set(app, true)
+        MealReminderReceiver().onReceive(
+            app,
+            Intent(app, MealReminderReceiver::class.java).setAction(CalendarMealReminders.ACTION)
+                .putExtra(CalendarMealReminders.EXTRA_TITLE, "Lunch")
+                .putExtra(CalendarMealReminders.EXTRA_START, System.currentTimeMillis() - 31 * MINUTE),
         )
         assertNull(app.posted(7))
     }
@@ -152,6 +166,7 @@ class CalendarMealRemindersTest {
     @Test fun `calendar query excludes hidden calendars, canceled events and declined invites`() {
         shadowOf(app).grantPermissions(Manifest.permission.READ_CALENDAR)
         var capturedSelection: String? = null
+        var capturedUri: android.net.Uri? = null
         val provider = object : android.content.ContentProvider() {
             override fun onCreate() = true
             override fun query(
@@ -162,6 +177,7 @@ class CalendarMealRemindersTest {
                 sortOrder: String?,
             ): android.database.Cursor {
                 capturedSelection = selection
+                capturedUri = uri
                 return android.database.MatrixCursor(projection ?: emptyArray())
             }
             override fun getType(uri: android.net.Uri): String? = null
@@ -174,6 +190,24 @@ class CalendarMealRemindersTest {
         assertTrue(capturedSelection.orEmpty().contains(android.provider.CalendarContract.Instances.VISIBLE))
         assertTrue(capturedSelection.orEmpty().contains(android.provider.CalendarContract.Instances.STATUS))
         assertTrue(capturedSelection.orEmpty().contains(android.provider.CalendarContract.Instances.SELF_ATTENDEE_STATUS))
+        // From 30 minutes ago, so a short meal added after it began (and ended) still reminds.
+        CalendarMealReminders.query(app, now)
+        val (begin, end) = capturedUri!!.pathSegments.takeLast(2).map(String::toLong)
+        assertEquals(now - CalendarMeals.LATE_MILLIS, begin)
+        assertEquals(now + CalendarMeals.LOOKAHEAD_MILLIS, end)
+    }
+
+    @Test fun `a calendar change looks again and keeps watching`() {
+        CalendarMealReminders.set(app, true)
+        val worker = androidx.work.testing.TestListenableWorkerBuilder<CalendarChangeWorker>(app).build()
+        kotlinx.coroutines.runBlocking { assertEquals(androidx.work.ListenableWorker.Result.success(), worker.doWork()) }
+        assertTrue(
+            WorkManager.getInstance(app).getWorkInfosForUniqueWork("calendar-meals-changes").get().any { !it.state.isFinished },
+        )
+        CalendarMealReminders.set(app, false)
+        assertTrue(
+            WorkManager.getInstance(app).getWorkInfosForUniqueWork("calendar-meals-changes").get().all { it.state.isFinished },
+        )
     }
 
     @Test fun `the worker scans`() {

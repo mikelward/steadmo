@@ -8,13 +8,17 @@ import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.provider.CalendarContract
+import androidx.work.Constraints
 import androidx.work.CoroutineWorker
+import androidx.work.ExistingWorkPolicy
+import androidx.work.OneTimeWorkRequestBuilder
 import androidx.work.ExistingPeriodicWorkPolicy
 import androidx.work.PeriodicWorkRequestBuilder
 import androidx.work.WorkManager
 import androidx.work.WorkerParameters
 import app.steadmo.core.CalendarMeals
 import app.steadmo.core.SteadmoLog
+import java.time.Duration
 import java.util.concurrent.TimeUnit
 
 /**
@@ -45,8 +49,10 @@ object CalendarMealReminders {
                 WORK, ExistingPeriodicWorkPolicy.KEEP,
                 PeriodicWorkRequestBuilder<CalendarScanWorker>(3, TimeUnit.HOURS).build(),
             )
+            watch(context)
         } else {
             work.cancelUniqueWork(WORK)
+            work.cancelUniqueWork(WATCH)
             // A snooze already set for one says nothing once it's off (MealReminderReceiver).
             StatusNotifier(context).cancelMealReminder(calendar = true)
         }
@@ -76,9 +82,9 @@ object CalendarMealReminders {
         Alarms.set(context, at, pending(context, event.title, event.start, event.key))
     }
 
-    /** An event's reminder went off: don't set it again, even after a restart. Keeps only events still ahead. */
+    /** An event's reminder went off: don't set it again, even after a restart. Keeps only events still current. */
     fun reminded(context: Context, key: String, now: Long = System.currentTimeMillis()) {
-        val kept = reminded(context).filter { (it.substringAfter(':').toLongOrNull() ?: 0) > now }.toSet()
+        val kept = reminded(context).filter { CalendarMeals.current(it.substringAfter(':').toLongOrNull() ?: 0, now) }.toSet()
         prefs(context).edit().putStringSet(KEY_REMINDED, kept + key).apply()
     }
 
@@ -95,10 +101,12 @@ object CalendarMealReminders {
 
     private const val KEY_REMINDED = "reminded"
 
-    /** The next day's event instances, timed and all-day, from every visible calendar. */
-    private fun query(context: Context, now: Long): List<CalendarMeals.Event> {
+    /** Event instances from 30 minutes ago to a day ahead, timed and all-day, from every visible calendar. */
+    internal fun query(context: Context, now: Long): List<CalendarMeals.Event> {
         val uri = CalendarContract.Instances.CONTENT_URI.buildUpon().also {
-            ContentUris.appendId(it, now)
+            // From the grace period's start: a meal that began up to that long ago (even a short
+            // one, already over) still reminds; CalendarMeals.next decides which are current.
+            ContentUris.appendId(it, now - CalendarMeals.LATE_MILLIS)
             ContentUris.appendId(it, now + CalendarMeals.LOOKAHEAD_MILLIS)
         }.build()
         val columns = arrayOf(
@@ -121,6 +129,38 @@ object CalendarMealReminders {
     }
 
     private const val WORK = "calendar-meals"
+    private const val WATCH = "calendar-meals-changes"
+
+    /**
+     * Looks again within about a minute of any calendar change, so an event
+     * added or moved shortly before it starts still reminds. Each look sets up
+     * the next ([again], after this one finishes).
+     */
+    fun watch(context: Context, again: Boolean = false) {
+        if (!enabled(context)) return
+        val request = OneTimeWorkRequestBuilder<CalendarChangeWorker>()
+            .setConstraints(
+                Constraints.Builder()
+                    .addContentUriTrigger(CalendarContract.Events.CONTENT_URI, true)
+                    .setTriggerContentUpdateDelay(Duration.ofSeconds(5))
+                    .setTriggerContentMaxDelay(Duration.ofMinutes(1))
+                    .build(),
+            )
+            .build()
+        WorkManager.getInstance(context).enqueueUniqueWork(
+            WATCH, if (again) ExistingWorkPolicy.APPEND_OR_REPLACE else ExistingWorkPolicy.KEEP, request,
+        )
+    }
+}
+
+/** The calendar changed: look again, and watch for the next change. */
+class CalendarChangeWorker(context: Context, params: WorkerParameters) : CoroutineWorker(context, params) {
+    override suspend fun doWork(): Result {
+        SteadmoLog.event("calendar meals: the calendar changed; looking again")
+        CalendarMealReminders.scan(applicationContext)
+        CalendarMealReminders.watch(applicationContext, again = true)
+        return Result.success()
+    }
 }
 
 /** Looks again every few hours, for events added since. */

@@ -3,10 +3,14 @@ package app.steadmo.core
 /**
  * Pre-bolus reminders for calendar events named for a meal or a restaurant
  * booking (SPEC.md §4.14), e.g. "Dinner with Sam" or "Reservation at Dishoom":
- * 15 minutes before they start.
+ * when they start.
  */
 object CalendarMeals {
-    const val LEAD_MILLIS = 15 * 60_000L
+    /** A reminder that arrives this long after the meal starts is still shown; later, it's no use. */
+    const val LATE_MILLIS = 30 * 60_000L
+
+    /** Whether a reminder for a meal starting at [start] is still worth showing at [now]. */
+    fun current(start: Long, now: Long): Boolean = now < start + LATE_MILLIS
 
     /** How far ahead Steadmo looks; it looks again well before this runs out. */
     const val LOOKAHEAD_MILLIS = 24 * 60 * 60_000L
@@ -25,13 +29,13 @@ object CalendarMeals {
     fun isMeal(title: String): Boolean = meal.containsMatchIn(title)
 
     /**
-     * The next event to remind about, and when: the soonest timed meal event
-     * that hasn't started and whose reminder hasn't gone off ([reminded] keys).
-     * A reminder time already past (a delayed alarm, or an event added late)
-     * is returned as is, so it goes off at once.
+     * The next event to remind about, and when (its start): the soonest timed
+     * meal event still [current] whose reminder hasn't gone off ([reminded]
+     * keys). A start already past (a delayed alarm, or an event added or moved
+     * late) is returned as is, so it goes off at once.
      */
     fun next(events: List<Event>, now: Long, reminded: Set<String> = emptySet()): Pair<Event, Long>? = events
-        .filter { !it.allDay && isMeal(it.title) && it.start > now && it.start - now <= LOOKAHEAD_MILLIS && it.key !in reminded }
+        .filter { !it.allDay && isMeal(it.title) && current(it.start, now) && it.start - now <= LOOKAHEAD_MILLIS && it.key !in reminded }
         .minByOrNull { it.start }
-        ?.let { it to it.start - LEAD_MILLIS }
+        ?.let { it to it.start }
 }
