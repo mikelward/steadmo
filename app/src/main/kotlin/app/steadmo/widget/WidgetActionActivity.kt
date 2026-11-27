@@ -19,7 +19,7 @@ import app.steadmo.repository
 class WidgetActionActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        if (intent.getBooleanExtra(EXTRA_CANCEL_PRE_BOLUS, false)) StatusNotifier(this).cancelPreBolus()
+        intent.getIntExtra(EXTRA_CANCEL_NOTIFICATION, 0).takeIf { it != 0 }?.let { StatusNotifier(this).cancel(it) }
         val path = intent.data?.pathSegments.orEmpty()
         SteadmoLog.event("widget: %s", path.joinToString("/"))
         val seen = repository.state.value.camapsPackage
@@ -40,6 +40,6 @@ class WidgetActionActivity : ComponentActivity() {
 
     companion object {
         const val SCHEME = "steadmo"
-        const val EXTRA_CANCEL_PRE_BOLUS = "app.steadmo.cancel_pre_bolus"
+        const val EXTRA_CANCEL_NOTIFICATION = "app.steadmo.cancel_notification"
     }
 }
