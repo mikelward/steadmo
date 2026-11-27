@@ -1,7 +1,9 @@
 # Steadmo
 
 Your glucose, trend and CamAPS FX status in one place, with a trend arrow in the status bar
-and alerts that say what's coming. Buttons open CamAPS FX for meals, Boost and Ease-off;
+and alerts that say what's coming. Buttons open CamAPS FX for meals, Boost and Ease-off,
+and optional CamAPS FX shortcuts go straight to the meal entry (with the carbs entered),
+Boost or Ease-off for you to confirm;
 Steadmo never doses.
 
 - **What it does and why**: [SPEC.md](SPEC.md)
@@ -32,7 +34,9 @@ Don't base treatment decisions on it, and keep CamAPS FX's and your CGM's alarms
    says notification access is "controlled by a restricted setting" (sideloaded apps, Android
    13 and later), open Steadmo's App info, tap ⋮, choose **Allow restricted settings**, then
    try again.
-3. Wait for the next CamAPS FX update. The trend arrow appears after 5 minutes of
+3. Optional: ⋮ → CamAPS FX shortcuts, then turn on **Steadmo CamAPS FX shortcuts** in Accessibility
+   (allow restricted settings first, as above, if it's greyed out).
+4. Wait for the next CamAPS FX update. The trend arrow appears after 5 minutes of
    readings. "Show CamAPS FX notification" shows exactly what Steadmo read.
 
 ## Modules

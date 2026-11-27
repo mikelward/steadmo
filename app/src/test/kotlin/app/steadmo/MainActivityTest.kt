@@ -51,6 +51,13 @@ class MainActivityTest {
         assertEquals("https://github.com/mikelward/steadmo/releases/latest/download/steadmo-debug.apk", intent.dataString)
     }
 
+    @Test fun `CamAPS FX shortcuts opens Accessibility settings`() {
+        compose.onNodeWithContentDescription("More options").performClick()
+        compose.onNodeWithText("CamAPS FX shortcuts").performClick()
+        compose.onNodeWithText("Open settings").performClick()
+        assertEquals(Settings.ACTION_ACCESSIBILITY_SETTINGS, shadowOf(app).nextStartedActivity.action)
+    }
+
     @Test fun `Known issues opens the GitHub issues`() {
         compose.onNodeWithContentDescription("More options").performClick()
         compose.onNodeWithText("Known issues").performClick()

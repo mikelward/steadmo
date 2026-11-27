@@ -17,6 +17,7 @@ import androidx.compose.foundation.layout.safeDrawingPadding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.AssistChip
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
@@ -48,6 +49,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import app.steadmo.core.AlertPolicy
+import app.steadmo.core.CamapsGoal
 import kotlinx.coroutines.delay
 import kotlin.math.abs
 
@@ -63,12 +65,15 @@ fun HomeScreen(
     onAllowNotifications: () -> Unit,
     onOpenCamaps: () -> Unit,
     onMeal: (Int) -> Unit,
+    onMode: (CamapsGoal.Mode) -> Unit = { onOpenCamaps() },
     onMinimizeCamaps: () -> Unit = {},
     onReportBug: () -> Unit = {},
     onShowDisclaimer: () -> Unit = {},
     onOpenAppInfo: () -> Unit = {},
     onGetLatest: () -> Unit = {},
     onKnownIssues: () -> Unit = {},
+    shortcutsOn: Boolean = false,
+    onOpenShortcutsSettings: () -> Unit = {},
     clock: () -> Long = System::currentTimeMillis,
     ticking: Boolean = true,
 ) {
@@ -90,12 +95,22 @@ fun HomeScreen(
                 .padding(horizontal = 16.dp, vertical = 12.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp),
         ) {
+            var showingShortcuts by remember { mutableStateOf(false) }
             TopBar(
                 onGetLatest = onGetLatest,
                 onKnownIssues = onKnownIssues,
                 onReportBug = onReportBug,
                 onShowDisclaimer = onShowDisclaimer,
+                onCamapsShortcuts = { showingShortcuts = true },
             )
+            if (showingShortcuts) {
+                ShortcutsDialog(
+                    on = shortcutsOn,
+                    onOpenSettings = { showingShortcuts = false; onOpenShortcutsSettings() },
+                    onOpenAppInfo = { showingShortcuts = false; onOpenAppInfo() },
+                    onDismiss = { showingShortcuts = false },
+                )
+            }
             if (!listenerAllowed) {
                 SetupCard(
                     "Allow notification access",
@@ -147,8 +162,8 @@ fun HomeScreen(
             }
 
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                OutlinedButton(onClick = onOpenCamaps, modifier = Modifier.weight(1f)) { Text("Boost") }
-                OutlinedButton(onClick = onOpenCamaps, modifier = Modifier.weight(1f)) { Text("Ease-off") }
+                OutlinedButton(onClick = { onMode(CamapsGoal.BOOST) }, modifier = Modifier.weight(1f)) { Text("Boost") }
+                OutlinedButton(onClick = { onMode(CamapsGoal.EASE_OFF) }, modifier = Modifier.weight(1f)) { Text("Ease-off") }
             }
             Text("Meal", style = MaterialTheme.typography.titleSmall)
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -231,6 +246,7 @@ private fun TopBar(
     onKnownIssues: () -> Unit,
     onReportBug: () -> Unit,
     onShowDisclaimer: () -> Unit,
+    onCamapsShortcuts: () -> Unit,
 ) {
     var open by remember { mutableStateOf(false) }
     Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
@@ -240,6 +256,7 @@ private fun TopBar(
                 Icon(painterResource(R.drawable.ic_more_vert), contentDescription = "More options")
             }
             DropdownMenu(expanded = open, onDismissRequest = { open = false }) {
+                DropdownMenuItem(text = { Text("CamAPS FX shortcuts") }, onClick = { open = false; onCamapsShortcuts() })
                 DropdownMenuItem(text = { Text("Get latest version") }, onClick = { open = false; onGetLatest() })
                 DropdownMenuItem(text = { Text("Known issues") }, onClick = { open = false; onKnownIssues() })
                 DropdownMenuItem(text = { Text("Report a bug") }, onClick = { open = false; onReportBug() })
@@ -247,6 +264,46 @@ private fun TopBar(
             }
         }
     }
+}
+
+/**
+ * What CamAPS FX shortcuts do and risk, shown before the user turns it on in
+ * Android's Accessibility settings (SPEC.md §4.6).
+ */
+@Composable
+internal fun ShortcutsDialog(on: Boolean, onOpenSettings: () -> Unit, onOpenAppInfo: () -> Unit, onDismiss: () -> Unit) {
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text("CamAPS FX shortcuts") },
+        text = {
+            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                Text(
+                    "Steadmo's meal, Boost and Ease-off buttons go straight to that screen in CamAPS FX. " +
+                        "Meal buttons enter the carbs, up to 60 g. You check the bolus and deliver it in " +
+                        "CamAPS FX, and confirm Boost and Ease-off there. Steadmo never delivers insulin.",
+                )
+                Text(
+                    "It uses Android accessibility, which lets it see and tap CamAPS FX's screens, and no other app's.",
+                )
+                Text(
+                    "A CamAPS FX update can stop it working, or make it tap or type in the wrong place, so " +
+                        "check every time. Meal grams are copied too, to paste instead.",
+                )
+                Text(
+                    if (on) "They're on." else "They're off. Turn on Steadmo CamAPS FX shortcuts in Accessibility. If it's " +
+                        "greyed out, allow restricted settings in App info first.",
+                    fontWeight = FontWeight.Bold,
+                )
+            }
+        },
+        confirmButton = { TextButton(onClick = onOpenSettings) { Text("Open settings") } },
+        dismissButton = {
+            Row {
+                if (!on) TextButton(onClick = onOpenAppInfo) { Text("App info") }
+                TextButton(onClick = onDismiss) { Text("Close") }
+            }
+        },
+    )
 }
 
 @Composable

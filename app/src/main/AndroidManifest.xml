@@ -75,5 +75,19 @@
                 android:name="android.service.notification.default_filter_types"
                 android:value="ongoing|silent|alerting" />
         </service>
+
+        <!-- CamAPS FX shortcuts (SPEC.md §4.6), off until the user turns it on in Accessibility. -->
+        <service
+            android:name=".CamapsShortcutsService"
+            android:exported="true"
+            android:label="@string/shortcuts_label"
+            android:permission="android.permission.BIND_ACCESSIBILITY_SERVICE">
+            <intent-filter>
+                <action android:name="android.accessibilityservice.AccessibilityService" />
+            </intent-filter>
+            <meta-data
+                android:name="android.accessibilityservice"
+                android:resource="@xml/camaps_shortcuts" />
+        </service>
     </application>
 </manifest>

@@ -44,7 +44,7 @@ The app follows the system light or dark setting, with Material You colors. Rang
 | # | Decision | Rationale |
 |---|---|---|
 | D1 | **CamAPS FX is the only source for the MVP** | The Dexcom G7 app can't run alongside CamAPS FX on the same phone, and CamAPS FX already receives the G7's readings. Other sources wait (`TODO.md`). |
-| D2 | **Read, never dose** | No public CamAPS FX or Ypsopump API exists; automating the confirm tap would bypass a medical-device safety step. Actions copy the amount and open CamAPS FX. |
+| D2 | **Read, never dose** | No public CamAPS FX or Ypsopump API exists; automating the confirm tap would bypass a medical-device safety step. Actions copy the amount and open CamAPS FX. CamAPS FX shortcuts (§4.6), which the user turns on, also tap through to the meal entry and enter the carbs, or open Boost or Ease-off's dialog: CamAPS FX exposes no screen but its launcher (checked on v1.4), and the user asked for it. The only confirm they press is the Carbohydrates dialog's, which enters up to 60 g into the bolus calculator; Next and delivering stay manual. |
 | D3 | **Read CamAPS FX's "My diabetes info" notification** with a `NotificationListenerService` | It shows the value, unit, Auto mode state and a trend arrow, updates in real time, and needs no network. It is a custom layout, so its views are inflated and their text read in layout order. |
 | D4 | **Compute the trend in Steadmo** | CamAPS FX draws its arrow as an image, with no text to read. Steadmo fits its own slope to the readings, so the arrow works the same everywhere Steadmo shows it. The CamAPS image is logged so the two can be compared (`TODO.md`). |
 | D5 | **Logic in a plain-Kotlin `:core`** | Parser, trend and alerts are tested on the JVM without an SDK. |
@@ -118,6 +118,48 @@ A resizable widget, from 2x1 to a full page (4x5 by default):
 It redraws on each new reading, and once more 10 minutes later so a stale value greys out
 without waiting for the system's 30-minute refresh.
 
+### 4.6 CamAPS FX shortcuts
+
+CamAPS FX opens only at its launch screen, so Steadmo's buttons can't open its meal,
+Boost or Ease-off screens directly. With CamAPS FX shortcuts on, an accessibility service
+does the navigation, from the app's buttons and the widget's:
+
+- Off until the user turns on "Steadmo CamAPS FX shortcuts" in Android's Accessibility
+  settings. ⋮ → CamAPS FX shortcuts explains what they do and their risks first, and
+  links there.
+- The service sees CamAPS FX's packages only (its config's `packageNames`), and can't
+  perform gestures. It acts only within 20 seconds of a Steadmo button, only while CamAPS
+  FX is the app in front (it never reads another app's screen), and only on views that are
+  on screen.
+- `CamapsTask` in `:core` decides each step from the screen's views. In CamAPS FX v1.4
+  (from the maintainer's phone):
+  - Meal: the meal tab (the second of three unlabeled icon tabs), the Carbs "---" cell,
+    then it types the grams into the Carbohydrates dialog. Up to 60 g, on a dialog with
+    one field, carbs on it and nothing about insulin anywhere (ids included), once the
+    field shows exactly those grams, it taps that dialog's only Confirm, which enters them into
+    the bolus calculator; over 60 g it stops and the user confirms. The user always
+    checks the bolus and taps Next in CamAPS FX.
+  - Boost or Ease-off: the home tab if needed, then the button reading exactly "Boost" or
+    "Ease-off", which opens CamAPS FX's own dialog for the user to set and confirm.
+- A carbs field is one marked as carbs by its hint or id, by the label beside it when it
+  is that row's only field, or as the only field on a dialog about carbs. A field with
+  anything about insulin, units, bolus or dose beside it, or on its dialog, is never one.
+- It never taps a button that reads like confirming, delivering, saving, Auto mode or a
+  setting, nor a slider or switch, nor anything on a screen with a field (forms are
+  where confirm buttons are), except the carbs dialog's Confirm above, and presses
+  nothing after its last step. Boost and Ease-off
+  are tapped only on an exact match, never "Stop Boost" or similar.
+- No repeats: within a minute of a meal shortcut (any grams), or of the same Boost or
+  Ease-off shortcut, the button only opens CamAPS FX and says why, so a double tap or a
+  second meal can't enter carbs twice. The time is kept across restarts. It is cleared
+  only when a shortcut fails before typing anything; once grams are typed, a later
+  failure keeps it, and says the grams were typed but not confirmed.
+- Unsure means stop: two candidate fields or buttons, a form with no carbs field, or not
+  there within 3 taps or 20 seconds. It says so in a toast; a meal's grams are always
+  copied to paste instead.
+- Each screen it acts on is logged as its structure, with every digit masked, so its
+  matching can be tuned from a bug report without recording glucose or doses.
+
 ### 4.4 CamAPS FX's notification
 
 Steadmo reads CamAPS FX's "My diabetes info" notification, so the user keeps it on but can
@@ -127,7 +169,8 @@ notification" card, with a button to that channel's settings, until it is minimi
 
 ## 5. Privacy
 
-Glucose data stays on the device. The app has no `INTERNET` permission. The only way
+Glucose data stays on the device. The app has no `INTERNET` permission. CamAPS FX shortcuts
+reads CamAPS FX's screens only while filling a meal, and logs them with digits masked. The only way
 anything leaves is a bug report the user sends themselves (§6).
 
 ## 6. Debug log and bug reports
