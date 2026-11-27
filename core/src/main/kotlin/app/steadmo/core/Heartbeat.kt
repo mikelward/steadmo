@@ -34,7 +34,7 @@ object Heartbeat {
         if (quiet < QUIET_MILLIS) return Decision.CheckAt(latest + QUIET_MILLIS)
         if (quiet > GIVE_UP_MILLIS) return Decision.Idle
         val warned = lastWarned?.takeIf { it >= latest }
-        if (warned != null && now - warned < REPEAT_MILLIS) return Decision.CheckAt(warned + REPEAT_MILLIS)
+        if (warned != null && now - warned in 0 until REPEAT_MILLIS) return Decision.CheckAt(warned + REPEAT_MILLIS)
         return Decision.Warn(quiet / 60_000, now + REPEAT_MILLIS)
     }
 }

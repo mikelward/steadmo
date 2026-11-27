@@ -28,7 +28,7 @@ class AlertPolicy(private val lastAlerted: MutableMap<AlertKind, Long> = mutable
         val alert = applying(latest, trend, unit) ?: return null
         if (Treatment.explains(alert.kind, treatedAt, latest.timeMillis)) return null
         val last = lastAlerted[alert.kind]
-        if (last != null && latest.timeMillis - last < REPEAT_MILLIS) return null
+        if (last != null && latest.timeMillis - last in 0 until REPEAT_MILLIS) return null
         lastAlerted[alert.kind] = latest.timeMillis
         return alert
     }

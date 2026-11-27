@@ -29,4 +29,8 @@ class HeartbeatTest {
     @Test fun `a warning before the latest reading doesn't count`() {
         assertEquals(Decision.Warn(16, 66 * min), Heartbeat.check(20 * min, 36 * min, lastWarned = 10 * min))
     }
+
+    @Test fun `a clock set back doesn't suppress the warning`() {
+        assertEquals(Decision.Warn(20, 50 * min), Heartbeat.check(0, 20 * min, lastWarned = 40 * min))
+    }
 }
