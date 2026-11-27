@@ -237,6 +237,28 @@ class HomeScreenTest {
         assertEquals(1, asked)
     }
 
+    @Test fun `Meal reminder turns on and off and picks a time`() {
+        val toggles = mutableListOf<Boolean>()
+        var picks = 0
+        compose.setContent {
+            SteadmoTheme(dark = false) {
+                HomeScreen(
+                    Samples.rising(), true, true, {}, {}, {}, {},
+                    mealReminderOn = true, mealReminderTime = "18:00",
+                    onMealReminderOn = { toggles += it }, onPickMealReminderTime = { picks++ }, ticking = false,
+                )
+            }
+        }
+        compose.onNodeWithContentDescription("More options").performClick()
+        compose.onNodeWithText("Meal reminder").performClick()
+        compose.onNodeWithText("Remind me").performClick()
+        assertEquals(listOf(false), toggles)
+        compose.onNodeWithText("At 18:00").performClick()
+        assertEquals(1, picks)
+        compose.onNodeWithText("Close").performClick()
+        compose.onNodeWithText("Remind me").assertDoesNotExist()
+    }
+
     @Test fun `Units picks mmol per L or mg per dL`() {
         val picked = mutableListOf<GlucoseUnit>()
         compose.setContent {

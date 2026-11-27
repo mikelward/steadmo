@@ -20,6 +20,8 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.selection.selectable
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.RadioButton
+import androidx.compose.material3.Switch
+import androidx.compose.foundation.selection.toggleable
 import androidx.compose.ui.semantics.Role
 import androidx.compose.material3.AssistChip
 import androidx.compose.material3.Button
@@ -88,6 +90,10 @@ fun HomeScreen(
     onOpenShortcutsSettings: () -> Unit = {},
     onSetUnit: (GlucoseUnit) -> Unit = {},
     alertsSilenced: Boolean = false,
+    mealReminderOn: Boolean = true,
+    mealReminderTime: String = "18:00",
+    onMealReminderOn: (Boolean) -> Unit = {},
+    onPickMealReminderTime: () -> Unit = {},
     fullScreenAllowed: Boolean = true,
     onAllowFullScreen: () -> Unit = {},
     onOpenAlertSettings: () -> Unit = {},
@@ -115,6 +121,7 @@ fun HomeScreen(
             var showingShortcuts by remember { mutableStateOf(false) }
             var showingUnits by remember { mutableStateOf(false) }
             var showingAbout by remember { mutableStateOf(false) }
+            var showingReminder by remember { mutableStateOf(false) }
             TopBar(
                 onGetLatest = onGetLatest,
                 onKnownIssues = onKnownIssues,
@@ -123,7 +130,17 @@ fun HomeScreen(
                 onCamapsShortcuts = { showingShortcuts = true },
                 onUnits = { showingUnits = true },
                 onAbout = { showingAbout = true },
+                onMealReminder = { showingReminder = true },
             )
+            if (showingReminder) {
+                MealReminderDialog(
+                    on = mealReminderOn,
+                    time = mealReminderTime,
+                    onToggle = onMealReminderOn,
+                    onPickTime = onPickMealReminderTime,
+                    onDismiss = { showingReminder = false },
+                )
+            }
             if (showingAbout) {
                 AboutDialog(version = version, onSourceCode = onSourceCode, onDismiss = { showingAbout = false })
             }
@@ -308,6 +325,7 @@ private fun TopBar(
     onCamapsShortcuts: () -> Unit,
     onUnits: () -> Unit,
     onAbout: () -> Unit,
+    onMealReminder: () -> Unit,
 ) {
     var open by remember { mutableStateOf(false) }
     Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
@@ -317,6 +335,7 @@ private fun TopBar(
                 Icon(painterResource(R.drawable.ic_more_vert), contentDescription = "More options")
             }
             DropdownMenu(expanded = open, onDismissRequest = { open = false }) {
+                DropdownMenuItem(text = { Text("Meal reminder") }, onClick = { open = false; onMealReminder() })
                 DropdownMenuItem(text = { Text("Units") }, onClick = { open = false; onUnits() })
                 DropdownMenuItem(text = { Text("CamAPS FX shortcuts") }, onClick = { open = false; onCamapsShortcuts() })
                 DropdownMenuItem(text = { Text("Get latest version") }, onClick = { open = false; onGetLatest() })
@@ -413,6 +432,37 @@ internal fun AboutDialog(version: String, onSourceCode: () -> Unit, onDismiss: (
                 TextButton(onClick = onSourceCode) { Text("Source code") }
             }
         },
+    )
+}
+
+/** The daily meal reminder: on or off, and when (SPEC.md §4.13). */
+@Composable
+internal fun MealReminderDialog(
+    on: Boolean,
+    time: String,
+    onToggle: (Boolean) -> Unit,
+    onPickTime: () -> Unit,
+    onDismiss: () -> Unit,
+) {
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text("Meal reminder") },
+        text = {
+            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                Text("Each day, a reminder to bolus before dinner, with Bolus and remind me in 30 or 60 minutes.")
+                Row(
+                    modifier = Modifier.fillMaxWidth()
+                        .toggleable(value = on, role = Role.Switch, onValueChange = onToggle)
+                        .padding(vertical = 8.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    Text("Remind me", style = MaterialTheme.typography.bodyLarge, modifier = Modifier.weight(1f))
+                    Switch(checked = on, onCheckedChange = null)
+                }
+                OutlinedButton(onClick = onPickTime, enabled = on) { Text("At $time") }
+            }
+        },
+        confirmButton = { TextButton(onClick = onDismiss) { Text("Close") } },
     )
 }
 

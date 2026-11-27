@@ -103,6 +103,20 @@
             </intent-filter>
         </service>
 
+        <!-- The daily meal reminder and its snoozes (SPEC.md §4.13). -->
+        <receiver
+            android:name=".MealReminderReceiver"
+            android:exported="false" />
+        <!-- Exported only for these system broadcasts, which other apps can't send. -->
+        <receiver
+            android:name=".TimeChangeReceiver"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.intent.action.TIMEZONE_CHANGED" />
+                <action android:name="android.intent.action.TIME_SET" />
+            </intent-filter>
+        </receiver>
+
         <!-- Shares bug report screenshots with the app the user picks. -->
         <provider
             android:name="androidx.core.content.FileProvider"

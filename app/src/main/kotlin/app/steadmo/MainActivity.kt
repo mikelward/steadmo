@@ -22,6 +22,8 @@ class MainActivity : ComponentActivity() {
     private var notificationsAllowed by mutableStateOf(false)
     private var alertsSilenced by mutableStateOf(false)
     private var fullScreenAllowed by mutableStateOf(true)
+    private var mealReminderOn by mutableStateOf(true)
+    private var mealReminderTime by mutableStateOf(app.steadmo.core.MealReminder.DEFAULT_TIME)
     private var suggestShortcuts by mutableStateOf(false)
     private var shortcutsOn by mutableStateOf(false)
     private var disclaimerAccepted by mutableStateOf(false)
@@ -78,6 +80,15 @@ class MainActivity : ComponentActivity() {
                     onOpenShortcutsSettings = ::openAccessibilitySettings,
                     onSetUnit = repository::setUnit,
                     alertsSilenced = alertsSilenced,
+                    mealReminderOn = mealReminderOn,
+                    mealReminderTime = android.text.format.DateFormat.getTimeFormat(this).format(
+                        java.util.Date.from(mealReminderTime.atDate(java.time.LocalDate.now()).atZone(java.time.ZoneId.systemDefault()).toInstant()),
+                    ),
+                    onMealReminderOn = { on ->
+                        MealReminders.set(this, on, mealReminderTime)
+                        mealReminderOn = on
+                    },
+                    onPickMealReminderTime = ::pickMealReminderTime,
                     fullScreenAllowed = fullScreenAllowed,
                     onAllowFullScreen = ::openFullScreenSettings,
                     onOpenAlertSettings = ::openAlertSettings,
@@ -94,6 +105,8 @@ class MainActivity : ComponentActivity() {
             checkSelfPermission(Manifest.permission.POST_NOTIFICATIONS) == PackageManager.PERMISSION_GRANTED
         shortcutsOn = CamapsShortcuts.enabled(this)
         alertsSilenced = StatusNotifier.alertsSilenced(this)
+        mealReminderOn = MealReminders.enabled(this)
+        mealReminderTime = MealReminders.time(this)
         fullScreenAllowed = getSystemService(android.app.NotificationManager::class.java).canUseFullScreenIntent()
         suggestShortcuts = !shortcutsOn && !getSharedPreferences(PREFS_UI, MODE_PRIVATE).getBoolean(KEY_SHORTCUTS_DISMISSED, false)
         SteadmoLog.event(
@@ -135,6 +148,19 @@ class MainActivity : ComponentActivity() {
         const val SOURCE_URL = "https://github.com/mikelward/steadmo"
         private const val PREFS_UI = "ui"
         private const val KEY_SHORTCUTS_DISMISSED = "shortcuts_suggestion_dismissed"
+    }
+
+    private fun pickMealReminderTime() {
+        android.app.TimePickerDialog(
+            this,
+            { _, hour, minute ->
+                mealReminderTime = java.time.LocalTime.of(hour, minute)
+                MealReminders.set(this, mealReminderOn, mealReminderTime)
+            },
+            mealReminderTime.hour,
+            mealReminderTime.minute,
+            android.text.format.DateFormat.is24HourFormat(this),
+        ).show()
     }
 
     /** Android 14+'s "Full screen intents" page for Steadmo. */
