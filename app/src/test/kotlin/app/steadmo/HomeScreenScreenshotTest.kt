@@ -42,6 +42,11 @@ class HomeScreenScreenshotTest {
     @Test fun treated() = both("home-treated") {
         home(Samples.rising().copy(treatments = listOf(Samples.NOW - 60 * MINUTE)))
     }
+    @Test fun urgentLow() = both("urgent-low") { { UrgentLowScreen("2.8 mmol/L", "just now", stale = false, onTreated = {}, onOk = {}) } }
+    @Test fun urgentLowStale() = both("urgent-low-stale") { { UrgentLowScreen("2.8 mmol/L", "12 min ago", stale = true, onTreated = {}, onOk = {}) } }
+    @Test fun fullScreenCard() = both("home-full-screen") {
+        { HomeScreen(Samples.rising(), true, true, {}, {}, {}, {}, fullScreenAllowed = false, clock = { Samples.NOW }, ticking = false) }
+    }
     @Test fun setup() = both("home-setup") { home(GlucoseState(), listener = false, notifications = false) }
 
     @Test fun aboutLight() = dialog("about", dark = false) { AboutDialog("48+abc1234", onSourceCode = {}, onDismiss = {}) }

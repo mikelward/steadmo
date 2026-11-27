@@ -199,8 +199,11 @@ usage and the alarm category, so Do Not Disturb lets it through wherever it lets
 through, and insistent, so it repeats until acknowledged. OK (or swiping it away) quiets it
 for 15 minutes; a reading at or above 3.0 clears it and the acknowledgement. The channel
 asks to bypass Do Not Disturb, which Android honours only with notification policy
-access. It adds to CamAPS FX's and the sensor's own urgent low alarms and never replaces
-them.
+access. If it sounds for 5 minutes without OK or Treated, the next
+reading makes it full screen, over the lock screen and turning the screen on, with
+Treated and OK. That needs `USE_FULL_SCREEN_INTENT`; when Android hasn't granted it, the
+home screen offers its settings page. It adds to CamAPS FX's and the sensor's own urgent
+low alarms and never replaces them.
 
 ### 4.9 Launcher shortcuts
 

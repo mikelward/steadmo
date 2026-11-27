@@ -15,6 +15,13 @@ fun Reading.urgentLow(): Boolean = bound == Bound.BELOW || mmol < URGENT_LOW_MMO
 object UrgentLow {
     const val SNOOZE_MILLIS = 15 * 60_000L
 
+    /** Ignored this long (no OK or Treated), the alarm takes over the screen. */
+    const val ESCALATE_MILLIS = 5 * 60_000L
+
+    /** Whether an alarm sounding since [alertingSince] has been ignored long enough by [now]. */
+    fun escalates(alertingSince: Long?, now: Long): Boolean =
+        alertingSince != null && now - alertingSince >= ESCALATE_MILLIS
+
     enum class Decision { ALERT, SNOOZED, CLEAR }
 
     fun decide(latest: Reading, acknowledgedAt: Long?): Decision = when {

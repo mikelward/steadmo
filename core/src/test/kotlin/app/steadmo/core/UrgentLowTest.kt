@@ -28,6 +28,12 @@ class UrgentLowTest {
         assertEquals(Decision.ALERT, UrgentLow.decide(Reading(0, 2.7), acknowledgedAt = 5 * min))
     }
 
+    @Test fun `takes over the screen after 5 ignored minutes`() {
+        assertFalse(UrgentLow.escalates(null, 10 * min))
+        assertFalse(UrgentLow.escalates(0, 4 * min))
+        assertTrue(UrgentLow.escalates(0, 5 * min))
+    }
+
     @Test fun `clears once glucose is out of the urgent range`() {
         assertEquals(Decision.CLEAR, UrgentLow.decide(Reading(0, 3.4), acknowledgedAt = null))
     }

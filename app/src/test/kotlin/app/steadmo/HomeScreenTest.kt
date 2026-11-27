@@ -225,6 +225,18 @@ class HomeScreenTest {
         assertEquals(1, other)
     }
 
+    @Test fun `asks to let urgent lows fill the screen`() {
+        var asked = 0
+        compose.setContent {
+            SteadmoTheme(dark = false) {
+                HomeScreen(Samples.rising(), true, true, {}, {}, {}, {}, fullScreenAllowed = false, onAllowFullScreen = { asked++ }, ticking = false)
+            }
+        }
+        compose.onNodeWithText("Let urgent lows fill the screen").assertIsDisplayed()
+        compose.onNodeWithText("Allow").performClick()
+        assertEquals(1, asked)
+    }
+
     @Test fun `Units picks mmol per L or mg per dL`() {
         val picked = mutableListOf<GlucoseUnit>()
         compose.setContent {

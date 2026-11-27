@@ -62,6 +62,21 @@ class UrgentLowTest {
         assertNotNull(app.posted(4))
     }
 
+    @Test fun `ignored for 5 minutes, it takes over the screen`() {
+        post("2.8", 0)
+        assertNull(app.posted(4)!!.fullScreenIntent)
+        post("2.7", 5 * MINUTE)
+        val n = app.posted(4)!!
+        assertEquals(
+            UrgentLowActivity::class.java.name,
+            org.robolectric.Shadows.shadowOf(n.fullScreenIntent).savedIntent.component!!.className,
+        )
+        // OK starts the count again.
+        UrgentLowAckReceiver().onReceive(app, Intent())
+        post("2.7", 16 * MINUTE)
+        assertNull(app.posted(4)!!.fullScreenIntent)
+    }
+
     @Test fun `below the sensor's range is urgent too, and recovery clears it`() {
         post("<2.2", 0)
         assertNotNull(app.posted(4))

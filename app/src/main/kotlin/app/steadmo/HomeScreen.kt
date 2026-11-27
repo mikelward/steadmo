@@ -88,6 +88,8 @@ fun HomeScreen(
     onOpenShortcutsSettings: () -> Unit = {},
     onSetUnit: (GlucoseUnit) -> Unit = {},
     alertsSilenced: Boolean = false,
+    fullScreenAllowed: Boolean = true,
+    onAllowFullScreen: () -> Unit = {},
     onOpenAlertSettings: () -> Unit = {},
     clock: () -> Long = System::currentTimeMillis,
     ticking: Boolean = true,
@@ -176,6 +178,14 @@ fun HomeScreen(
                     "Steadmo's alerts won't sound, including when glucose stops coming. Set Alerts to Default.",
                     "Open settings",
                     onOpenAlertSettings,
+                )
+            }
+            if (notificationsAllowed && !fullScreenAllowed) {
+                SetupCard(
+                    "Let urgent lows fill the screen",
+                    "If an urgent low alarm goes unanswered for 5 minutes, Steadmo shows it full screen, even on the lock screen.",
+                    "Allow",
+                    onAllowFullScreen,
                 )
             }
 
