@@ -19,13 +19,21 @@ data class TrendAlert(val kind: AlertKind, val arrow: TrendArrow, val title: Str
 class AlertPolicy(private val lastAlerted: MutableMap<AlertKind, Long> = mutableMapOf()) {
 
     fun evaluate(latest: Reading, trend: Trend?): TrendAlert? {
-        trend ?: return null
-        if (latest.bound != null) return null
-        val alert = candidate(latest, trend) ?: return null
+        val alert = applying(latest, trend) ?: return null
         val last = lastAlerted[alert.kind]
         if (last != null && latest.timeMillis - last < REPEAT_MILLIS) return null
         lastAlerted[alert.kind] = latest.timeMillis
         return alert
+    }
+
+    /**
+     * The alert [latest] and [trend] call for, ignoring repeat limits: what a
+     * shown alert must still match to stay up.
+     */
+    fun applying(latest: Reading, trend: Trend?): TrendAlert? {
+        trend ?: return null
+        if (latest.bound != null) return null
+        return candidate(latest, trend)
     }
 
     private fun candidate(latest: Reading, trend: Trend): TrendAlert? {

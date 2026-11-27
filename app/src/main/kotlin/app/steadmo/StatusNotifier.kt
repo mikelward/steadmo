@@ -87,6 +87,8 @@ class StatusNotifier(private val context: Context, private val clock: () -> Long
         post(ID_ALERT, notification)
     }
 
+    fun cancelAlert() = manager.cancel(ID_ALERT)
+
     private fun post(id: Int, notification: Notification) {
         if (context.checkSelfPermission(android.Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED) {
             Log.i(SteadmoApp.TAG, "Notifications aren't allowed; not posting $id")

@@ -75,7 +75,7 @@ old it is. Steadmo's notification disappears 15 minutes after its reading.
 
 Only for a reading under 2 minutes old: a replayed reading is history, and its
 projection would be about a time already past. Each alert disappears 15 minutes after its
-reading. In priority order, each kind at most every 30 minutes:
+reading, or sooner when a newer reading no longer calls for it. In priority order, each kind at most every 30 minutes:
 
 1. **Low soon**: falling, and projected below 3.9 within 20 minutes.
 2. **Falling fast**: a double down arrow.
