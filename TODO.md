@@ -8,6 +8,9 @@
 - [x] Fast rise and fall, low-soon and high-soon alerts.
 - [x] Home screen: value, arrow, age, Auto mode, 3-hour graph, Boost, Ease-off and meal
       buttons that open CamAPS FX.
+- [x] Unit tests for `:core` and `:app` (Robolectric), Roborazzi screenshots in light and
+      dark, and a 95% line-coverage gate (Kover), all in CI.
+- [x] Follow the system light or dark setting.
 - [ ] Try on a real phone: check the parsed text and the arrow against CamAPS FX's own.
 - [ ] Map CamAPS FX's arrow image (logged as a pixel hash) to `TrendArrow`, and show
       both if they disagree.
@@ -18,17 +21,19 @@
 
 - [ ] Full-page home screen widget (Glance): value, arrow, graph, Auto mode, Boost,
       Ease-off, 20/40/45/Other.
-- [ ] Wear OS tile and complication.
 - [ ] Launcher shortcuts and Quick Settings tiles for the meal presets.
-- [ ] CI screenshot tests (Roborazzi), as in the sibling apps.
 
 ## Phase 3: more sources
 
 - [ ] Deliveroo, Uber Eats and Just Eat order notifications: suggest a pre-bolus when the
-      rider is nearby, mirrored to the watch.
+      rider is nearby.
 - [ ] Glooko history (boluses, carbs) for the timeline.
 - [ ] Deep links into CamAPS FX's meal, Boost and Ease-off screens, if it has them.
 - [ ] Optional Accessibility reader for IOB and Boost/Ease-off time left.
+
+## Not in the MVP
+
+- Wear OS: tile, complication and the takeaway prompt on the watch.
 
 ## Decisions needing review
 
