@@ -131,15 +131,49 @@ class CalendarMealRemindersTest {
         assertNull(app.posted(7))
     }
 
-    @Test fun `turned off, a pending calendar reminder says nothing`() {
+    @Test fun `turned off, a pending calendar reminder says nothing and is not marked reminded`() {
+        shadowOf(app).grantPermissions(Manifest.permission.READ_CALENDAR)
         CalendarMealReminders.set(app, false)
         MealReminderReceiver().onReceive(
             app,
             Intent(app, MealReminderReceiver::class.java).setAction(CalendarMealReminders.ACTION)
-                .putExtra(CalendarMealReminders.EXTRA_TITLE, "Lunch"),
+                .putExtra(CalendarMealReminders.EXTRA_TITLE, dinner.title)
+                .putExtra(CalendarMealReminders.EXTRA_START, dinner.start)
+                .putExtra(CalendarMealReminders.EXTRA_KEY, dinner.key),
         )
         assertNull(app.posted(7))
         assertEquals(0, WorkManager.getInstance(app).getWorkInfosForUniqueWork("calendar-meals").get().count { !it.state.isFinished })
+        // Turning it back on before the meal still schedules the reminder.
+        CalendarMealReminders.set(app, true)
+        CalendarMealReminders.scan(app, now) { listOf(dinner) }
+        assertEquals(1, calendarAlarms().size)
+    }
+
+    @Test fun `calendar query excludes hidden calendars, canceled events and declined invites`() {
+        shadowOf(app).grantPermissions(Manifest.permission.READ_CALENDAR)
+        var capturedSelection: String? = null
+        val provider = object : android.content.ContentProvider() {
+            override fun onCreate() = true
+            override fun query(
+                uri: android.net.Uri,
+                projection: Array<out String>?,
+                selection: String?,
+                selectionArgs: Array<out String>?,
+                sortOrder: String?,
+            ): android.database.Cursor {
+                capturedSelection = selection
+                return android.database.MatrixCursor(projection ?: emptyArray())
+            }
+            override fun getType(uri: android.net.Uri): String? = null
+            override fun insert(uri: android.net.Uri, values: android.content.ContentValues?): android.net.Uri? = null
+            override fun delete(uri: android.net.Uri, selection: String?, selectionArgs: Array<out String>?) = 0
+            override fun update(uri: android.net.Uri, values: android.content.ContentValues?, selection: String?, selectionArgs: Array<out String>?) = 0
+        }
+        org.robolectric.shadows.ShadowContentResolver.registerProviderInternal(android.provider.CalendarContract.AUTHORITY, provider)
+        CalendarMealReminders.set(app, true)
+        assertTrue(capturedSelection.orEmpty().contains(android.provider.CalendarContract.Instances.VISIBLE))
+        assertTrue(capturedSelection.orEmpty().contains(android.provider.CalendarContract.Instances.STATUS))
+        assertTrue(capturedSelection.orEmpty().contains(android.provider.CalendarContract.Instances.SELF_ATTENDEE_STATUS))
     }
 
     @Test fun `the worker scans`() {
