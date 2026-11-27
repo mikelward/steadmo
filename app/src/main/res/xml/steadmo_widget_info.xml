@@ -1,12 +1,13 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- Resizable from a 2x1 glance up to a full page; 4x5 shows everything. -->
+<!-- Resizable from 180x90 dp (the reading, arrow, time and mode just fit; WidgetScreenshotTest
+     records that size) up to a full page; 4x5 shows everything. -->
 <appwidget-provider xmlns:android="http://schemas.android.com/apk/res/android"
     android:description="@string/widget_description"
     android:initialLayout="@layout/glance_default_loading_layout"
-    android:minWidth="110dp"
-    android:minHeight="50dp"
-    android:minResizeWidth="110dp"
-    android:minResizeHeight="50dp"
+    android:minWidth="180dp"
+    android:minHeight="90dp"
+    android:minResizeWidth="180dp"
+    android:minResizeHeight="90dp"
     android:resizeMode="horizontal|vertical"
     android:targetCellWidth="4"
     android:targetCellHeight="5"

@@ -33,7 +33,7 @@ class WidgetModelTest {
         assertFalse(m.stale)
         assertEquals(fmt.format(Samples.NOW), m.time)
         assertEquals("+0.12/min", m.rate)
-        assertEquals("On", m.autoMode)
+        assertEquals("Auto mode on", m.autoMode)
     }
 
     @Test fun `old readings are stale, and a single one has no trend`() {
@@ -42,6 +42,11 @@ class WidgetModelTest {
         assertNull(m.rate)
         assertEquals("No trend yet", m.arrowLabel)
         assertEquals(R.drawable.ic_trend_unknown, m.arrow)
+    }
+
+    @Test fun `an old Auto mode report says when it was`() {
+        val m = WidgetModel.of(Samples.rising(), true, Samples.NOW + 20 * MINUTE, fmt) as WidgetModel.Showing
+        assertEquals("Auto mode on at ${fmt.format(Samples.NOW)}", m.autoMode)
     }
 
     @Test fun `falling fast keeps its sign`() {

@@ -150,8 +150,7 @@ private fun ColumnScope.Showing(model: WidgetModel.Showing, now: Long, size: DpS
             model.rate?.let { Text(it, style = TextStyle(color = GlanceTheme.colors.onSurfaceVariant, fontSize = 13.sp)) }
         }
     }
-    val autoMode = model.autoMode?.let { "Auto mode ${it.lowercase()}" }
-    val status = listOfNotNull(autoMode, if (model.stale) "No new reading for over 10 min" else null).joinToString(" · ")
+    val status = listOfNotNull(model.autoMode, if (model.stale) "No new reading for over 10 min" else null).joinToString(" · ")
     if (status.isNotEmpty()) {
         Text(status, style = TextStyle(color = GlanceTheme.colors.onSurfaceVariant, fontSize = 13.sp))
     }
