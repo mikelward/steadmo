@@ -158,6 +158,16 @@ class GlucoseRepositoryTest {
         assertNull(app.posted(2))
     }
 
+    @Test fun `a recovery clears an alert shown before a restart`() {
+        repository().apply {
+            post("7.0", 0)
+            post("6.0", 5 * MINUTE)
+        }
+        assertNotNull(app.posted(2))
+        repository().post("7.0", 10 * MINUTE)
+        assertNull(app.posted(2))
+    }
+
     @Test fun `a throttled repeat keeps the alert up`() {
         val repo = repository()
         repo.post("15.0", 0)
@@ -182,6 +192,9 @@ class GlucoseRepositoryTest {
         val repo = repository()
         repo.post("7.0", 0)
         repo.post("6.0", 5 * MINUTE)
+        assertTrue(promoted())
+        // Stays promoted across a restart while the low-soon alert is still active.
+        repository().setUnit(GlucoseUnit.MGDL)
         assertTrue(promoted())
     }
 
