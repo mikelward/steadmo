@@ -1,0 +1,23 @@
+# Ignore all dotfiles and dot-directories by default; allowlist below.
+.*
+!/.github
+!/.github/**
+!/.gitignore
+!.gitkeep
+# Claude Code shared config (SessionStart hook + settings) is tracked so remote
+# web sessions pick it up; machine-local overrides stay ignored.
+!/.claude
+!/.claude/**
+/.claude/settings.local.json
+/.claude/worktrees/
+/.claude/scheduled_tasks.lock
+/.claude/scheduled_tasks.json
+
+*.iml
+local.properties
+build/
+/captures
+*.keystore
+*.jks
+hs_err_pid*.log
+replay_pid*.log
