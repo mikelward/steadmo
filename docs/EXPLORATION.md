@@ -1,4 +1,4 @@
-# Bolusmo: exploration
+# Steadmo: exploration
 
 An Android app that gives someone with type 1 diabetes, using an insulin pump and CGM, one place to see and act on their data.
 
@@ -8,17 +8,21 @@ Target setup: **Ypsopump** + **Dexcom G7**, looped by **CamAPS FX**
 
 Interactive mocks: [`mocks.html`](mocks.html).
 
+> **Update, 2026-11-27.** The Dexcom G7 app isn't compatible with CamAPS FX, so the MVP
+> reads only CamAPS FX's "My diabetes info" notification (`SPEC.md` D1). Takeaway orders
+> are Phase 3 in `TODO.md`. The rest of this page is the original research.
+
 ## Main constraint
 
 There is no public API for CamAPS FX or the Ypsopump. The Ypsopump uses heavy
 encryption, and AAPS lists it as not loopable. CamAPS FX holds the pump's
 Bluetooth connection. So:
 
-* Bolusmo **reads** data from notifications, xDrip+, cloud APIs and
+* Steadmo **reads** data from notifications, xDrip+, cloud APIs and
   (optionally) the CamAPS screen through an Accessibility service.
-* Bolusmo **never delivers insulin**. Bolus, Boost and Ease-off actions open
+* Steadmo **never delivers insulin**. Bolus, Boost and Ease-off actions open
   CamAPS FX on the right screen with the amount ready. You confirm there.
-  Bolusmo never automates the confirm tap.
+  Steadmo never automates the confirm tap.
 
 ## Integration routes
 

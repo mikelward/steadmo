@@ -1,4 +1,4 @@
-<title>Bolusmo</title>
+<title>Steadmo</title>
 <meta name="claude:viewport-fit-sides" content="cover">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Sora:wght@500;600;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@500;700&display=swap">
 <style>
@@ -73,6 +73,9 @@ code{font-family:var(--f-data);font-size:.85em;background:var(--chip);padding:.1
 .chips{display:grid;grid-template-columns:repeat(4,1fr);gap:6px}
 .chip{background:var(--dev-surface);border:1px solid var(--dev-line);color:var(--dev-ink);border-radius:12px;padding:9px 0;font:600 14px var(--f-data);text-align:center;cursor:pointer}
 .chip:focus-visible{outline:2px solid var(--accent)}
+.chips.meal .chip{padding:16px 0;font-size:16px}
+.chips.meal .chip[data-g="other"]{background:#3cc2d3;color:#04252a;border:0}
+.arw{display:inline-flex;vertical-align:middle}
 .alert{border-radius:12px;padding:8px 10px;font-size:12.5px;line-height:1.35;display:flex;gap:8px;align-items:flex-start}
 .alert.fall{background:rgba(214,51,74,.18);border:1px solid rgba(255,92,115,.5)}
 .alert.rise{background:rgba(217,138,0,.16);border:1px solid rgba(242,169,59,.5)}
@@ -127,15 +130,15 @@ pre.mermaid{background:var(--surface);border:1px solid var(--line);border-radius
 </style>
 
 <div class="wrap">
-  <div class="eyebrow">Exploration · Android · Ypsopump + Dexcom G7 + CamAPS FX</div>
-  <h1>Bolusmo</h1>
-  <p class="lede">One place to see glucose, loop state and insulin, and to act on them quickly. It reads data from CamAPS FX, Dexcom and Glooko, and sends you to the right app when there is something to do.</p>
+  <div class="eyebrow">Exploration · Android · Ypsopump + Dexcom G7 + CamAPS FX · MVP reads CamAPS FX</div>
+  <h1>Steadmo</h1>
+  <p class="lede">One place to see glucose, loop state and insulin, and to act on them quickly. The MVP reads CamAPS FX's "My diabetes info" notification and sends you to CamAPS FX when there is something to do. Glooko and takeaway orders come later.</p>
 
-  <div class="note crit"><b>Read this first.</b> No official API exists for CamAPS FX or the Ypsopump. Bolusmo can <em>read</em> from them in several ways. It cannot <em>deliver insulin</em> on its own, and it should not try. Every bolus, Boost and Ease-off is confirmed inside CamAPS FX. Bolusmo gets you to that screen in one tap, with the amount ready to enter.</div>
+  <div class="note crit"><b>Read this first.</b> No official API exists for CamAPS FX or the Ypsopump. Steadmo can <em>read</em> from them in several ways. It cannot <em>deliver insulin</em> on its own, and it should not try. Every bolus, Boost and Ease-off is confirmed inside CamAPS FX. Steadmo gets you to that screen in one tap, with the amount ready to enter.</div>
 
   <!-- ============ MOCKS ============ -->
   <h2>The mocks</h2>
-  <p class="prose">Sample data, mmol/L. The buttons are live: try Boost, Ease-off, the carb chips and the Bolus button.</p>
+  <p class="prose">Sample data, mmol/L. The buttons are live: try Boost, Ease-off and the meal presets.</p>
 
   <div class="bench">
     <figure class="figure">
@@ -143,10 +146,10 @@ pre.mermaid{background:var(--surface);border:1px solid var(--line);border-radius
         <div class="status"><span>18:42</span><span>5G ▮▮▮ 81%</span></div>
         <div class="screen">
           <div class="bg-row">
-            <div><span class="bg-val" id="w-bg">8.9</span><span class="bg-arrow" id="w-arrow">↗</span><div class="unit">mmol/L</div></div>
+            <div><span class="bg-val" id="w-bg">8.9</span><span class="arw" data-a="up" data-s="44" data-c="#3ccf7a"></span><div class="unit">mmol/L</div></div>
             <div class="bg-meta"><b id="w-delta">+0.6</b> /5 min<br>2 min ago<br>IOB 1.8 U</div>
           </div>
-          <div class="alert rise"><span class="icon">⇈</span><div><b>Rising 0.12 mmol/L/min</b>Likely above 10 in about 10 min. No carbs logged in the last hour.</div></div>
+          <div class="alert rise"><span class="arw" data-a="up" data-s="22" data-c="#f2a93b"></span><div><b>Rising 0.12 mmol/L/min</b>Likely above 10 in about 10 min. No carbs logged in the last hour.</div></div>
           <div class="graph"><svg id="g1" viewBox="0 0 280 120" role="img" aria-label="Glucose over the last 3 hours"></svg></div>
           <div style="display:flex;gap:6px;flex-wrap:wrap">
             <span class="pill"><span class="dot"></span>Auto mode on</span>
@@ -157,16 +160,16 @@ pre.mermaid{background:var(--surface);border:1px solid var(--line);border-radius
             <button class="btn ease" id="b-ease" type="button">Ease-off<small>tap to start</small></button>
           </div>
           <div class="spacer"></div>
-          <div class="chips">
+          <div class="small" style="text-transform:uppercase;letter-spacing:.08em">Meal</div>
+          <div class="chips meal">
             <button class="chip" type="button" data-g="20">20g</button>
             <button class="chip" type="button" data-g="40">40g</button>
             <button class="chip" type="button" data-g="45">45g</button>
             <button class="chip" type="button" data-g="other">Other</button>
           </div>
-          <button class="bolus" id="b-bolus" type="button">Bolus</button>
         </div>
       </div>
-      <figcaption>Full-page home screen widget. Reading, trend and graph at the top; the controls sit at the bottom where your thumb reaches.</figcaption>
+      <figcaption>Full-page home screen widget. Reading, trend arrow and graph at the top; meal presets at the bottom where your thumb reaches. "Other" replaces the separate Bolus button.</figcaption>
     </figure>
 
     <figure class="figure">
@@ -191,20 +194,19 @@ pre.mermaid{background:var(--surface);border:1px solid var(--line);border-radius
           <div class="spacer"></div>
           <div class="small" style="text-transform:uppercase;letter-spacing:.08em">Sources</div>
           <div>
-            <div class="src"><span><span class="ok">●</span> Dexcom G7 (notification)</span><span>2 min</span></div>
-            <div class="src"><span><span class="ok">●</span> CamAPS FX (notification)</span><span>2 min</span></div>
-            <div class="src"><span><span class="warn">●</span> Glooko (history)</span><span>3 h</span></div>
+            <div class="src"><span><span class="ok">●</span> CamAPS FX (My diabetes info)</span><span>2 min</span></div>
+            <div class="src"><span><span class="warn">●</span> Glooko (history, later)</span><span>—</span></div>
           </div>
         </div>
       </div>
-      <figcaption>App home. One timeline combines readings, CamAPS events and Glooko history. Each source shows how fresh its data is, so you can tell when one has stopped.</figcaption>
+      <figcaption>App home. One timeline combines readings and CamAPS events, and later Glooko history. Each source shows how fresh its data is, so you can tell when one has stopped.</figcaption>
     </figure>
 
     <figure class="figure">
       <div class="phone" aria-label="Bolus sheet mock">
         <div class="status"><span>18:42</span><span>5G ▮▮▮ 81%</span></div>
         <div class="screen">
-          <div class="bg-row dimmed"><div><span class="bg-val" style="font-size:40px">8.9</span><span class="bg-arrow" style="font-size:26px">↗</span></div><div class="bg-meta">IOB 1.8 U</div></div>
+          <div class="bg-row dimmed"><div><span class="bg-val" style="font-size:40px">8.9</span><span class="arw" data-a="up" data-s="30" data-c="#3ccf7a"></span></div><div class="bg-meta">IOB 1.8 U</div></div>
           <div class="graph dimmed"><svg id="g3" viewBox="0 0 280 120" aria-hidden="true"></svg></div>
           <div class="sheet">
             <div class="grab"></div>
@@ -225,54 +227,54 @@ pre.mermaid{background:var(--surface);border:1px solid var(--line);border-radius
           </div>
         </div>
       </div>
-      <figcaption>Bolus sheet. Bolusmo picks the amount; CamAPS FX calculates and delivers the dose.</figcaption>
+      <figcaption>Meal sheet, from "Other". Steadmo picks the amount; CamAPS FX calculates and delivers the dose.</figcaption>
     </figure>
   </div>
 
   <div class="bench">
     <figure class="figure">
       <div class="phone wallpaper" aria-label="Lock screen notifications mock">
-        <div class="status"><span>19:27</span><span>5G ▮▮▮ 74%</span></div>
+        <div class="status"><span style="display:flex;align-items:center;gap:4px">19:27 <span class="arw" data-a="flat" data-s="12" data-c="#eaf1f6"></span></span><span>5G ▮▮▮ 74%</span></div>
         <div class="screen">
           <div style="text-align:center;font:600 48px var(--f-display);margin:10px 0 4px">19:27</div>
           <div style="text-align:center" class="small">Thursday 27 November</div>
           <div style="height:10px"></div>
           <div class="notif">
-            <div class="app"><span class="icon" style="color:#3cc2d3">◆</span>Bolusmo · now</div>
+            <div class="app"><span class="icon" style="color:#3cc2d3">◆</span>Steadmo · now</div>
             <b>Food arriving in ~8 min</b>
-            <div>Deliveroo says your rider is nearby. BG 6.4 →. Pre-bolus now?</div>
+            <div>Deliveroo says your rider is nearby. BG 6.4, steady. Pre-bolus now?</div>
             <div class="acts"><span>Bolus 45g</span><span>Other</span><span>Ate already</span></div>
           </div>
           <div class="notif" style="border-color:rgba(255,92,115,.5)">
-            <div class="app"><span class="icon" style="color:var(--low)">⇊</span>Bolusmo · 4 min ago</div>
-            <b>Falling fast: 5.1, −0.15/min</b>
-            <div>Projected 3.9 in about 8 min. IOB 2.4 U from the 18:05 bolus.</div>
+            <div class="app"><span class="arw" data-a="double_down" data-s="16" data-c="#ff5c73"></span>Steadmo · 4 min ago</div>
+            <b style="display:flex;align-items:center;gap:6px"><span class="arw" data-a="down" data-s="20" data-c="#ff5c73"></span>Low in about 8 min</b>
+            <div>5.1, −0.15/min. Heading below 3.9.</div>
             <div class="acts"><span>Ease-off</span><span>Logged 15g</span><span>Snooze 30m</span></div>
           </div>
           <div class="notif dimmed">
             <div class="app">CamAPS FX · ongoing</div>
-            <div>6.4 mmol/L → · Auto mode</div>
+            <div>6.4 mmol/L · Auto mode On</div>
           </div>
         </div>
       </div>
-      <figcaption>Alerts that say what to do. Each one gives the rate, a projection, and the relevant context (IOB, recent carbs), with actions on the notification.</figcaption>
+      <figcaption>Steadmo's trend arrow is the status bar icon. Alerts say what is coming. The takeaway prompt (top) is Phase 3. Each one gives the rate, a projection, and the relevant context (IOB, recent carbs), with actions on the notification.</figcaption>
     </figure>
 
     <figure class="figure">
       <div class="watch" aria-label="Wear OS notification mock">
         <div class="w-title">Deliveroo nearby</div>
-        <div style="font:700 26px var(--f-data)">6.4 <span style="font-size:18px">→</span></div>
+        <div style="font:700 26px var(--f-data);display:flex;align-items:center;gap:6px">6.4 <span class="arw" data-a="flat" data-s="22" data-c="#3ccf7a"></span></div>
         <div class="w-body">Pre-bolus for dinner?</div>
         <div class="w-btn">Bolus 45g</div>
         <div class="w-btn2">Other amount · Dismiss</div>
       </div>
-      <figcaption>Wear OS. The same notification is mirrored to the watch. Tapping "Bolus 45g" opens CamAPS FX on the phone with 45 copied, ready to confirm.</figcaption>
+      <figcaption>Later (Phase 3). Wear OS. The takeaway prompt is mirrored to the watch. Tapping "Bolus 45g" opens CamAPS FX on the phone with 45 copied, ready to confirm.</figcaption>
     </figure>
 
     <figure class="figure">
       <div class="watch" aria-label="Watch tile mock" style="gap:4px">
         <div class="small" style="font-family:var(--f-data)">AUTO · BOOST 1:12</div>
-        <div style="font:700 40px var(--f-data);line-height:1">8.9<span style="font-size:24px">↗</span></div>
+        <div style="font:700 40px var(--f-data);line-height:1;display:flex;align-items:center;gap:4px">8.9<span class="arw" data-a="up" data-s="28" data-c="#3ccf7a"></span></div>
         <svg id="g4" viewBox="0 0 280 120" style="width:150px;height:auto" aria-hidden="true"></svg>
         <div class="small">+0.6 · IOB 1.8</div>
       </div>
@@ -282,59 +284,49 @@ pre.mermaid{background:var(--surface);border:1px solid var(--line);border-radius
 
   <!-- ============ INTEGRATIONS ============ -->
   <h2>How each piece can connect</h2>
-  <p class="prose">Ranked by how useful each route is to Bolusmo. <span class="tag g">good</span> means it works today without hacks; <span class="tag a">fragile</span> means it works but can break when the other app updates; <span class="tag r">no</span> means not possible or not sensible.</p>
+  <p class="prose"><b>MVP: CamAPS FX only.</b> The Dexcom G7 app can't run alongside CamAPS FX, and CamAPS FX already has the G7's readings, so its "My diabetes info" notification is the one live source. <span class="tag g">good</span> works today; <span class="tag a">fragile</span> can break when the other app updates; <span class="tag r">no</span> not possible or not sensible.</p>
 
   <div class="tbl"><table>
-    <thead><tr><th>Source</th><th>Route</th><th>What you get</th><th>Latency</th><th>Verdict</th></tr></thead>
+    <thead><tr><th>Source</th><th>Route</th><th>What you get</th><th>When</th><th>Verdict</th></tr></thead>
     <tbody>
-      <tr><td><b>Dexcom G7</b></td><td>Read the G7 app's ongoing notification (<code>NotificationListenerService</code>)</td><td>Glucose, trend arrow</td><td>Real time (5 min)</td><td><span class="tag a">fragile</span> Main route. xDrip+ "companion mode" works the same way.</td></tr>
-      <tr><td></td><td>xDrip+ as a collector, then its local broadcast</td><td>Glucose, trend, xDrip's own smoothing</td><td>Real time</td><td><span class="tag g">good</span> Lets xDrip handle the parsing and gives a stable intent API.</td></tr>
-      <tr><td></td><td>Dexcom Share (unofficial cloud API, as used by Nightscout bridges)</td><td>Glucose, trend</td><td>~5–10 min, needs network</td><td><span class="tag a">fragile</span> Good fallback, and works on a second device.</td></tr>
-      <tr><td></td><td>Dexcom developer API (official, OAuth)</td><td>EGVs, events</td><td>Hours (delayed outside US)</td><td><span class="tag r">no</span> for live use; fine for reports</td></tr>
-      <tr><td></td><td>Health Connect</td><td>Blood glucose records</td><td>A few hours</td><td><span class="tag r">no</span> for live use</td></tr>
-      <tr><td><b>CamAPS FX</b></td><td>Read its ongoing notification</td><td>Glucose, trend, sometimes mode</td><td>Real time</td><td><span class="tag a">fragile</span> Most reliable live loop signal.</td></tr>
-      <tr><td></td><td>Accessibility service reading the CamAPS screen</td><td>Auto mode, Boost/Ease-off state and time left, IOB, last bolus</td><td>When the screen is shown</td><td><span class="tag a">fragile</span> Powerful but brittle. Needs care and testing after every CamAPS update.</td></tr>
-      <tr><td></td><td>Launch intent / deep link</td><td>Open the app (and possibly a specific screen)</td><td>—</td><td><span class="tag g">good</span> for "Open CamAPS". Deep links to the meal or Boost screen need checking.</td></tr>
-      <tr><td></td><td>Bolus or Boost via API</td><td>—</td><td>—</td><td><span class="tag r">no</span> No public interface. Automating the confirm tap would bypass a medical-device safety step.</td></tr>
-      <tr><td><b>Ypsopump</b></td><td>Direct Bluetooth</td><td>—</td><td>—</td><td><span class="tag r">no</span> Heavily encrypted. CamAPS owns the connection. AAPS lists it as not loopable.</td></tr>
-      <tr><td><b>Glooko</b></td><td>Web API behind the Glooko app and site (unofficial)</td><td>Boluses, carbs, basal, CGM history</td><td>Hours, after CamAPS uploads</td><td><span class="tag a">fragile</span> History and reports only.</td></tr>
-      <tr><td></td><td>CSV export from Glooko web</td><td>Same, manual</td><td>Manual</td><td><span class="tag g">good</span> for one-off analysis</td></tr>
-      <tr><td><b>Deliveroo</b> (and Uber Eats, Just Eat)</td><td>Read order notifications</td><td>Order placed, picked up, rider nearby</td><td>Real time</td><td><span class="tag a">fragile</span> Text matching, but low risk if it misses.</td></tr>
+      <tr><td><b>CamAPS FX</b></td><td>"My diabetes info" notification (<code>NotificationListenerService</code>, views inflated and read in order)</td><td>Glucose, unit, Auto mode. Its arrow is an image, so Steadmo computes its own.</td><td><span class="tag g">MVP</span></td><td><span class="tag a">fragile</span> Real time, no network. Steadmo shows what it read, to check after CamAPS updates.</td></tr>
+      <tr><td></td><td>Launch intent</td><td>Opens CamAPS FX for meals, Boost and Ease-off</td><td><span class="tag g">MVP</span></td><td><span class="tag g">good</span> Deep links to specific screens need checking.</td></tr>
+      <tr><td></td><td>Accessibility service reading the CamAPS screen</td><td>Boost/Ease-off time left, IOB, last bolus</td><td>Later</td><td><span class="tag a">fragile</span> Powerful but brittle.</td></tr>
+      <tr><td></td><td>Bolus or Boost via API</td><td>—</td><td>—</td><td><span class="tag r">no</span> No public interface; automating the confirm tap would bypass a safety step.</td></tr>
+      <tr><td><b>Ypsopump</b></td><td>Direct Bluetooth</td><td>—</td><td>—</td><td><span class="tag r">no</span> Heavily encrypted; CamAPS owns the connection.</td></tr>
+      <tr><td><b>Dexcom G7</b></td><td>G7 app, xDrip+, Share, Health Connect</td><td>Glucose, trend</td><td>—</td><td><span class="tag r">no</span> for this setup: the G7 app isn't compatible with CamAPS FX. Share or Health Connect only if a second device ever needs it.</td></tr>
+      <tr><td><b>Glooko</b></td><td>Unofficial web API, or CSV export</td><td>Boluses, carbs, basal history</td><td>Later</td><td><span class="tag a">fragile</span> History only, hours behind.</td></tr>
+      <tr><td><b>Deliveroo</b>, Uber Eats, Just Eat</td><td>Order notifications</td><td>Rider picked up, nearby</td><td>To do (Phase 3)</td><td><span class="tag a">fragile</span> Text matching, low risk if it misses.</td></tr>
     </tbody>
   </table></div>
 
-  <h3>Recommended architecture</h3>
-  <p class="prose">A foreground service holds a small local store of readings and events. Adapters feed it, and every screen (widget, app, watch, alerts) reads from it. Nothing leaves the phone unless you opt into Nightscout or Share.</p>
+  <h3>Trend arrows</h3>
+  <p class="prose">Steadmo fits a slope to the last 20 minutes of readings and uses the standard CGM thresholds. The same drawn arrow is the status bar icon, the notification icon, and the arrow in the app and widget.</p>
+  <div class="tbl"><table style="min-width:520px">
+    <thead><tr><th>Arrow</th><th>Name</th><th>Rate</th><th>Change in 30 min</th></tr></thead>
+    <tbody>
+      <tr><td><span class="arw" data-a="double_up" data-s="28" data-c="var(--high)"></span></td><td>Rising fast</td><td>≥ 0.17 mmol/L/min (3 mg/dL/min)</td><td>over +5.0</td></tr>
+      <tr><td><span class="arw" data-a="up" data-s="28" data-c="var(--ink)"></span></td><td>Rising</td><td>0.11–0.17</td><td>+3.3 to +5.0</td></tr>
+      <tr><td><span class="arw" data-a="up_slight" data-s="28" data-c="var(--ink)"></span></td><td>Rising slowly</td><td>0.056–0.11</td><td>+1.7 to +3.3</td></tr>
+      <tr><td><span class="arw" data-a="flat" data-s="28" data-c="var(--inrange)"></span></td><td>Steady</td><td>under 0.056 either way</td><td>under 1.7</td></tr>
+      <tr><td><span class="arw" data-a="down_slight" data-s="28" data-c="var(--ink)"></span></td><td>Falling slowly</td><td>−0.056 to −0.11</td><td>−1.7 to −3.3</td></tr>
+      <tr><td><span class="arw" data-a="down" data-s="28" data-c="var(--ink)"></span></td><td>Falling</td><td>−0.11 to −0.17</td><td>−3.3 to −5.0</td></tr>
+      <tr><td><span class="arw" data-a="double_down" data-s="28" data-c="var(--low)"></span></td><td>Falling fast</td><td>≤ −0.17</td><td>over −5.0</td></tr>
+    </tbody>
+  </table></div>
+
+  <h3>MVP architecture</h3>
+  <p class="prose">No foreground service is needed: Android keeps the notification listener bound. Readings stay on the phone; the app has no internet permission.</p>
 <pre class="mermaid">
 flowchart LR
-  subgraph Sources
-    DX[Dexcom G7 app notification]
-    CA[CamAPS FX notification]
-    AX[CamAPS screen via Accessibility]
-    XD[xDrip+ broadcast]
-    SH[Dexcom Share cloud]
-    GL[Glooko history]
-    FD[Deliveroo / Uber Eats notifications]
-  end
-  subgraph Bolusmo["Bolusmo (foreground service)"]
-    AD[Source adapters] --> ST[(Room store: readings, events, loop state)]
-    ST --> EN[Trend + alert engine]
-    ST --> MD[Meal detector]
-  end
-  DX --> AD
-  CA --> AD
-  AX --> AD
-  XD --> AD
-  SH --> AD
-  GL --> AD
-  FD --> MD
-  EN --> NT[Notifications + Wear OS]
-  MD --> NT
-  ST --> WG[Glance widget]
-  ST --> UI[Compose app]
-  ST --> WT[Wear tile + complication]
-  NT -->|action| LC[Open CamAPS FX on meal / Boost / Ease-off]
-  WG -->|tap| LC
+  CA["CamAPS FX: My diabetes info"] --> NL[Notification listener]
+  NL --> PA["Parser (core)"]
+  PA --> LOG[("A day of readings, on device")]
+  LOG --> TR["Trend + alerts (core)"]
+  TR --> SN["Status notification: arrow icon"]
+  TR --> AL[Trend alerts]
+  LOG --> UI[App home screen]
+  UI -->|Boost, Ease-off, meal| CF[Open CamAPS FX]
 </pre>
 
   <!-- ============ FEATURES ============ -->
@@ -349,22 +341,22 @@ flowchart LR
       <p>The buttons open CamAPS FX on the right screen, where you set the duration and confirm. The current state and time left come from the notification, or from the Accessibility reader when it is enabled.</p>
     </div>
     <div class="card">
-      <h3>Big bolus button and 20/40/45 shortcuts</h3>
-      <p>Carb amounts (this assumes your 20, 40 and 45 are grams). Each one copies the number and opens CamAPS FX's meal entry. As an option, the Accessibility service can type the number in. It never presses confirm. Also exposed as launcher app shortcuts and Quick Settings tiles.</p>
+      <h3>Meal presets: 20, 40, 45, Other</h3>
+      <p>Grams of carbs. One row replaces the separate Bolus button: Other opens the meal sheet. Each preset copies the number and opens CamAPS FX's meal entry. As an option, the Accessibility service can type the number in. It never presses confirm. Also exposed as launcher app shortcuts and Quick Settings tiles.</p>
     </div>
     <div class="card">
       <h3>Rate-of-change alerts</h3>
       <ul>
-        <li>Slope from a least-squares fit over the last 15 min.</li>
-        <li>Fast rise from 0.1 mmol/L/min, fast fall from −0.1.</li>
-        <li>Projects time to 3.9 and 10.0 and states it.</li>
-        <li>Adds context: IOB, last bolus, carbs logged or not.</li>
-        <li>One action per alert (Ease-off, log carbs, bolus, snooze).</li>
+        <li>Low soon: projected below 3.9 within 20 min.</li>
+        <li>Falling fast or rising fast: a double arrow.</li>
+        <li>High soon: a single or double up arrow, above 10.0 within 15 min.</li>
+        <li>The alert's icon is the trend arrow. Each kind repeats at most every 30 min.</li>
+        <li>Later: IOB and carbs context, and an action per alert.</li>
       </ul>
     </div>
     <div class="card">
-      <h3>Takeaway pre-bolus prompt</h3>
-      <p>A notification listener matches "picked up" and "nearby" messages from Deliveroo, Uber Eats and Just Eat. Bolusmo suggests your usual takeaway amount (it learns from past meals) and mirrors the prompt to the watch. If you bolus in the next 20 minutes it marks the prompt done.</p>
+      <h3>Takeaway pre-bolus prompt (to do)</h3>
+      <p>A notification listener matches "picked up" and "nearby" messages from Deliveroo, Uber Eats and Just Eat. Steadmo suggests your usual takeaway amount (it learns from past meals) and mirrors the prompt to the watch. If you bolus in the next 20 minutes it marks the prompt done.</p>
     </div>
     <div class="card">
       <h3>Watch</h3>
@@ -377,7 +369,7 @@ flowchart LR
     <div class="card">
       <h3>Safety</h3>
       <ul>
-        <li>Bolusmo is a companion display. CamAPS FX and Dexcom alarms stay on and stay authoritative.</li>
+        <li>Steadmo is a companion display. CamAPS FX and Dexcom alarms stay on and stay authoritative.</li>
         <li>Never automate the bolus confirmation.</li>
         <li>Show data age everywhere, and grey a reading out after 10 min.</li>
       </ul>
@@ -386,22 +378,21 @@ flowchart LR
       <h3>Fragility</h3>
       <ul>
         <li>Notification text and layouts change with app updates. Keep parsers small, versioned and covered by tests with captured samples.</li>
-        <li>Some OEMs kill background services. Needs battery optimisation exemptions.</li>
+        <li>Some OEMs kill background services. Needs battery optimization exemptions.</li>
       </ul>
     </div>
     <div class="card">
       <h3>To verify on your phone</h3>
       <ul>
-        <li>Exactly what the CamAPS FX and G7 notifications contain (mode? IOB?).</li>
+        <li>Whether "My diabetes info" shows Boost and Ease-off, and how its arrow image maps to ours.</li>
         <li>Whether CamAPS FX exposes deep links to meal, Boost or Ease-off screens.</li>
-        <li>Whether CamAPS reads G7 directly or through the Dexcom app on your setup.</li>
-        <li>Deliveroo's current notification wording.</li>
+                <li>Deliveroo's current notification wording.</li>
       </ul>
     </div>
   </div>
 
-  <h2>Suggested first milestone</h2>
-  <p class="prose">A read-only build: the notification adapters for G7 and CamAPS FX, the Room store, the full-page widget with the graph, and rate-of-change alerts. Buttons open CamAPS FX. This tests whether the data is good enough before any work on Accessibility, Glooko or the watch.</p>
+  <h2>MVP</h2>
+  <p class="prose">Built: reading CamAPS FX's "My diabetes info" notification, a day of readings on the phone, trend arrows and alerts, the arrow as the status bar icon, and a home screen whose buttons open CamAPS FX. Next: try it on the phone, then the full-page widget and the watch.</p>
 
   <p class="small" style="color:var(--muted);margin-top:3rem">Sources: <a href="https://navid200.github.io/xDrip/docs/Follow/CompanionApp.html">xDrip+ companion app mode</a> · <a href="https://androidaps.readthedocs.io/en/latest/Getting-Started/Future-possible-Pump-Drivers.html">AAPS future pump drivers (Ypsomed)</a> · <a href="https://www.dexcom.com/en-AU/how-do-i-navigate-to-health-connect?ipc=US">Dexcom and Health Connect</a> · <a href="https://adces.org/education/danatech/apps-dtx/find-apps-tools/product-detail/dexcom-g7-app">ADCES on G7 Health Connect delay</a> · <a href="https://www.mylife-diabetescare.com/en/dexcom-g7-rollout-pat">mylife: Dexcom G7 with myLoop/CamAPS</a></p>
 </div>
@@ -434,6 +425,14 @@ drawGraph(document.getElementById('g2'),day,{xlabels:['06','10','14','18'],event
 drawGraph(document.getElementById('g3'),series);
 drawGraph(document.getElementById('g4'),series,{xlabels:[]});
 
+
+// ---- trend arrows: one shape, rotated, like the app's vector drawables ----
+const ARROWS={flat:[0,1],up_slight:[-45,1],up:[-90,1],double_up:[-90,2],down_slight:[45,1],down:[90,1],double_down:[90,2]};
+function arrowSvg(kind,size,color){const [rot,n]=ARROWS[kind];
+  const d=n===1?'M4,12 L19,12 M13,6 L19,12 L13,18':'M4,7.5 L19,7.5 M14.5,3 L19,7.5 L14.5,12 M4,16.5 L19,16.5 M14.5,12 L19,16.5 L14.5,21';
+  return `<svg width="${size}" height="${size}" viewBox="0 0 24 24" aria-hidden="true"><g transform="rotate(${rot} 12 12)"><path d="${d}" fill="none" stroke="${color}" stroke-width="${n===1?2.75:2.25}" stroke-linecap="round" stroke-linejoin="round"/></g></svg>`;}
+document.querySelectorAll('.arw').forEach(el=>{el.innerHTML=arrowSvg(el.dataset.a,+el.dataset.s||24,el.dataset.c||'currentColor');el.setAttribute('role','img');el.setAttribute('aria-label',el.dataset.a.replace('_',' '));});
+
 // ---- interactions ----
 const toast=document.getElementById('toast');let tt;
 function say(msg){toast.textContent=msg;toast.hidden=false;clearTimeout(tt);tt=setTimeout(()=>toast.hidden=true,2600);}
@@ -449,9 +448,8 @@ boost.onclick=()=>{cur=cur==='boost'?null:'boost';setMode(cur);say(cur?'Would op
 ease.onclick=()=>{cur=cur==='ease'?null:'ease';setMode(cur);say(cur?'Would open CamAPS FX on Ease-off. You confirm the duration there.':'Would open CamAPS FX to cancel Ease-off.');};
 let grams=45;const sg=document.getElementById('s-g'),sg2=document.getElementById('s-g2');
 function setG(g){grams=Math.max(5,Math.min(150,g));sg.textContent=grams;sg2.textContent=grams;}
-document.querySelectorAll('[data-g]').forEach(b=>b.onclick=()=>{const g=b.dataset.g;if(g==='other'){say('Would open the bolus sheet to choose an amount.');return;}setG(+g);say(`${g} g copied. Would open CamAPS FX meal entry.`);});
+document.querySelectorAll('[data-g]').forEach(b=>b.onclick=()=>{const g=b.dataset.g;if(g==='other'){say('Would open the meal sheet (third mock) to choose an amount.');return;}setG(+g);say(`${g} g copied. Would open CamAPS FX meal entry.`);});
 document.querySelectorAll('[data-step]').forEach(b=>b.onclick=()=>setG(grams+ +b.dataset.step));
 document.querySelectorAll('[data-set]').forEach(b=>b.onclick=()=>setG(+b.dataset.set));
-document.getElementById('b-bolus').onclick=()=>say('Would open the bolus sheet (third mock).');
 document.getElementById('s-go').onclick=()=>say(`${grams} g copied. Would open CamAPS FX. Confirm the dose there.`);
 </script>
