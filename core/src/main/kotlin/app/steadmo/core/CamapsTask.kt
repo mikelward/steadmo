@@ -263,9 +263,10 @@ class CamapsTask(val goal: CamapsGoal, val startedAt: Long) {
             walk(screen, emptyList(), null) { node, path, parent ->
                 if (!node.clickable || node.editable) return@walk
                 if (CONTROLS.containsMatchIn(node.className.orEmpty())) return@walk
+                val nodeText = texts(node).joinToString(" ").trim()
                 var label = (texts(node) + listOfNotNull(node.viewId?.substringAfter(":id/")))
                     .joinToString(" ").trim()
-                if (label.isNotEmpty() && isValue(label) && parent != null) {
+                if (nodeText.isNotEmpty() && isValue(nodeText) && parent != null) {
                     // A value cell, such as CamAPS FX's Carbs "---", or "40" once carbs are
                     // entered, reads as the labels just before it, whatever it shows: on
                     // v1.4 those are two views, "Carbs" then "g CHO".

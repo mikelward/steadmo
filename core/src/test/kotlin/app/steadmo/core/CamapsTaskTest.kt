@@ -187,6 +187,9 @@ class CamapsTaskTest {
         val entry = CamapsTask(CamapsGoal.MealEntry, startedAt = 0)
         entry.next(realHome, 0)
         assertEquals(CamapsStep.Tap(listOf(2, 0, 18), "Carbs g CHO --- 2131296421"), entry.next(realMeal("---"), 100))
+        // A named viewId on the value cell must not hide its preceding Carbs label.
+        val named = screen(row(label("Carbs"), label("g CHO"), ScreenNode(text = "---", clickable = true, viewId = "pkg:id/value")))
+        assertEquals(listOf(listOf(0, 2) to "Carbs g CHO --- value"), CamapsTask.buttons(named))
     }
 
     @Test fun `CamAPS FX v1_4 - meal tab, Carbs cell, then types and leaves Confirm`() {
