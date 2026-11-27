@@ -64,6 +64,19 @@ class StatusNotifierTest {
     }
 
     @Test
+    fun `mg per dL shows in the title, text and chip`() {
+        app.allowNotifications()
+        notifier.showStatus(low.copy(unit = GlucoseUnit.MGDL), promote = true)
+        val n = app.posted(1)!!
+        assertEquals("65", n.shortCriticalText)
+        assertEquals("Low: 65 mg/dL", n.extras.getString(Notification.EXTRA_TITLE))
+        assertEquals(
+            "Falling slowly · −1.3/min · Auto mode on. Below 70 for 5 min",
+            n.extras.getCharSequence(Notification.EXTRA_TEXT).toString(),
+        )
+    }
+
+    @Test
     fun `not promoted unless asked`() {
         app.allowNotifications()
         notifier.showStatus(low)

@@ -1,5 +1,6 @@
 package app.steadmo.widget
 
+import app.steadmo.core.GlucoseUnit
 import app.steadmo.GlucoseState
 import app.steadmo.MINUTE
 import app.steadmo.R
@@ -34,6 +35,14 @@ class WidgetModelTest {
         assertEquals(fmt.format(Samples.NOW), m.time)
         assertEquals("+0.12/min", m.rate)
         assertEquals("Auto mode on", m.autoMode)
+    }
+
+    @Test fun `mg per dL shows whole numbers`() {
+        val state = Samples.rising().copy(unit = GlucoseUnit.MGDL)
+        val m = WidgetModel.of(state, true, Samples.NOW, fmt) as WidgetModel.Showing
+        assertEquals("169", m.value)
+        assertEquals("+2.2/min", m.rate)
+        assertEquals(GlucoseUnit.MGDL, m.unit)
     }
 
     @Test fun `old readings are stale, and a single one has no trend`() {

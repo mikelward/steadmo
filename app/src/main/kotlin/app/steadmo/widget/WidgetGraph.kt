@@ -7,7 +7,10 @@ import android.graphics.Paint
 import androidx.core.graphics.createBitmap
 import app.steadmo.core.HIGH_MMOL
 import app.steadmo.core.LOW_MMOL
+import app.steadmo.core.GlucoseUnit
 import app.steadmo.core.Reading
+import app.steadmo.axis
+import app.steadmo.gutter
 
 /** Glance has no canvas, so the widget's 3-hour graph is drawn to a bitmap. */
 object WidgetGraph {
@@ -15,14 +18,22 @@ object WidgetGraph {
 
     data class Colors(val low: Int, val inRange: Int, val high: Int, val band: Int, val grid: Int, val label: Int)
 
-    fun draw(readings: List<Reading>, now: Long, widthPx: Int, heightPx: Int, density: Float, colors: Colors): Bitmap {
+    fun draw(
+        readings: List<Reading>,
+        now: Long,
+        widthPx: Int,
+        heightPx: Int,
+        density: Float,
+        colors: Colors,
+        unit: GlucoseUnit = GlucoseUnit.MMOL,
+    ): Bitmap {
         val bitmap = createBitmap(widthPx.coerceAtLeast(1), heightPx.coerceAtLeast(1))
         val canvas = Canvas(bitmap)
         val shown = readings.filter { now - it.timeMillis <= WINDOW_MILLIS }
         val top = maxOf(14.0, (shown.maxOfOrNull { it.mmol } ?: 0.0) + 1.0)
         val bottom = 2.0
         val labelPx = 10 * density
-        val left = labelPx * 2
+        val left = labelPx * unit.gutter()
         val width = widthPx - left
         fun x(t: Long) = left + width * (1f - (now - t).toFloat() / WINDOW_MILLIS)
         // Room above the top line for its label.
@@ -39,7 +50,7 @@ object WidgetGraph {
         }
         listOf(LOW_MMOL, HIGH_MMOL).forEach { canvas.drawLine(left, y(it), widthPx.toFloat(), y(it), grid) }
         val text = Paint(Paint.ANTI_ALIAS_FLAG).apply { color = colors.label; textSize = labelPx }
-        listOf(4, 10, 14).forEach { canvas.drawText(it.toString(), 0f, y(it.toDouble()) + labelPx / 3, text) }
+        listOf(4, 10, 14).forEach { canvas.drawText(unit.axis(it), 0f, y(it.toDouble()) + labelPx / 3, text) }
         shown.forEachIndexed { i, r ->
             fill.color = when {
                 r.mmol < LOW_MMOL -> colors.low

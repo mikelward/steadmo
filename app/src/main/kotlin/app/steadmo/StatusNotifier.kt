@@ -13,7 +13,9 @@ import android.os.Build
 import androidx.annotation.RequiresApi
 import androidx.compose.ui.graphics.toArgb
 import androidx.core.graphics.drawable.toBitmap
-import app.steadmo.core.AlertPolicy
+import app.steadmo.core.rate
+import app.steadmo.core.reading
+import app.steadmo.core.value
 import app.steadmo.core.HIGH_MMOL
 import app.steadmo.core.LOW_MMOL
 import app.steadmo.core.RangeSide
@@ -56,23 +58,25 @@ class StatusNotifier(private val context: Context, private val clock: () -> Long
             manager.cancel(ID_STATUS)
             return
         }
+        val unit = state.unit
         val arrow = state.trend?.arrow
         val rate = state.trend?.mmolPerMinute
         val detail = listOfNotNull(
             arrow?.label,
-            rate?.let { "${if (it >= 0) "+" else "−"}${AlertPolicy.fmt2(kotlin.math.abs(it))}/min" },
+            rate?.let { "${unit.rate(it)}/min" },
             state.status?.autoMode?.let { "Auto mode ${it.lowercase()}" },
         ).joinToString(" · ")
         val color = rangeColor(latest.mmol).toArgb()
         val side = latest.side()
+        val shown = "${unit.reading(latest)} ${unit.label}"
         val title = when (side) {
-            RangeSide.LOW -> "Low: ${latest.display} mmol/L"
-            RangeSide.HIGH -> "High: ${latest.display} mmol/L"
-            RangeSide.IN_RANGE -> "${latest.display} mmol/L"
+            RangeSide.LOW -> "Low: $shown"
+            RangeSide.HIGH -> "High: $shown"
+            RangeSide.IN_RANGE -> shown
         }
         val since = outOfRangeSince(state.readings)?.let { start ->
             val minutes = (latest.timeMillis - start) / 60_000
-            val edge = if (side == RangeSide.LOW) "Below ${AlertPolicy.fmt(LOW_MMOL)}" else "Above ${AlertPolicy.fmt(HIGH_MMOL)}"
+            val edge = if (side == RangeSide.LOW) "Below ${unit.value(LOW_MMOL)}" else "Above ${unit.value(HIGH_MMOL)}"
             if (minutes > 0) "$edge for $minutes min" else edge
         }
         val text = listOfNotNull(detail.ifEmpty { null }, since).joinToString(". ")
@@ -91,19 +95,19 @@ class StatusNotifier(private val context: Context, private val clock: () -> Long
             .setTimeoutAfter(remaining)
             .setContentIntent(openApp())
         val promoted = promote && Build.VERSION.SDK_INT >= Build.VERSION_CODES.BAKLAVA
-        if (promoted) promote(builder, latest)
+        if (promoted) promote(builder, unit.reading(latest), latest)
         SteadmoLog.verbose("notify: status %s, arrow %s, live update %s (asked %s)", latest.display, arrow, promoted, promote)
         post(ID_STATUS, builder.build())
     }
 
     /** A Live Update: chip text, promotion request, and the range bar. */
     @RequiresApi(Build.VERSION_CODES.BAKLAVA)
-    private fun promote(builder: Notification.Builder, latest: Reading) {
+    private fun promote(builder: Notification.Builder, chip: String, latest: Reading) {
         val low = LowColor.toArgb()
         val inRange = InRangeColor.toArgb()
         val high = HighColor.toArgb()
         builder
-            .setShortCriticalText(latest.display)
+            .setShortCriticalText(chip)
             .setStyle(
                 Notification.ProgressStyle()
                     .setStyledByProgress(false)
@@ -119,8 +123,11 @@ class StatusNotifier(private val context: Context, private val clock: () -> Long
             .extras.putBoolean(Notification.EXTRA_REQUEST_PROMOTED_ONGOING, true)
     }
 
-    /** Shows [alert] until its reading, taken at [readingTime], is stale. */
-    fun showAlert(alert: TrendAlert, readingTime: Long) {
+    /**
+     * Shows [alert] until its reading, taken at [readingTime], is stale. [quiet]
+     * updates one already showing (e.g. in a new unit) without sounding again.
+     */
+    fun showAlert(alert: TrendAlert, readingTime: Long, quiet: Boolean = false) {
         val remaining = STALE_MILLIS - (clock() - readingTime)
         if (remaining <= 0) {
             SteadmoLog.event("notify: alert %s for a stale reading not shown", alert.kind)
@@ -135,11 +142,15 @@ class StatusNotifier(private val context: Context, private val clock: () -> Long
             .setContentText(alert.text)
             .setCategory(Notification.CATEGORY_ALARM)
             .setAutoCancel(true)
+            .setOnlyAlertOnce(quiet)
             .setTimeoutAfter(remaining)
             .setContentIntent(openApp())
             .build()
         post(ID_ALERT, notification)
     }
+
+    /** Whether a trend alert is still on screen (not dismissed, tapped or timed out). */
+    fun alertShowing(): Boolean = manager.activeNotifications.any { it.id == ID_ALERT }
 
     fun cancelAlert() {
         SteadmoLog.event("notify: alert cancelled")

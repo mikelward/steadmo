@@ -17,7 +17,10 @@ import androidx.compose.foundation.layout.safeDrawingPadding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.foundation.selection.selectable
 import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.RadioButton
+import androidx.compose.ui.semantics.Role
 import androidx.compose.material3.AssistChip
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
@@ -50,6 +53,10 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import app.steadmo.core.AlertPolicy
 import app.steadmo.core.CamapsGoal
+import app.steadmo.core.GlucoseUnit
+import app.steadmo.core.rate
+import app.steadmo.core.rateLabel
+import app.steadmo.core.reading
 import kotlinx.coroutines.delay
 import kotlin.math.abs
 
@@ -74,6 +81,7 @@ fun HomeScreen(
     onKnownIssues: () -> Unit = {},
     shortcutsOn: Boolean = false,
     onOpenShortcutsSettings: () -> Unit = {},
+    onSetUnit: (GlucoseUnit) -> Unit = {},
     clock: () -> Long = System::currentTimeMillis,
     ticking: Boolean = true,
 ) {
@@ -96,13 +104,22 @@ fun HomeScreen(
             verticalArrangement = Arrangement.spacedBy(12.dp),
         ) {
             var showingShortcuts by remember { mutableStateOf(false) }
+            var showingUnits by remember { mutableStateOf(false) }
             TopBar(
                 onGetLatest = onGetLatest,
                 onKnownIssues = onKnownIssues,
                 onReportBug = onReportBug,
                 onShowDisclaimer = onShowDisclaimer,
                 onCamapsShortcuts = { showingShortcuts = true },
+                onUnits = { showingUnits = true },
             )
+            if (showingUnits) {
+                UnitsDialog(
+                    unit = state.unit,
+                    onPick = { showingUnits = false; onSetUnit(it) },
+                    onDismiss = { showingUnits = false },
+                )
+            }
             if (showingShortcuts) {
                 ShortcutsDialog(
                     on = shortcutsOn,
@@ -156,6 +173,7 @@ fun HomeScreen(
                     GlucoseGraph(
                         readings = state.readings,
                         now = now,
+                        unit = state.unit,
                         modifier = Modifier.fillMaxWidth().height(180.dp).padding(8.dp),
                     )
                 }
@@ -195,7 +213,7 @@ private fun Reading(state: GlucoseState, now: Long, stale: Boolean) {
     val color = if (stale) MaterialTheme.colorScheme.outline else rangeColor(latest.mmol)
     Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
         Text(
-            latest.display,
+            state.unit.reading(latest),
             fontSize = 72.sp,
             fontWeight = FontWeight.Bold,
             fontFamily = FontFamily.Monospace,
@@ -208,13 +226,13 @@ private fun Reading(state: GlucoseState, now: Long, stale: Boolean) {
             modifier = Modifier.size(64.dp),
         )
     }
-    val rate = trend?.mmolPerMinute?.let { "${if (it >= 0) "+" else "−"}${AlertPolicy.fmt2(abs(it))} mmol/L/min" }
+    val rate = trend?.mmolPerMinute?.let { "${state.unit.rate(it)} ${state.unit.rateLabel}" }
     Text(
         listOfNotNull(trend?.arrow?.label ?: "Trend after 5 min of readings", rate).joinToString(" · "),
         style = MaterialTheme.typography.titleMedium,
     )
     Text(
-        "mmol/L · " + if (now - latest.timeMillis < DateUtils.MINUTE_IN_MILLIS) {
+        "${state.unit.label} · " + if (now - latest.timeMillis < DateUtils.MINUTE_IN_MILLIS) {
             "just now"
         } else {
             DateUtils.getRelativeTimeSpanString(latest.timeMillis, now, DateUtils.MINUTE_IN_MILLIS)
@@ -247,6 +265,7 @@ private fun TopBar(
     onReportBug: () -> Unit,
     onShowDisclaimer: () -> Unit,
     onCamapsShortcuts: () -> Unit,
+    onUnits: () -> Unit,
 ) {
     var open by remember { mutableStateOf(false) }
     Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
@@ -256,6 +275,7 @@ private fun TopBar(
                 Icon(painterResource(R.drawable.ic_more_vert), contentDescription = "More options")
             }
             DropdownMenu(expanded = open, onDismissRequest = { open = false }) {
+                DropdownMenuItem(text = { Text("Units") }, onClick = { open = false; onUnits() })
                 DropdownMenuItem(text = { Text("CamAPS FX shortcuts") }, onClick = { open = false; onCamapsShortcuts() })
                 DropdownMenuItem(text = { Text("Get latest version") }, onClick = { open = false; onGetLatest() })
                 DropdownMenuItem(text = { Text("Known issues") }, onClick = { open = false; onKnownIssues() })
@@ -303,6 +323,33 @@ internal fun ShortcutsDialog(on: Boolean, onOpenSettings: () -> Unit, onOpenAppI
                 TextButton(onClick = onDismiss) { Text("Close") }
             }
         },
+    )
+}
+
+/** Picks mmol/L or mg/dL for every value Steadmo shows. */
+@Composable
+internal fun UnitsDialog(unit: GlucoseUnit, onPick: (GlucoseUnit) -> Unit, onDismiss: () -> Unit) {
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text("Units") },
+        text = {
+            Column {
+                GlucoseUnit.entries.forEach { option ->
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .selectable(selected = option == unit, role = Role.RadioButton, onClick = { onPick(option) })
+                            .padding(vertical = 12.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(16.dp),
+                    ) {
+                        RadioButton(selected = option == unit, onClick = null)
+                        Text(option.label, style = MaterialTheme.typography.bodyLarge)
+                    }
+                }
+            }
+        },
+        confirmButton = { TextButton(onClick = onDismiss) { Text("Close") } },
     )
 }
 

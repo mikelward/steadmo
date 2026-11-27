@@ -1,5 +1,6 @@
 package app.steadmo
 
+import app.steadmo.core.GlucoseUnit
 import android.graphics.Bitmap
 import android.graphics.Canvas
 import android.view.View
@@ -27,6 +28,7 @@ class HomeScreenScreenshotTest {
     }
 
     @Test fun rising() = both("home-rising") { home(Samples.rising()) }
+    @Test fun risingMgdl() = both("home-rising-mgdl") { home(Samples.rising().copy(unit = GlucoseUnit.MGDL)) }
     @Test fun fallingFast() = both("home-falling-fast") { home(Samples.fallingFast()) }
     @Test fun stale() = both("home-stale") { home(Samples.rising(), now = Samples.NOW + 20 * MINUTE) }
     @Test fun belowSensor() = both("home-below-sensor") { home(Samples.belowSensor()) }
@@ -35,6 +37,20 @@ class HomeScreenScreenshotTest {
     }
     @Test fun disclaimer() = both("disclaimer") { { DisclaimerScreen(onAccept = {}, onLeave = {}) } }
     @Test fun setup() = both("home-setup") { home(GlucoseState(), listener = false, notifications = false) }
+
+    @Test fun unitsLight() = dialog("units", dark = false) {
+        UnitsDialog(GlucoseUnit.MMOL, onPick = {}, onDismiss = {})
+    }
+    @Test fun unitsDark() = dialog("units", dark = true) {
+        UnitsDialog(GlucoseUnit.MMOL, onPick = {}, onDismiss = {})
+    }
+
+    /** A dialog has its own window, so each theme gets its own activity. */
+    private fun dialog(name: String, dark: Boolean, content: @Composable () -> Unit) {
+        compose.activity.setContent { SteadmoTheme(dark = dark) { content() } }
+        compose.onNode(androidx.compose.ui.test.isDialog())
+            .captureRoboImage("src/test/snapshots/images/$name-${if (dark) "dark" else "light"}.png")
+    }
 
     @Test fun shortcutsLight() = shortcuts(dark = false)
     @Test fun shortcutsDark() = shortcuts(dark = true)

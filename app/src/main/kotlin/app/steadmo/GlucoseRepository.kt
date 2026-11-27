@@ -7,6 +7,7 @@ import app.steadmo.core.AlertPolicy
 import app.steadmo.core.RangeSide
 import app.steadmo.core.side
 import app.steadmo.core.CamapsStatus
+import app.steadmo.core.GlucoseUnit
 import app.steadmo.core.Reading
 import app.steadmo.core.ReadingLog
 import app.steadmo.core.Trend
@@ -30,6 +31,8 @@ data class GlucoseState(
     val camapsChannelId: String? = null,
     val camapsChannelImportance: Int? = null,
     val listenerConnected: Boolean = false,
+    /** How glucose is shown; readings are kept in mmol/L whatever this is. */
+    val unit: GlucoseUnit = GlucoseUnit.MMOL,
 ) {
     val latest: Reading? get() = readings.lastOrNull()
 }
@@ -45,12 +48,48 @@ class GlucoseRepository(
     private val clock: () -> Long = System::currentTimeMillis,
 ) {
     private val file = File(context.filesDir, "readings.csv")
+    private val settings = context.getSharedPreferences("settings", Context.MODE_PRIVATE)
     private val log = load()
     private val alerts = AlertPolicy()
     private var shownAlert: AlertKind? = null
+    /** When the reading behind [shownAlert] was taken, so it can be redrawn with the same expiry. */
+    private var shownAlertTime: Long? = null
 
-    private val _state = MutableStateFlow(GlucoseState(readings = log.all, trend = TrendCalculator.trend(log.all)))
+    private val _state = MutableStateFlow(
+        GlucoseState(readings = log.all, trend = TrendCalculator.trend(log.all), unit = loadUnit()),
+    )
     val state: StateFlow<GlucoseState> = _state
+
+    /** Shows glucose in [unit] from now on, and redraws the status notification in it. */
+    @Synchronized
+    fun setUnit(unit: GlucoseUnit) {
+        SteadmoLog.event("settings: units %s", unit.label)
+        settings.edit().putString(KEY_UNIT, unit.name).apply()
+        _state.update { it.copy(unit = unit) }
+        val latest = _state.value.latest ?: return
+        notifier.showStatus(_state.value, promote())
+        // Redraw a shown alert in the new unit, quietly and with its original expiry.
+        val time = shownAlertTime
+        val redrawn = alerts.applying(latest, _state.value.trend, unit)
+        // Only one still on screen: a dismissed alert must not come back.
+        if (redrawn != null && time != null && redrawn.kind == shownAlert && notifier.alertShowing()) {
+            notifier.showAlert(redrawn, time, quiet = true)
+        }
+    }
+
+    private fun loadUnit(): GlucoseUnit {
+        val name = settings.getString(KEY_UNIT, null) ?: return GlucoseUnit.MMOL
+        return GlucoseUnit.entries.firstOrNull { it.name == name } ?: run {
+            SteadmoLog.warning("settings: unknown units %s; using mmol/L", name)
+            GlucoseUnit.MMOL
+        }
+    }
+
+    /** A Live Update while out of range, or while a low is on the way. */
+    private fun promote(): Boolean {
+        val current = _state.value.latest
+        return current != null && (current.side() != RangeSide.IN_RANGE || shownAlert == AlertKind.LOW_SOON)
+    }
 
     fun setListenerConnected(connected: Boolean) = _state.update { it.copy(listenerConnected = connected) }
 
@@ -84,7 +123,7 @@ class GlucoseRepository(
             save(log.encode())
             val latest = log.latest
             // A newer reading that no longer calls for the shown alert clears it.
-            if (shownAlert != null && latest != null && alerts.applying(latest, trend)?.kind != shownAlert) {
+            if (shownAlert != null && latest != null && alerts.applying(latest, trend, _state.value.unit)?.kind != shownAlert) {
                 SteadmoLog.event("alerts: %s no longer applies; cleared", shownAlert)
                 notifier.cancelAlert()
                 shownAlert = null
@@ -96,23 +135,21 @@ class GlucoseRepository(
                 SteadmoLog.event("alerts: reading is %s ms old; a replay doesn't alert", age)
             }
             latest?.takeIf { clock() - it.timeMillis < ALERT_MAX_AGE_MILLIS }?.let {
-                alerts.evaluate(it, trend)?.let { alert ->
+                alerts.evaluate(it, trend, _state.value.unit)?.let { alert ->
                     SteadmoLog.event("alerts: %s (%s)", alert.kind, alert.title)
                     notifier.showAlert(alert, it.timeMillis)
                     shownAlert = alert.kind
+                    shownAlertTime = it.timeMillis
                 }
             }
         }
-        // A Live Update while out of range, or while a low is on the way.
-        val current = _state.value.latest
-        val promote = current != null && (current.side() != RangeSide.IN_RANGE || shownAlert == AlertKind.LOW_SOON)
-
-        notifier.showStatus(_state.value, promote)
+        notifier.showStatus(_state.value, promote())
     }
 
     companion object {
         /** CamAPS posts as a reading arrives; anything older is a replay. */
         const val ALERT_MAX_AGE_MILLIS = 2 * 60_000L
+        private const val KEY_UNIT = "unit"
     }
 
     private fun load(): ReadingLog = try {

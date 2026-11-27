@@ -1,6 +1,7 @@
 package app.steadmo
 
 import app.steadmo.core.CamapsGoal
+import app.steadmo.core.GlucoseUnit
 import android.app.NotificationManager
 import androidx.activity.ComponentActivity
 import androidx.compose.ui.test.assertIsDisplayed
@@ -166,6 +167,31 @@ class HomeScreenTest {
         compose.onNodeWithText("App info").assertDoesNotExist()
         compose.onNodeWithText("Close").performClick()
         compose.onNodeWithText("They're on.").assertDoesNotExist()
+    }
+
+    @Test fun `Units picks mmol per L or mg per dL`() {
+        val picked = mutableListOf<GlucoseUnit>()
+        compose.setContent {
+            SteadmoTheme(dark = false) {
+                HomeScreen(Samples.rising(), true, true, {}, {}, {}, {}, onSetUnit = { picked += it }, ticking = false)
+            }
+        }
+        compose.onNodeWithContentDescription("More options").performClick()
+        compose.onNodeWithText("Units").performClick()
+        compose.onNodeWithText("mg/dL").performClick()
+        assertEquals(listOf(GlucoseUnit.MGDL), picked)
+        compose.onNodeWithText("mg/dL").assertDoesNotExist()
+        compose.onNodeWithContentDescription("More options").performClick()
+        compose.onNodeWithText("Units").performClick()
+        compose.onNodeWithText("Close").performClick()
+        assertEquals(listOf(GlucoseUnit.MGDL), picked)
+    }
+
+    @Test fun `mg per dL shows on the home screen`() {
+        show(Samples.rising().copy(unit = GlucoseUnit.MGDL))
+        compose.onNodeWithText("169").assertIsDisplayed()
+        compose.onNodeWithText("+2.2 mg/dL/min", substring = true).assertIsDisplayed()
+        compose.onNodeWithText("mg/dL · ", substring = true).assertIsDisplayed()
     }
 
     @Test fun `Report a bug asks for a report`() {

@@ -17,13 +17,15 @@ import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.sp
 import app.steadmo.core.HIGH_MMOL
 import app.steadmo.core.LOW_MMOL
+import app.steadmo.core.GlucoseUnit
+import app.steadmo.core.value
 import app.steadmo.core.Reading
 
 private const val WINDOW_MILLIS = 3 * 60 * 60_000L
 
 /** The last three hours, with the 3.9–10 target band. */
 @Composable
-fun GlucoseGraph(readings: List<Reading>, now: Long, modifier: Modifier = Modifier) {
+fun GlucoseGraph(readings: List<Reading>, now: Long, modifier: Modifier = Modifier, unit: GlucoseUnit = GlucoseUnit.MMOL) {
     val labelColor = MaterialTheme.colorScheme.onSurfaceVariant.toArgb()
     val gridColor = MaterialTheme.colorScheme.outlineVariant
     val labelPx = with(LocalDensity.current) { 11.sp.toPx() }
@@ -32,7 +34,7 @@ fun GlucoseGraph(readings: List<Reading>, now: Long, modifier: Modifier = Modifi
     val bottom = 2.0
 
     Canvas(modifier.semantics { contentDescription = "Glucose over the last 3 hours" }) {
-        val left = labelPx * 2
+        val left = labelPx * unit.gutter()
         val width = size.width - left
         fun x(t: Long) = left + width * (1f - (now - t).toFloat() / WINDOW_MILLIS)
         fun y(v: Double) = (size.height * (1 - (v - bottom) / (top - bottom))).toFloat()
@@ -48,7 +50,7 @@ fun GlucoseGraph(readings: List<Reading>, now: Long, modifier: Modifier = Modifi
         }
         drawIntoCanvas { canvas ->
             listOf(4, 10, 14).forEach { v ->
-                canvas.nativeCanvas.drawText(v.toString(), 0f, y(v.toDouble()) + labelPx / 3, paint)
+                canvas.nativeCanvas.drawText(unit.axis(v), 0f, y(v.toDouble()) + labelPx / 3, paint)
             }
         }
         shown.forEachIndexed { i, r ->
@@ -57,3 +59,9 @@ fun GlucoseGraph(readings: List<Reading>, now: Long, modifier: Modifier = Modifi
         }
     }
 }
+
+/** An axis label at [mmol] (4, 10 or 14): "4" in mmol/L, "72" in mg/dL. */
+internal fun GlucoseUnit.axis(mmol: Int): String = value(mmol.toDouble()).removeSuffix(".0")
+
+/** Label width, in text heights, left of a graph: wider for three-digit mg/dL. */
+internal fun GlucoseUnit.gutter(): Float = if (this == GlucoseUnit.MGDL) 2.6f else 2f

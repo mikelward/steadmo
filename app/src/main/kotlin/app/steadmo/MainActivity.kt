@@ -68,6 +68,7 @@ class MainActivity : ComponentActivity() {
                     onKnownIssues = ::openKnownIssues,
                     shortcutsOn = shortcutsOn,
                     onOpenShortcutsSettings = ::openAccessibilitySettings,
+                    onSetUnit = repository::setUnit,
                     onMinimizeCamaps = { Camaps.openChannelSettings(this, state.camapsPackage, state.camapsChannelId) },
                 )
             }
