@@ -39,15 +39,20 @@ import app.steadmo.core.SteadmoLog
  */
 object Disclaimer {
     /** Bump when the wording changes, so everyone accepts the new text. */
-    const val VERSION = 1
+    const val VERSION = 2
 
     val points = listOf(
         "Use Steadmo at your own risk. It comes with no warranty of any kind.",
         "It's made for the developer's family. It hasn't been tested for your circumstances, " +
             "your phone or your version of CamAPS FX.",
         "It isn't a medical device and isn't approved by any regulator.",
-        "Don't base treatment decisions on it. Use CamAPS FX, your CGM and your diabetes team, " +
-            "and keep their alarms on.",
+        "It can be wrong or out of date. It copies what CamAPS FX shows, and can misread it, miss " +
+            "readings or stop updating. CamAPS FX or Android updates can break it without warning.",
+        "Its alerts can be late or missing. Your phone can stop it in the background, block its " +
+            "notifications, or silence them in Do Not Disturb.",
+        "Its trend arrows and predictions are its own estimates. They are not CamAPS FX's and can " +
+            "disagree with it.",
+        "Don't base treatment decisions on it. Check CamAPS FX or your sensor, and keep their alarms on.",
         "Steadmo never doses insulin. Its buttons open CamAPS FX, where you check and confirm.",
     )
 
