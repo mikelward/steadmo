@@ -193,6 +193,14 @@ asks to bypass Do Not Disturb, which Android honours only with notification poli
 access. It adds to CamAPS FX's and the sensor's own urgent low alarms and never replaces
 them.
 
+### 4.9 Launcher shortcuts
+
+A long press on Steadmo's icon offers 20 g, 40 g, 45 g and Boost. They run through the
+widget's UI-less activity, so they behave exactly like the widget's buttons: copy the
+grams, open CamAPS FX (straight to the screen with CamAPS FX shortcuts on), and open
+Steadmo instead until the disclaimer is accepted. They are published as dynamic shortcuts
+on start, so they follow the debug build's package.
+
 ### 4.4 CamAPS FX's notification
 
 Steadmo reads CamAPS FX's "My diabetes info" notification, so the user keeps it on but can

@@ -34,6 +34,7 @@ open class SteadmoApp : Application() {
         logProcessExits()
         watchForWidgets()
         watchSignal()
+        LauncherShortcuts.publish(this)
     }
 
     /**

@@ -36,7 +36,8 @@
 - [x] Display units setting: mmol/L or mg/dL (⋮ → Units).
 - [ ] Bolus progress: if CamAPS FX shows a notification while a bolus is delivering,
       mirror its progress as a Live Update (check on a real phone first).
-- [ ] Launcher shortcuts and Quick Settings tiles for the meal presets.
+- [x] Launcher shortcuts: 20 g, 40 g, 45 g and Boost on a long press of Steadmo's icon.
+- [ ] Quick Settings tiles for the meal presets.
 - [x] CamAPS FX shortcuts: an accessibility service, limited to CamAPS FX, that takes the
       meal, Boost and Ease-off buttons (app and widget) to their CamAPS FX screens and types
       a meal's carbs, never delivering (SPEC.md §4.6). Mapped from v1.4 screenshots.
@@ -109,3 +110,5 @@ CamAPS FX's. Each step needs the maintainer's sign-off: these are safety decisio
   check is an inexact alarm allowed while idle, so it can land a few minutes late.
 - Urgent low is below 3.0 mmol/L (54 mg/dL) or under the sensor's range. It sounds on every
   new reading until OK; swiping it away counts as OK. OK quiets it for 15 minutes.
+- Launcher shortcuts are 20 g, 40 g, 45 g and Boost: launchers show about four, so Ease-off
+  and Other stay on the widget and in the app.
