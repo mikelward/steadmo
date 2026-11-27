@@ -58,6 +58,22 @@ class MainActivityTest {
         assertEquals(Settings.ACTION_ACCESSIBILITY_SETTINGS, shadowOf(app).nextStartedActivity.action)
     }
 
+    @Test fun `silenced alerts open their channel settings`() {
+        val manager = app.getSystemService(android.app.NotificationManager::class.java)
+        manager.deleteNotificationChannel(StatusNotifier.CHANNEL_ALERTS)
+        manager.createNotificationChannel(
+            android.app.NotificationChannel(StatusNotifier.CHANNEL_ALERTS, "Alerts", android.app.NotificationManager.IMPORTANCE_LOW),
+        )
+        app.allowNotifications()
+        compose.activityRule.scenario.moveToState(androidx.lifecycle.Lifecycle.State.CREATED)
+        compose.activityRule.scenario.moveToState(androidx.lifecycle.Lifecycle.State.RESUMED)
+        compose.onNodeWithText("Alerts are silenced").assertExists()
+        compose.onNodeWithText("Open settings").performClick()
+        val intent = shadowOf(app).nextStartedActivity
+        assertEquals(Settings.ACTION_CHANNEL_NOTIFICATION_SETTINGS, intent.action)
+        assertEquals(StatusNotifier.CHANNEL_ALERTS, intent.getStringExtra(Settings.EXTRA_CHANNEL_ID))
+    }
+
     @Test fun `Known issues opens the GitHub issues`() {
         compose.onNodeWithContentDescription("More options").performClick()
         compose.onNodeWithText("Known issues").performClick()

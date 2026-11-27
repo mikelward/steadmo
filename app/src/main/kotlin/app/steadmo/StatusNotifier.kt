@@ -217,6 +217,15 @@ class StatusNotifier(private val context: Context, private val clock: () -> Long
         private const val ICON_PX = 128
         const val STALE_MILLIS = 15 * 60_000L
 
+        /**
+         * Whether the user has turned Steadmo's alerts channel below Default
+         * (no sound) or off, so alerts, signal loss included, would go unheard.
+         */
+        fun alertsSilenced(context: Context): Boolean {
+            val channel = context.getSystemService(NotificationManager::class.java).getNotificationChannel(CHANNEL_ALERTS)
+            return channel != null && channel.importance < NotificationManager.IMPORTANCE_DEFAULT
+        }
+
         /** The Live Update bar runs from 2 to 14 mmol/L in tenths. */
         const val SCALE_MAX = 120
         fun scale(mmol: Double): Int = ((mmol - 2.0) * 10).toInt().coerceIn(0, SCALE_MAX)

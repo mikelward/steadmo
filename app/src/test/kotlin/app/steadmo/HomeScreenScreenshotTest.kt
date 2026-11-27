@@ -36,6 +36,9 @@ class HomeScreenScreenshotTest {
         home(Samples.rising().copy(camapsChannelId = "info", camapsChannelImportance = android.app.NotificationManager.IMPORTANCE_LOW))
     }
     @Test fun disclaimer() = both("disclaimer") { { DisclaimerScreen(onAccept = {}, onLeave = {}) } }
+    @Test fun alertsSilenced() = both("home-alerts-silenced") {
+        { HomeScreen(Samples.rising(), true, true, {}, {}, {}, {}, alertsSilenced = true, clock = { Samples.NOW }, ticking = false) }
+    }
     @Test fun setup() = both("home-setup") { home(GlucoseState(), listener = false, notifications = false) }
 
     @Test fun unitsLight() = dialog("units", dark = false) {

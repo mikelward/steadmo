@@ -169,6 +169,21 @@ class HomeScreenTest {
         compose.onNodeWithText("They're on.").assertDoesNotExist()
     }
 
+    @Test fun `silenced alerts say so and open their settings`() {
+        var opened = 0
+        compose.setContent {
+            SteadmoTheme(dark = false) {
+                HomeScreen(
+                    Samples.rising(), true, true, {}, {}, {}, {},
+                    alertsSilenced = true, onOpenAlertSettings = { opened++ }, ticking = false,
+                )
+            }
+        }
+        compose.onNodeWithText("Alerts are silenced").assertIsDisplayed()
+        compose.onNodeWithText("Open settings").performClick()
+        assertEquals(1, opened)
+    }
+
     @Test fun `Units picks mmol per L or mg per dL`() {
         val picked = mutableListOf<GlucoseUnit>()
         compose.setContent {
