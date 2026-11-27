@@ -30,6 +30,8 @@ body{background:var(--bg);color:var(--ink);font-family:var(--f-body);font-size:1
 .prose{max-width:70ch}
 h1,h2,h3{font-family:var(--f-display);text-wrap:balance;line-height:1.2;margin:0}
 h1{font-size:clamp(2rem,5vw,3rem);letter-spacing:-.02em}
+.brand{display:flex;align-items:center;gap:.6rem}
+.appicon{width:1.6em;height:auto;border-radius:.25em;box-shadow:0 1px 3px rgba(10,20,30,.18)}
 h2{font-size:1.6rem;margin-top:3.5rem;margin-bottom:.75rem}
 h3{font-size:1.1rem;margin-top:1.75rem;margin-bottom:.4rem}
 p{margin:.6rem 0}
@@ -138,7 +140,7 @@ pre.mermaid{background:var(--surface);border:1px solid var(--line);border-radius
 
 <div class="wrap">
   <div class="eyebrow">Exploration · Android · Ypsopump + Dexcom G7 + CamAPS FX · MVP reads CamAPS FX</div>
-  <h1>Steadmo</h1>
+  <h1 class="brand"><svg class="appicon" viewBox="20 35 68 38" role="img" aria-label="Steadmo icon"><rect x="20" y="35" width="68" height="38" rx="9" fill="#ffffff"/><path fill="#E8F6F7" d="M33.12,42.48 L74.88,42.48 A5.76,5.76 0 0,1 80.64,48.24 L80.64,59.76 A5.76,5.76 0 0,1 74.88,65.52 L33.12,65.52 A5.76,5.76 0 0,1 27.36,59.76 L27.36,48.24 A5.76,5.76 0 0,1 33.12,42.48 Z"/><path fill="none" stroke="#8CC8CF" stroke-width="1.44" stroke-linecap="round" d="M29.5,42.48h3M35.25,42.48h3M41,42.48h3M46.75,42.48h3M52.5,42.48h3M58.25,42.48h3M64,42.48h3M69.75,42.48h3M75.5,42.48h3M29.5,65.52h3M35.25,65.52h3M41,65.52h3M46.75,65.52h3M52.5,65.52h3M58.25,65.52h3M64,65.52h3M69.75,65.52h3M75.5,65.52h3"/><path fill="none" stroke="#0A7C8C" stroke-width="4.68" stroke-linecap="round" stroke-linejoin="round" d="M30.96,61.92 C38.16,61.92 39.6,46.08 48.24,48.24 C55.44,49.68 56.88,54.72 64.8,54 L74.88,54"/><circle cx="74.88" cy="54" r="7.92" fill="#1F9D55" fill-opacity=".18"/><circle cx="74.88" cy="54" r="4.32" fill="#1F9D55"/></svg>Steadmo</h1>
   <p class="lede">One place to see glucose, loop state and insulin, and to act on them quickly. The MVP reads CamAPS FX's "My diabetes info" notification and sends you to CamAPS FX when there is something to do. Glooko and takeaway orders come later.</p>
 
   <div class="note crit"><b>Read this first.</b> No official API exists for CamAPS FX or the Ypsopump. Steadmo can <em>read</em> from them in several ways. It cannot <em>deliver insulin</em> on its own, and it should not try. Every bolus, Boost and Ease-off is confirmed inside CamAPS FX. Steadmo gets you to that screen in one tap, with the amount ready to enter.</div>
