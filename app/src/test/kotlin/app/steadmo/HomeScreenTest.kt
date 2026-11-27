@@ -184,6 +184,47 @@ class HomeScreenTest {
         assertEquals(1, opened)
     }
 
+    @Test fun `About shows the version and the licence`() {
+        var source = 0
+        compose.setContent {
+            SteadmoTheme(dark = false) {
+                HomeScreen(Samples.rising(), true, true, {}, {}, {}, {}, version = "48+abc", onSourceCode = { source++ }, ticking = false)
+            }
+        }
+        compose.onNodeWithContentDescription("More options").performClick()
+        compose.onNodeWithText("About").performClick()
+        compose.onNodeWithText("Version 48+abc").assertIsDisplayed()
+        compose.onNodeWithText("Source code").performClick()
+        assertEquals(1, source)
+        compose.onNodeWithText("Licence").performClick()
+        compose.onNodeWithText("Apache License 2.0").assertIsDisplayed()
+        compose.onNodeWithText("Close").performClick()
+        compose.onNodeWithText("Version 48+abc").assertIsDisplayed()
+        compose.onNodeWithText("Close").performClick()
+        compose.onNodeWithText("Version 48+abc").assertDoesNotExist()
+    }
+
+    @Test fun `suggests CamAPS FX shortcuts until set up or dismissed`() {
+        var dismissed = 0
+        var other = 0
+        compose.setContent {
+            SteadmoTheme(dark = false) {
+                HomeScreen(
+                    Samples.rising(), true, true, {}, {}, {}, {},
+                    suggestShortcuts = true, onDismissShortcuts = { dismissed++ }, onOtherMeal = { other++ }, ticking = false,
+                )
+            }
+        }
+        compose.onNodeWithText("Go straight to CamAPS FX's screens").assertIsDisplayed()
+        compose.onNodeWithText("Not now").performClick()
+        assertEquals(1, dismissed)
+        compose.onNodeWithText("Set up").performClick()
+        compose.onNodeWithText("Open settings").assertIsDisplayed()
+        compose.onNodeWithText("Close").performClick()
+        compose.onNodeWithText("Other").performScrollTo().performClick()
+        assertEquals(1, other)
+    }
+
     @Test fun `Units picks mmol per L or mg per dL`() {
         val picked = mutableListOf<GlucoseUnit>()
         compose.setContent {

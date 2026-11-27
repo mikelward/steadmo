@@ -73,6 +73,11 @@ fun HomeScreen(
     onOpenCamaps: () -> Unit,
     onMeal: (Int) -> Unit,
     onMode: (CamapsGoal.Mode) -> Unit = { onOpenCamaps() },
+    onOtherMeal: () -> Unit = onOpenCamaps,
+    suggestShortcuts: Boolean = false,
+    onDismissShortcuts: () -> Unit = {},
+    version: String = "",
+    onSourceCode: () -> Unit = {},
     onMinimizeCamaps: () -> Unit = {},
     onReportBug: () -> Unit = {},
     onShowDisclaimer: () -> Unit = {},
@@ -107,6 +112,7 @@ fun HomeScreen(
         ) {
             var showingShortcuts by remember { mutableStateOf(false) }
             var showingUnits by remember { mutableStateOf(false) }
+            var showingAbout by remember { mutableStateOf(false) }
             TopBar(
                 onGetLatest = onGetLatest,
                 onKnownIssues = onKnownIssues,
@@ -114,7 +120,22 @@ fun HomeScreen(
                 onShowDisclaimer = onShowDisclaimer,
                 onCamapsShortcuts = { showingShortcuts = true },
                 onUnits = { showingUnits = true },
+                onAbout = { showingAbout = true },
             )
+            if (showingAbout) {
+                AboutDialog(version = version, onSourceCode = onSourceCode, onDismiss = { showingAbout = false })
+            }
+            if (suggestShortcuts) {
+                SetupCard(
+                    "Go straight to CamAPS FX's screens",
+                    "Steadmo's meal, Boost and Ease-off buttons can open the right screen in CamAPS FX " +
+                        "and enter the grams for you to check.",
+                    "Set up",
+                    { showingShortcuts = true },
+                    secondaryAction = "Not now",
+                    onSecondary = onDismissShortcuts,
+                )
+            }
             if (showingUnits) {
                 UnitsDialog(
                     unit = state.unit,
@@ -197,7 +218,7 @@ fun HomeScreen(
                 listOf(20, 40, 45).forEach { grams ->
                     FilledTonalButton(onClick = { onMeal(grams) }, modifier = Modifier.weight(1f)) { Text("$grams g") }
                 }
-                FilledTonalButton(onClick = onOpenCamaps, modifier = Modifier.weight(1f)) { Text("Other") }
+                FilledTonalButton(onClick = onOtherMeal, modifier = Modifier.weight(1f)) { Text("Other") }
             }
             Text(
                 "These open CamAPS FX, where you check and confirm the dose.",
@@ -275,6 +296,7 @@ private fun TopBar(
     onShowDisclaimer: () -> Unit,
     onCamapsShortcuts: () -> Unit,
     onUnits: () -> Unit,
+    onAbout: () -> Unit,
 ) {
     var open by remember { mutableStateOf(false) }
     Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
@@ -290,6 +312,7 @@ private fun TopBar(
                 DropdownMenuItem(text = { Text("Known issues") }, onClick = { open = false; onKnownIssues() })
                 DropdownMenuItem(text = { Text("Report a bug") }, onClick = { open = false; onReportBug() })
                 DropdownMenuItem(text = { Text("Disclaimer") }, onClick = { open = false; onShowDisclaimer() })
+                DropdownMenuItem(text = { Text("About") }, onClick = { open = false; onAbout() })
             }
         }
     }
@@ -330,6 +353,53 @@ internal fun ShortcutsDialog(on: Boolean, onOpenSettings: () -> Unit, onOpenAppI
             Row {
                 if (!on) TextButton(onClick = onOpenAppInfo) { Text("App info") }
                 TextButton(onClick = onDismiss) { Text("Close") }
+            }
+        },
+    )
+}
+
+/**
+ * The version, and the licences: Steadmo's and its libraries' (all Apache 2.0),
+ * with the licence text itself one tap away.
+ */
+@Composable
+internal fun AboutDialog(version: String, onSourceCode: () -> Unit, onDismiss: () -> Unit) {
+    var showingLicence by remember { mutableStateOf(false) }
+    if (showingLicence) {
+        val context = LocalContext.current
+        val text = remember { context.resources.openRawResource(R.raw.license).bufferedReader().use { it.readText() } }
+        AlertDialog(
+            onDismissRequest = { showingLicence = false },
+            title = { Text("Apache License 2.0") },
+            text = {
+                Text(
+                    text,
+                    style = MaterialTheme.typography.bodySmall,
+                    modifier = Modifier.verticalScroll(rememberScrollState()),
+                )
+            },
+            confirmButton = { TextButton(onClick = { showingLicence = false }) { Text("Close") } },
+        )
+        return
+    }
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text("Steadmo") },
+        text = {
+            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                Text("Version $version", fontWeight = FontWeight.Bold)
+                Text("A companion display for CamAPS FX. Not a medical device.")
+                Text(
+                    "Steadmo is licensed under the Apache License 2.0, as are the libraries it uses: " +
+                        "AndroidX, Jetpack Compose and Glance, Kotlin, kotlinx.coroutines and androidlog.",
+                )
+            }
+        },
+        confirmButton = { TextButton(onClick = onDismiss) { Text("Close") } },
+        dismissButton = {
+            Row {
+                TextButton(onClick = { showingLicence = true }) { Text("Licence") }
+                TextButton(onClick = onSourceCode) { Text("Source code") }
             }
         },
     )

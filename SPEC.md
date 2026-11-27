@@ -42,6 +42,13 @@ status notification, Live Update chip and alert text. Rates are per minute in th
 unit (0.01 mmol/L, 0.1 mg/dL). The choice is kept on the device and redraws the status
 notification and widgets at once.
 
+### About
+
+⋮ → About shows the version, that Steadmo is a companion display and not a medical device,
+and its licence: Steadmo and every library it uses are Apache 2.0, and the licence text is
+bundled (`res/raw/license.txt`, a copy of `LICENSE`). A Source code button opens the
+GitHub repository.
+
 ### Appearance
 
 The app follows the system light or dark setting, with Material You colors. Range colors
@@ -133,7 +140,7 @@ Boost or Ease-off screens directly. With CamAPS FX shortcuts on, an accessibilit
 does the navigation, from the app's buttons and the widget's:
 
 - Off until the user turns on "Steadmo CamAPS FX shortcuts" in Android's Accessibility
-  settings. ⋮ → CamAPS FX shortcuts explains what they do and their risks first, and
+  settings. Until then, or until they tap Not now, a home screen card suggests it. ⋮ → CamAPS FX shortcuts explains what they do and their risks first, and
   links there.
 - The service sees CamAPS FX's packages only (its config's `packageNames`), and can't
   perform gestures. It acts only within 20 seconds of a Steadmo button, only while CamAPS
@@ -147,6 +154,8 @@ does the navigation, from the app's buttons and the widget's:
     field shows exactly those grams, it taps that dialog's only Confirm, which enters them into
     the bolus calculator; over 60 g it stops and the user confirms. The user always
     checks the bolus and taps Next in CamAPS FX.
+  - Other: the same way to the Carbohydrates dialog, then it stops with the field open
+    for the user to type the grams. It types nothing, so no repeat guard applies.
   - Boost or Ease-off: the home tab if needed, then the button reading exactly "Boost" or
     "Ease-off", which opens CamAPS FX's own dialog for the user to set and confirm.
 - A carbs field is one marked as carbs by its hint or id, by the label beside it when it

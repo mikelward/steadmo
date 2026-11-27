@@ -87,6 +87,7 @@ class CamapsShortcutsService : AccessibilityService() {
                             when (val goal = task.goal) {
                                 is CamapsGoal.Meal -> "${goal.grams} g entered. Check the bolus in CamAPS FX, then tap Next."
                                 is CamapsGoal.Mode -> "Set ${goal.name} in CamAPS FX, then confirm."
+                                CamapsGoal.MealEntry -> "Enter the grams in CamAPS FX, then confirm."
                             },
                         )
                     }
@@ -108,6 +109,10 @@ class CamapsShortcutsService : AccessibilityService() {
                     SteadmoLog.event("shortcuts: typed %s g at %s; confirming next", step.text, step.path)
                 }
             }
+            is CamapsStep.Done -> {
+                finish(task, "done: ${step.reason}", fail = false)
+                toast("Enter the grams in CamAPS FX, then confirm.")
+            }
             is CamapsStep.GiveUp -> finish(task, "gave up: ${step.reason}", fail = true)
         }
     }
@@ -126,7 +131,8 @@ class CamapsShortcutsService : AccessibilityService() {
                     entered && goal is CamapsGoal.Meal ->
                         "${goal.grams} g was typed in CamAPS FX, but Steadmo didn't confirm it. Check it there."
                     goal is CamapsGoal.Meal -> "Couldn't find CamAPS FX's meal entry. ${goal.grams} g is copied to paste."
-                    else -> "Couldn't find ${(goal as CamapsGoal.Mode).name} in CamAPS FX."
+                    goal is CamapsGoal.Mode -> "Couldn't find ${goal.name} in CamAPS FX."
+                    else -> "Couldn't find CamAPS FX's meal entry."
                 },
             )
         } else {

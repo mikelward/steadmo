@@ -21,6 +21,7 @@ class MainActivity : ComponentActivity() {
     private var listenerAllowed by mutableStateOf(false)
     private var notificationsAllowed by mutableStateOf(false)
     private var alertsSilenced by mutableStateOf(false)
+    private var suggestShortcuts by mutableStateOf(false)
     private var shortcutsOn by mutableStateOf(false)
     private var disclaimerAccepted by mutableStateOf(false)
     private var showingDisclaimer by mutableStateOf(false)
@@ -62,6 +63,11 @@ class MainActivity : ComponentActivity() {
                     onOpenCamaps = { Camaps.open(this, state.camapsPackage) },
                     onMeal = { grams -> Camaps.openForMeal(this, state.camapsPackage, grams) },
                     onMode = { mode -> Camaps.openForMode(this, state.camapsPackage, mode) },
+                    onOtherMeal = { Camaps.openForMealEntry(this, state.camapsPackage) },
+                    suggestShortcuts = suggestShortcuts,
+                    onDismissShortcuts = ::dismissShortcutsSuggestion,
+                    version = BuildConfig.VERSION_NAME,
+                    onSourceCode = ::openSourceCode,
                     onReportBug = { Thread { BugReport.share(this) }.start() },
                     onShowDisclaimer = { showingDisclaimer = true },
                     onOpenAppInfo = ::openAppInfo,
@@ -85,6 +91,7 @@ class MainActivity : ComponentActivity() {
             checkSelfPermission(Manifest.permission.POST_NOTIFICATIONS) == PackageManager.PERMISSION_GRANTED
         shortcutsOn = CamapsShortcuts.enabled(this)
         alertsSilenced = StatusNotifier.alertsSilenced(this)
+        suggestShortcuts = !shortcutsOn && !getSharedPreferences(PREFS_UI, MODE_PRIVATE).getBoolean(KEY_SHORTCUTS_DISMISSED, false)
         SteadmoLog.event(
             "ui: resumed; notification access %s, notifications %s, CamAPS FX shortcuts %s, alerts silenced %s",
             listenerAllowed, notificationsAllowed, shortcutsOn, alertsSilenced,
@@ -100,6 +107,18 @@ class MainActivity : ComponentActivity() {
         startActivity(Intent(Intent.ACTION_VIEW, android.net.Uri.parse(LATEST_RELEASE_URL)))
     }
 
+    /** "Not now" on the CamAPS FX shortcuts card: don't suggest it again (⋮ still has it). */
+    private fun dismissShortcutsSuggestion() {
+        SteadmoLog.event("ui: CamAPS FX shortcuts suggestion dismissed")
+        getSharedPreferences(PREFS_UI, MODE_PRIVATE).edit().putBoolean(KEY_SHORTCUTS_DISMISSED, true).apply()
+        suggestShortcuts = false
+    }
+
+    private fun openSourceCode() {
+        SteadmoLog.event("ui: opening the source code")
+        startActivity(Intent(Intent.ACTION_VIEW, android.net.Uri.parse(SOURCE_URL)))
+    }
+
     /** Open issues on GitHub: what's known to be wrong, and whether a report is already filed. */
     private fun openKnownIssues() {
         SteadmoLog.event("ui: opening known issues")
@@ -109,6 +128,9 @@ class MainActivity : ComponentActivity() {
     companion object {
         const val LATEST_RELEASE_URL = BuildConfig.LATEST_DOWNLOAD_URL
         const val KNOWN_ISSUES_URL = "https://github.com/mikelward/steadmo/issues"
+        const val SOURCE_URL = "https://github.com/mikelward/steadmo"
+        private const val PREFS_UI = "ui"
+        private const val KEY_SHORTCUTS_DISMISSED = "shortcuts_suggestion_dismissed"
     }
 
     /** Steadmo's alerts channel, where the user can raise its importance again. */

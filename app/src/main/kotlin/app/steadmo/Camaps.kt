@@ -85,6 +85,17 @@ object Camaps {
      * Opens CamAPS FX and, with shortcuts on, its [mode] (Boost or Ease-off)
      * dialog, for the user to set and confirm there (SPEC.md §4.6).
      */
+    /**
+     * The Other button: opens CamAPS FX and, with shortcuts on, its meal entry,
+     * for the user to type the grams (SPEC.md §4.6). Nothing is typed, so no
+     * repeat guard applies.
+     */
+    fun openForMealEntry(context: Context, seenPackage: String?) {
+        val shortcuts = CamapsShortcuts.enabled(context)
+        if (shortcuts) CamapsShortcuts.start(CamapsGoal.MealEntry)
+        if (!open(context, seenPackage)) CamapsShortcuts.clear()
+    }
+
     fun openForMode(context: Context, seenPackage: String?, mode: CamapsGoal.Mode) {
         val shortcuts = CamapsShortcuts.enabled(context)
         val started = shortcuts && CamapsShortcuts.begin(context, mode)

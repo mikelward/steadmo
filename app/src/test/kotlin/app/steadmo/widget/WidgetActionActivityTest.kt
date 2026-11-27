@@ -66,6 +66,10 @@ class WidgetActionActivityTest {
         assertEquals(CamapsGoal.BOOST, CamapsShortcuts.pending!!.goal)
         tap("camaps/ease-off")
         assertEquals(CamapsGoal.EASE_OFF, CamapsShortcuts.pending!!.goal)
+        tap("camaps/meal")
+        assertEquals(CamapsGoal.MealEntry, CamapsShortcuts.pending!!.goal)
+        tap("meal/x")
+        assertEquals(CamapsGoal.MealEntry, CamapsShortcuts.pending!!.goal)
         CamapsShortcuts.clear()
     }
 

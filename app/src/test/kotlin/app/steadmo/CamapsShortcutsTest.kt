@@ -145,6 +145,23 @@ class CamapsShortcutsTest {
         assertEquals("Couldn't find Ease-off in CamAPS FX.", ShadowToast.getTextOfLatestToast())
     }
 
+    @Test fun `Other taps through to the carbs box and leaves the typing to the user`() {
+        val carbs = node(hint = "Carbs", editable = true)
+        showing(node(null, null, false, false, carbs))
+        CamapsShortcuts.start(CamapsGoal.MealEntry)
+        service.onAccessibilityEvent(event())
+        assertTrue(shadowOf(carbs).performedActions.isEmpty())
+        assertNull(CamapsShortcuts.pending)
+        assertEquals("Enter the grams in CamAPS FX, then confirm.", ShadowToast.getTextOfLatestToast())
+    }
+
+    @Test fun `says so when the meal entry can't be found for Other`() {
+        showing(node(null, null, false, false, node(hint = "Insulin", editable = true)))
+        CamapsShortcuts.start(CamapsGoal.MealEntry)
+        service.onAccessibilityEvent(event())
+        assertEquals("Couldn't find CamAPS FX's meal entry.", ShadowToast.getTextOfLatestToast())
+    }
+
     @Test fun `ignores other apps and does nothing without a meal`() {
         val meal = node(text = "Meal", clickable = true)
         showing(node(null, null, false, false, meal))
