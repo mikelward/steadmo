@@ -16,6 +16,18 @@ class RangeTest {
         assertEquals(RangeSide.HIGH, Reading(0, 22.2, Bound.ABOVE).side())
     }
 
+    @Test fun theLinesMeanTheSameInMgPerDl() {
+        fun mgdl(v: Int) = Reading(0, v / MGDL_PER_MMOL)
+        assertEquals(RangeSide.IN_RANGE, mgdl(70).side())
+        assertEquals(RangeSide.LOW, mgdl(69).side())
+        assertEquals(RangeSide.IN_RANGE, mgdl(180).side())
+        assertEquals(RangeSide.HIGH, mgdl(181).side())
+        assertEquals(false, mgdl(54).urgentLow())
+        assertEquals(true, mgdl(53).urgentLow())
+        assertEquals(false, Reading(0, 3.0).urgentLow())
+        assertEquals(true, Reading(0, 2.9).urgentLow())
+    }
+
     @Test fun runStartsAtTheFirstReadingOnTheSameSide() {
         val readings = listOf(Reading(0, 3.5), Reading(5 * min, 4.5), Reading(10 * min, 3.8), Reading(15 * min, 3.6))
         assertEquals(10 * min, outOfRangeSince(readings))

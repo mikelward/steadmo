@@ -48,8 +48,9 @@ class AlertPolicy(private val lastAlerted: MutableMap<AlertKind, Long> = mutable
         val value = unit.reading(latest)
         val rateText = "${unit.rate(rate)}/min"
 
-        if (rate < 0 && latest.mmol > LOW_MMOL) {
-            TrendCalculator.minutesUntil(latest.mmol, LOW_MMOL, rate, horizonMinutes = 20)?.let { minutes ->
+        // From the line itself too (3.9, or 70 mg/dL), heading below it now.
+        if (rate < 0 && !belowLow(latest.mmol)) {
+            TrendCalculator.minutesUntil(maxOf(latest.mmol, LOW_MMOL), LOW_MMOL, rate, horizonMinutes = 20)?.coerceAtLeast(1)?.let { minutes ->
                 return TrendAlert(AlertKind.LOW_SOON, trend.arrow, "Low in about $minutes min",
                     "$value, $rateText. Heading below ${unit.value(LOW_MMOL)}.")
             }
@@ -58,8 +59,8 @@ class AlertPolicy(private val lastAlerted: MutableMap<AlertKind, Long> = mutable
             return TrendAlert(AlertKind.FALLING_FAST, trend.arrow, "Falling fast: $value",
                 "$rateText, ${unit.value(abs(rate) * 30)} ${unit.label} in 30 min at this rate.")
         }
-        if (rate > 0 && latest.mmol < HIGH_MMOL) {
-            TrendCalculator.minutesUntil(latest.mmol, HIGH_MMOL, rate, horizonMinutes = 15)?.let { minutes ->
+        if (rate > 0 && !aboveHigh(latest.mmol)) {
+            TrendCalculator.minutesUntil(minOf(latest.mmol, HIGH_MMOL), HIGH_MMOL, rate, horizonMinutes = 15)?.coerceAtLeast(1)?.let { minutes ->
                 if (trend.arrow == TrendArrow.UP || trend.arrow == TrendArrow.DOUBLE_UP) {
                     return TrendAlert(AlertKind.HIGH_SOON, trend.arrow, "High in about $minutes min",
                         "$value, $rateText. Heading above ${unit.value(HIGH_MMOL)}.")

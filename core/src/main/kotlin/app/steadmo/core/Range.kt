@@ -2,9 +2,22 @@ package app.steadmo.core
 
 enum class RangeSide { LOW, IN_RANGE, HIGH }
 
+/**
+ * Half of 1 mg/dL in mmol/L. mg/dL readings are converted on the way in, so
+ * the standard lines land a hair off: 70 mg/dL is 3.885, 54 is 2.997. Within
+ * this of a line counts as on it, so each line means the same in both units.
+ */
+const val LINE_SLACK_MMOL = 0.5 / MGDL_PER_MMOL
+
+/** Below [LOW_MMOL] (under 70 mg/dL). */
+fun belowLow(mmol: Double): Boolean = mmol < LOW_MMOL - LINE_SLACK_MMOL
+
+/** Above [HIGH_MMOL] (over 180 mg/dL). */
+fun aboveHigh(mmol: Double): Boolean = mmol > HIGH_MMOL + LINE_SLACK_MMOL
+
 fun Reading.side(): RangeSide = when {
-    mmol < LOW_MMOL || bound == Bound.BELOW -> RangeSide.LOW
-    mmol > HIGH_MMOL || bound == Bound.ABOVE -> RangeSide.HIGH
+    belowLow(mmol) || bound == Bound.BELOW -> RangeSide.LOW
+    aboveHigh(mmol) || bound == Bound.ABOVE -> RangeSide.HIGH
     else -> RangeSide.IN_RANGE
 }
 

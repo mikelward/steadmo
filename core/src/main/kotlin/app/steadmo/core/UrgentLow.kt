@@ -4,7 +4,7 @@ package app.steadmo.core
 const val URGENT_LOW_MMOL = 3.0
 
 /** Below [URGENT_LOW_MMOL], or under the sensor's lowest reading. */
-fun Reading.urgentLow(): Boolean = bound == Bound.BELOW || mmol < URGENT_LOW_MMOL
+fun Reading.urgentLow(): Boolean = bound == Bound.BELOW || mmol < URGENT_LOW_MMOL - LINE_SLACK_MMOL
 
 /**
  * Steadmo's urgent low alert (SPEC.md §4.8): it sounds as an alarm on every

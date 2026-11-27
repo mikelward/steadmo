@@ -16,6 +16,12 @@ class AlertPolicyTest {
         assertEquals(TrendArrow.DOWN, alert.arrow)
     }
 
+    @Test fun onTheLineAndHeadingOverItWarns() {
+        assertEquals("Low in about 1 min", AlertPolicy().evaluate(Reading(0, 3.9), trend(-0.07))!!.title)
+        assertEquals("Low in about 1 min", AlertPolicy().evaluate(Reading(0, 70 / MGDL_PER_MMOL), trend(-0.07))!!.title)
+        assertEquals("High in about 1 min", AlertPolicy().evaluate(Reading(0, 10.0), trend(0.12))!!.title)
+    }
+
     @Test fun fastFallWellAboveLow() {
         val alert = AlertPolicy().evaluate(Reading(0, 12.0), trend(-0.2))!!
         assertEquals(AlertKind.FALLING_FAST, alert.kind)

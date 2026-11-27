@@ -2,8 +2,6 @@ package app.steadmo
 
 import androidx.annotation.DrawableRes
 import androidx.compose.ui.graphics.Color
-import app.steadmo.core.HIGH_MMOL
-import app.steadmo.core.LOW_MMOL
 import app.steadmo.core.TrendArrow
 
 @DrawableRes
@@ -23,7 +21,7 @@ val InRangeColor = Color(0xFF30A46C)
 val HighColor = Color(0xFFE79D13)
 
 fun rangeColor(mmol: Double): Color = when {
-    mmol < LOW_MMOL -> LowColor
-    mmol > HIGH_MMOL -> HighColor
+    app.steadmo.core.belowLow(mmol) -> LowColor
+    app.steadmo.core.aboveHigh(mmol) -> HighColor
     else -> InRangeColor
 }
