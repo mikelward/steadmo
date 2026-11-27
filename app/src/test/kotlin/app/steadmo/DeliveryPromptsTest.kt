@@ -2,9 +2,12 @@ package app.steadmo
 
 import android.app.Application
 import android.app.Notification
+import android.content.Intent
 import android.os.Process
 import android.service.notification.StatusBarNotification
+import android.widget.RemoteViews
 import androidx.test.core.app.ApplicationProvider
+import app.steadmo.widget.WidgetActionActivity
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
@@ -40,8 +43,32 @@ class DeliveryPromptsTest {
         assertEquals("Deliveroo says your rider is nearby. Bolus now?", n.extras.getCharSequence(Notification.EXTRA_TEXT).toString())
         assertEquals(StatusNotifier.CHANNEL_REMINDERS, n.channelId)
         assertEquals("Bolus", n.actions.single().title)
-        assertEquals("steadmo://widget/camaps/meal", shadowOf(n.actions.single().actionIntent).savedIntent.dataString)
+        val bolusIntent = shadowOf(n.actions.single().actionIntent).savedIntent
+        assertEquals("steadmo://widget/camaps/meal", bolusIntent.dataString)
+        assertTrue(bolusIntent.flags and Intent.FLAG_ACTIVITY_NEW_TASK != 0)
+        Robolectric.buildActivity(WidgetActionActivity::class.java, bolusIntent).create()
+        assertNull(app.posted(6))
         assertTrue(DeliveryPrompts.lastSeen!!.startsWith("Deliveroo: "))
+    }
+
+    @Test fun `delivery notifications read extras without inflating custom layouts`() {
+        val notification = Notification.Builder(app, "test")
+            .setSmallIcon(R.drawable.ic_trend_flat)
+            .setContentTitle("Almost there!")
+            .setContentText("Your rider is around the corner")
+            .build()
+        @Suppress("DEPRECATION")
+        notification.contentView = object : RemoteViews(app.packageName, R.layout.test_camaps_notification) {
+            override fun apply(context: android.content.Context?, parent: android.view.ViewGroup?): android.view.View {
+                throw AssertionError("delivery notification layout must not be inflated")
+            }
+        }
+        val sbn = StatusBarNotification(
+            "com.deliveroo.orderapp", "com.deliveroo.orderapp", 8, null, 0, 0, 0,
+            notification, Process.myUserHandle(), System.currentTimeMillis(),
+        )
+        listener.onNotificationPosted(sbn)
+        assertEquals("Food nearly here", app.posted(6)!!.extras.getString(Notification.EXTRA_TITLE))
     }
 
     @Test fun `once per order, and not before it leaves`() {
