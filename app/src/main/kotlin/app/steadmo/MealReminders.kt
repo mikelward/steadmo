@@ -112,6 +112,7 @@ class TimeChangeReceiver : BroadcastReceiver() {
         }
         SteadmoLog.event("meal reminder: %s; rescheduling", intent.action)
         MealReminders.clockChanged(context)
+        CalendarMealReminders.scan(context)
     }
 }
 
@@ -134,9 +135,9 @@ class MealReminderReceiver : BroadcastReceiver() {
                 else -> {
                     SteadmoLog.event("calendar meals: reminder")
                     notifier.showMealReminder(calendarTitle(context, title, start))
+                    intent.getStringExtra(CalendarMealReminders.EXTRA_KEY)?.let { CalendarMealReminders.reminded(context, it) }
                 }
             }
-            intent.getStringExtra(CalendarMealReminders.EXTRA_KEY)?.let { CalendarMealReminders.reminded(context, it) }
             CalendarMealReminders.scan(context)
             return
         }
