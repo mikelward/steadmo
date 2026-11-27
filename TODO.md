@@ -112,3 +112,5 @@ CamAPS FX's. Each step needs the maintainer's sign-off: these are safety decisio
   new reading until OK; swiping it away counts as OK. OK quiets it for 15 minutes.
 - Launcher shortcuts are 20 g, 40 g, 45 g and Boost: launchers show about four, so Ease-off
   and Other stay on the widget and in the app.
+- About lists the licence once (Apache 2.0 covers Steadmo and all its libraries) rather
+  than adding a licence-listing library; add one if a non-Apache dependency arrives.

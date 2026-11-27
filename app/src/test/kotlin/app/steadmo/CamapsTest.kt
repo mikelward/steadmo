@@ -142,6 +142,21 @@ class CamapsTest {
         assertFalse(CamapsShortcuts.begin(app, CamapsGoal.Meal(20), now = 63_000))
     }
 
+    @Test fun `Other asks for the meal entry with shortcuts on`() {
+        installCamaps()
+        Camaps.openForMealEntry(app, null)
+        assertNull(CamapsShortcuts.pending)
+        turnOnShortcuts()
+        Camaps.openForMealEntry(app, null)
+        assertEquals(CamapsGoal.MealEntry, CamapsShortcuts.pending!!.goal)
+    }
+
+    @Test fun `with no CamAPS FX, Other doesn't wait for it`() {
+        turnOnShortcuts()
+        Camaps.openForMealEntry(app, null)
+        assertNull(CamapsShortcuts.pending)
+    }
+
     @Test fun `Boost asks for its dialog only with shortcuts on`() {
         installCamaps()
         Camaps.openForMode(app, null, CamapsGoal.BOOST)

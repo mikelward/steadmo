@@ -41,6 +41,11 @@ class HomeScreenScreenshotTest {
     }
     @Test fun setup() = both("home-setup") { home(GlucoseState(), listener = false, notifications = false) }
 
+    @Test fun aboutLight() = dialog("about", dark = false) { AboutDialog("48+abc1234", onSourceCode = {}, onDismiss = {}) }
+    @Test fun aboutDark() = dialog("about", dark = true) { AboutDialog("48+abc1234", onSourceCode = {}, onDismiss = {}) }
+    @Test fun suggestShortcuts() = both("home-suggest-shortcuts") {
+        { HomeScreen(Samples.rising(), true, true, {}, {}, {}, {}, suggestShortcuts = true, clock = { Samples.NOW }, ticking = false) }
+    }
     @Test fun unitsLight() = dialog("units", dark = false) {
         UnitsDialog(GlucoseUnit.MMOL, onPick = {}, onDismiss = {})
     }

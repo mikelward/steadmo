@@ -47,6 +47,9 @@ sealed interface CamapsStep {
     /** Tap the button at [path], which reads [label], on the way to the task's screen. */
     data class Tap(val path: List<Int>, val label: String) : CamapsStep
 
+    /** There: nothing more to do. */
+    data class Done(val reason: String) : CamapsStep
+
     /** Nothing to do on this screen yet; it may still be loading. */
     data object Wait : CamapsStep
 
@@ -57,6 +60,9 @@ sealed interface CamapsStep {
 sealed interface CamapsGoal {
     /** Enter [grams] of carbs in the meal entry. */
     data class Meal(val grams: Int) : CamapsGoal
+
+    /** Open the meal entry, for the user to type the grams (the Other button). */
+    data object MealEntry : CamapsGoal
 
     /** Open Boost, or Ease-off, from the home screen, for the user to set and confirm. */
     data class Mode(val name: String) : CamapsGoal
@@ -103,7 +109,21 @@ class CamapsTask(val goal: CamapsGoal, val startedAt: Long) {
         return when (goal) {
             is CamapsGoal.Meal -> meal(goal.grams, screen)
             is CamapsGoal.Mode -> mode(goal.name, screen)
+            CamapsGoal.MealEntry -> mealEntry(screen)
         }
+    }
+
+    /** Like [meal], but stops once the carbs field is open, leaving the typing to the user. */
+    private fun mealEntry(screen: ScreenNode): CamapsStep {
+        if (carbFields(screen).isNotEmpty()) {
+            finished = true
+            return CamapsStep.Done("the carbs field is open")
+        }
+        if (hasField(screen)) return giveUp("a form with no field for carbs")
+        return tapOnce(
+            buttons(screen).ifEmpty { listOfNotNull(tab(screen, 1)) }
+                .sortedBy { (_, label) -> NAVIGATION.indexOfFirst { it.containsMatchIn(label) } },
+        )
     }
 
     private fun mode(name: String, screen: ScreenNode): CamapsStep {
@@ -311,6 +331,7 @@ object RepeatGuard {
     fun key(goal: CamapsGoal): String = when (goal) {
         is CamapsGoal.Meal -> "meal"
         is CamapsGoal.Mode -> goal.name.lowercase()
+        CamapsGoal.MealEntry -> "meal-entry"
     }
 
     /** Whether a shortcut last run at [last] may run again at [now]. A clock set back allows it. */

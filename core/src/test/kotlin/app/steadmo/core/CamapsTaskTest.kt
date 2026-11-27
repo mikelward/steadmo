@@ -233,4 +233,17 @@ class CamapsTaskTest {
             CamapsTask(CamapsGoal.EASE_OFF, 0).next(camapsDialog, 0),
         )
     }
+
+    @Test fun `Other goes to the meal entry and stops, typing nothing`() {
+        val entry = CamapsTask(CamapsGoal.MealEntry, startedAt = 0)
+        assertEquals(CamapsStep.Tap(listOf(2, 1), "tab 2 of 3"), entry.next(camapsHome, 0))
+        assertEquals(CamapsStep.Tap(listOf(4, 5), "Carbs g CHO ---"), entry.next(camapsMeal, 100))
+        assertEquals(CamapsStep.Done("the carbs field is open"), entry.next(camapsDialog, 200))
+        assertTrue(entry.finished)
+        assertEquals(
+            CamapsStep.GiveUp("a form with no field for carbs"),
+            CamapsTask(CamapsGoal.MealEntry, 0).next(screen(row(label("Insulin"), field())), 0),
+        )
+        assertEquals("meal-entry", RepeatGuard.key(CamapsGoal.MealEntry))
+    }
 }

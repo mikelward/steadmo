@@ -25,8 +25,9 @@ class WidgetActionActivity : ComponentActivity() {
             !Disclaimer.accepted(this) -> startActivity(Intent(this, MainActivity::class.java))
             path.firstOrNull() == "meal" -> {
                 val grams = path.getOrNull(1)?.toIntOrNull()
-                if (grams != null) Camaps.openForMeal(this, seen, grams) else Camaps.open(this, seen)
+                if (grams != null) Camaps.openForMeal(this, seen, grams) else Camaps.openForMealEntry(this, seen)
             }
+            path == listOf("camaps", "meal") -> Camaps.openForMealEntry(this, seen)
             path == listOf("camaps", "boost") -> Camaps.openForMode(this, seen, CamapsGoal.BOOST)
             path == listOf("camaps", "ease-off") -> Camaps.openForMode(this, seen, CamapsGoal.EASE_OFF)
             path.firstOrNull() == "camaps" -> Camaps.open(this, seen)

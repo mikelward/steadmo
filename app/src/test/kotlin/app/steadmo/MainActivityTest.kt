@@ -6,6 +6,7 @@ import androidx.compose.ui.test.junit4.createAndroidComposeRule
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
+import androidx.compose.ui.test.performScrollTo
 import androidx.test.core.app.ApplicationProvider
 import org.junit.Assert.assertEquals
 import org.junit.Rule
@@ -68,10 +69,26 @@ class MainActivityTest {
         compose.activityRule.scenario.moveToState(androidx.lifecycle.Lifecycle.State.CREATED)
         compose.activityRule.scenario.moveToState(androidx.lifecycle.Lifecycle.State.RESUMED)
         compose.onNodeWithText("Alerts are silenced").assertExists()
-        compose.onNodeWithText("Open settings").performClick()
+        compose.onNodeWithText("Open settings").performScrollTo().performClick()
         val intent = shadowOf(app).nextStartedActivity
         assertEquals(Settings.ACTION_CHANNEL_NOTIFICATION_SETTINGS, intent.action)
         assertEquals(StatusNotifier.CHANNEL_ALERTS, intent.getStringExtra(Settings.EXTRA_CHANNEL_ID))
+    }
+
+    @Test fun `About links to the source code`() {
+        compose.onNodeWithContentDescription("More options").performClick()
+        compose.onNodeWithText("About").performClick()
+        compose.onNodeWithText("Version ${BuildConfig.VERSION_NAME}").assertExists()
+        compose.onNodeWithText("Source code").performClick()
+        assertEquals(MainActivity.SOURCE_URL, shadowOf(app).nextStartedActivity.dataString)
+    }
+
+    @Test fun `Not now hides the shortcuts suggestion for good`() {
+        compose.onNodeWithText("Not now").performClick()
+        compose.onNodeWithText("Go straight to CamAPS FX's screens").assertDoesNotExist()
+        compose.activityRule.scenario.moveToState(androidx.lifecycle.Lifecycle.State.CREATED)
+        compose.activityRule.scenario.moveToState(androidx.lifecycle.Lifecycle.State.RESUMED)
+        compose.onNodeWithText("Go straight to CamAPS FX's screens").assertDoesNotExist()
     }
 
     @Test fun `Known issues opens the GitHub issues`() {
