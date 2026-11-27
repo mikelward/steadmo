@@ -20,6 +20,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 class MainActivity : ComponentActivity() {
     private var listenerAllowed by mutableStateOf(false)
     private var notificationsAllowed by mutableStateOf(false)
+    private var alertsSilenced by mutableStateOf(false)
     private var shortcutsOn by mutableStateOf(false)
     private var disclaimerAccepted by mutableStateOf(false)
     private var showingDisclaimer by mutableStateOf(false)
@@ -69,6 +70,8 @@ class MainActivity : ComponentActivity() {
                     shortcutsOn = shortcutsOn,
                     onOpenShortcutsSettings = ::openAccessibilitySettings,
                     onSetUnit = repository::setUnit,
+                    alertsSilenced = alertsSilenced,
+                    onOpenAlertSettings = ::openAlertSettings,
                     onMinimizeCamaps = { Camaps.openChannelSettings(this, state.camapsPackage, state.camapsChannelId) },
                 )
             }
@@ -81,9 +84,10 @@ class MainActivity : ComponentActivity() {
         notificationsAllowed =
             checkSelfPermission(Manifest.permission.POST_NOTIFICATIONS) == PackageManager.PERMISSION_GRANTED
         shortcutsOn = CamapsShortcuts.enabled(this)
+        alertsSilenced = StatusNotifier.alertsSilenced(this)
         SteadmoLog.event(
-            "ui: resumed; notification access %s, notifications %s, CamAPS FX shortcuts %s",
-            listenerAllowed, notificationsAllowed, shortcutsOn,
+            "ui: resumed; notification access %s, notifications %s, CamAPS FX shortcuts %s, alerts silenced %s",
+            listenerAllowed, notificationsAllowed, shortcutsOn, alertsSilenced,
         )
     }
 
@@ -105,6 +109,16 @@ class MainActivity : ComponentActivity() {
     companion object {
         const val LATEST_RELEASE_URL = BuildConfig.LATEST_DOWNLOAD_URL
         const val KNOWN_ISSUES_URL = "https://github.com/mikelward/steadmo/issues"
+    }
+
+    /** Steadmo's alerts channel, where the user can raise its importance again. */
+    private fun openAlertSettings() {
+        SteadmoLog.event("ui: opening alert channel settings")
+        startActivity(
+            Intent(Settings.ACTION_CHANNEL_NOTIFICATION_SETTINGS)
+                .putExtra(Settings.EXTRA_APP_PACKAGE, packageName)
+                .putExtra(Settings.EXTRA_CHANNEL_ID, StatusNotifier.CHANNEL_ALERTS),
+        )
     }
 
     /** Accessibility settings, where the user turns CamAPS FX shortcuts on or off. */

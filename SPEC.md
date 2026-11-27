@@ -178,6 +178,10 @@ for 2 hours, and the next reading clears it. Each reading sets an inexact alarm,
 while idle, for 15 minutes later; the app re-arms it on start. It adds to CamAPS FX's
 own signal loss alarm and never replaces it.
 
+Alerts go on one channel, "Alerts". When the user has set it below Default (no sound) or
+off, the home screen says so with a button to the channel's settings, as it does when
+notifications are off.
+
 ### 4.4 CamAPS FX's notification
 
 Steadmo reads CamAPS FX's "My diabetes info" notification, so the user keeps it on but can

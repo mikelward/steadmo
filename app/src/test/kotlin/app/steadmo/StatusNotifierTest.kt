@@ -77,6 +77,19 @@ class StatusNotifierTest {
     }
 
     @Test
+    fun `alerts count as silenced below Default`() {
+        val manager = app.getSystemService(android.app.NotificationManager::class.java)
+        StatusNotifier(app)
+        assertFalse(StatusNotifier.alertsSilenced(app))
+        manager.deleteNotificationChannel(StatusNotifier.CHANNEL_ALERTS)
+        assertFalse(StatusNotifier.alertsSilenced(app))
+        manager.createNotificationChannel(
+            android.app.NotificationChannel(StatusNotifier.CHANNEL_ALERTS, "Alerts", android.app.NotificationManager.IMPORTANCE_LOW),
+        )
+        assertTrue(StatusNotifier.alertsSilenced(app))
+    }
+
+    @Test
     fun `not promoted unless asked`() {
         app.allowNotifications()
         notifier.showStatus(low)

@@ -65,8 +65,8 @@ CamAPS FX's. Each step needs the maintainer's sign-off: these are safety decisio
 - [x] Signal loss: warn when no glucose has come from CamAPS FX for 15 minutes (sensor,
       Bluetooth, CamAPS FX, or Steadmo's notification access), repeating every 30 minutes
       for 2 hours (SPEC.md §4.7).
-- [ ] Check that notification permission and the alert channel's importance are intact,
-      and say so in the app when they aren't.
+- [x] Say so in the app when notifications are off or the Alerts channel is set below
+      Default, with a button to its settings.
 - [ ] Pump connection: find what CamAPS FX's notifications say when it loses the pump
       (bug report while disconnected), then warn, and say so on the Boost and meal buttons.
 - [ ] Do Not Disturb: let urgent low alerts through (channel bypass needs notification

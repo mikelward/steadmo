@@ -3,8 +3,8 @@
     <string name="app_name">Steadmo</string>
     <string name="channel_glucose">Glucose</string>
     <string name="channel_glucose_description">Current glucose and trend</string>
-    <string name="channel_alerts">Trend alerts</string>
-    <string name="channel_alerts_description">Fast rises and falls, and lows or highs on the way</string>
+    <string name="channel_alerts">Alerts</string>
+    <string name="channel_alerts_description">Fast rises and falls, lows or highs on the way, and no glucose from CamAPS FX</string>
     <string name="bug_report_subject">Steadmo bug report</string>
     <string name="bug_report_chooser_title">Send bug report</string>
     <string name="bug_report_clipboard_label">Steadmo bug report</string>

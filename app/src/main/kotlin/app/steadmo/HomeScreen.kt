@@ -82,6 +82,8 @@ fun HomeScreen(
     shortcutsOn: Boolean = false,
     onOpenShortcutsSettings: () -> Unit = {},
     onSetUnit: (GlucoseUnit) -> Unit = {},
+    alertsSilenced: Boolean = false,
+    onOpenAlertSettings: () -> Unit = {},
     clock: () -> Long = System::currentTimeMillis,
     ticking: Boolean = true,
 ) {
@@ -146,6 +148,13 @@ fun HomeScreen(
                     "For the trend arrow in the status bar and fast rise and fall alerts.",
                     "Allow",
                     onAllowNotifications,
+                )
+            } else if (alertsSilenced) {
+                SetupCard(
+                    "Alerts are silenced",
+                    "Steadmo's alerts won't sound, including when glucose stops coming. Set Alerts to Default.",
+                    "Open settings",
+                    onOpenAlertSettings,
                 )
             }
 
