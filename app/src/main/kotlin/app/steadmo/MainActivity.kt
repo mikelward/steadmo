@@ -60,6 +60,7 @@ class MainActivity : ComponentActivity() {
                     onMeal = { grams -> Camaps.openForMeal(this, state.camapsPackage, grams) },
                     onReportBug = { Thread { BugReport.share(this) }.start() },
                     onShowDisclaimer = { showingDisclaimer = true },
+                    onOpenAppInfo = ::openAppInfo,
                     onMinimizeCamaps = { Camaps.openChannelSettings(this, state.camapsPackage, state.camapsChannelId) },
                 )
             }
@@ -74,7 +75,16 @@ class MainActivity : ComponentActivity() {
         SteadmoLog.event("ui: resumed; notification access %s, notifications %s", listenerAllowed, notificationsAllowed)
     }
 
+    /** App info, where Android 13+ hides "Allow restricted settings" for sideloaded apps. */
+    private fun openAppInfo() {
+        SteadmoLog.event("ui: opening app info for restricted settings")
+        startActivity(
+            Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS, android.net.Uri.fromParts("package", packageName, null)),
+        )
+    }
+
     private fun openListenerSettings() {
+        SteadmoLog.event("ui: opening notification access settings")
         val component = ComponentName(this, CamapsListener::class.java).flattenToString()
         startActivity(
             Intent(Settings.ACTION_NOTIFICATION_LISTENER_DETAIL_SETTINGS)

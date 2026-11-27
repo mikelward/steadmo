@@ -62,6 +62,7 @@ fun HomeScreen(
     onMinimizeCamaps: () -> Unit = {},
     onReportBug: () -> Unit = {},
     onShowDisclaimer: () -> Unit = {},
+    onOpenAppInfo: () -> Unit = {},
     clock: () -> Long = System::currentTimeMillis,
     ticking: Boolean = true,
 ) {
@@ -89,6 +90,10 @@ fun HomeScreen(
                     "Steadmo reads your glucose from CamAPS FX's notification.",
                     "Allow",
                     onAllowListener,
+                    note = "If Android says it's controlled by a restricted setting: open App info, " +
+                        "tap ⋮, choose Allow restricted settings, then come back and tap Allow.",
+                    secondaryAction = "Open App info",
+                    onSecondary = onOpenAppInfo,
                 )
             }
             if (!notificationsAllowed) {
@@ -212,12 +217,26 @@ private fun Reading(state: GlucoseState, now: Long, stale: Boolean) {
 }
 
 @Composable
-private fun SetupCard(title: String, text: String, action: String, onClick: () -> Unit) {
+private fun SetupCard(
+    title: String,
+    text: String,
+    action: String,
+    onClick: () -> Unit,
+    note: String? = null,
+    secondaryAction: String? = null,
+    onSecondary: () -> Unit = {},
+) {
     Card(modifier = Modifier.fillMaxWidth()) {
         Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
             Text(title, style = MaterialTheme.typography.titleMedium)
             Text(text, style = MaterialTheme.typography.bodyMedium)
-            Button(onClick = onClick) { Text(action) }
+            note?.let {
+                Text(it, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            }
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                Button(onClick = onClick) { Text(action) }
+                secondaryAction?.let { OutlinedButton(onClick = onSecondary) { Text(it) } }
+            }
         }
     }
 }
