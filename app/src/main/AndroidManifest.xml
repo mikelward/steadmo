@@ -4,6 +4,8 @@
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
     <!-- Android 16 Live Updates: the status bar chip while out of range (SPEC.md §4.3). -->
     <uses-permission android:name="android.permission.POST_PROMOTED_NOTIFICATIONS" />
+    <!-- The urgent low alarm takes over the screen once ignored (SPEC.md §4.8). -->
+    <uses-permission android:name="android.permission.USE_FULL_SCREEN_INTENT" />
 
     <!-- Package visibility, to open CamAPS FX from the Boost, Ease-off and bolus buttons. -->
     <queries>
@@ -55,6 +57,16 @@
         <receiver
             android:name=".SignalWatchReceiver"
             android:exported="false" />
+
+        <!-- The urgent low alarm, full screen over the lock screen (SPEC.md §4.8). -->
+        <activity
+            android:name=".UrgentLowActivity"
+            android:excludeFromRecents="true"
+            android:exported="false"
+            android:launchMode="singleTop"
+            android:showWhenLocked="true"
+            android:taskAffinity=""
+            android:turnScreenOn="true" />
 
         <!-- OK on the urgent low alarm (SPEC.md §4.8). -->
         <receiver

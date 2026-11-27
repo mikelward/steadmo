@@ -75,8 +75,10 @@ CamAPS FX's. Each step needs the maintainer's sign-off: these are safety decisio
       through wherever it lets alarms through, repeating until OK (SPEC.md §4.8).
 - [ ] Check on a real phone that the urgent low alarm sounds in Do Not Disturb; if not,
       ask for notification policy access so its channel can bypass it.
-- [ ] Full-screen urgent low after it's been ignored (needs `USE_FULL_SCREEN_INTENT`, a
-      Play policy question for the maintainer).
+- [x] Full-screen urgent low after 5 ignored minutes, over the lock screen, with Treated
+      and OK (maintainer's call; SPEC.md §4.8).
+- [ ] Play policy check for `USE_FULL_SCREEN_INTENT` before a Play release (Play grants it
+      by default only to alarm and calling apps).
 - [ ] Tests for each alert path, including DND on and off, before any CamAPS FX alert is
       silenced.
 
@@ -117,3 +119,4 @@ CamAPS FX's. Each step needs the maintainer's sign-off: these are safety decisio
   than adding a licence-listing library; add one if a non-Apache dependency arrives.
 - "Treated" holds off rise alerts for 45 minutes and quiets the urgent low alarm as OK does;
   it is Steadmo's own note, kept for a day, and not sent to CamAPS FX.
+- The urgent low alarm takes over the screen after 5 minutes without OK or Treated.

@@ -95,8 +95,13 @@ class GlucoseRepository(
         when (UrgentLow.decide(latest, UrgentLowAck.get(appContext))) {
             // Only a reading posted just now sounds; a replay may still clear one.
             UrgentLow.Decision.ALERT ->
-                if (fresh) notifier.showUrgentLow(latest, _state.value.unit)
-                else SteadmoLog.event("urgent low: replayed reading; not sounding")
+                if (fresh) {
+                    UrgentLowAck.startAlerting(appContext, latest.timeMillis)
+                    val takeOver = UrgentLow.escalates(UrgentLowAck.alertingSince(appContext), latest.timeMillis)
+                    notifier.showUrgentLow(latest, _state.value.unit, fullScreen = takeOver)
+                } else {
+                    SteadmoLog.event("urgent low: replayed reading; not sounding")
+                }
             UrgentLow.Decision.SNOOZED -> SteadmoLog.event("urgent low: acknowledged recently; not sounding")
             UrgentLow.Decision.CLEAR -> {
                 notifier.cancelUrgentLow()
@@ -121,7 +126,7 @@ class GlucoseRepository(
             shownAlert = null
         }
         notifier.cancelUrgentLow()
-        UrgentLowAck.set(appContext, at)
+        UrgentLowAck.acknowledge(appContext, at)
         Recheck.schedule(appContext, at)
     }
 

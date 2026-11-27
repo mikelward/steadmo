@@ -21,6 +21,7 @@ class MainActivity : ComponentActivity() {
     private var listenerAllowed by mutableStateOf(false)
     private var notificationsAllowed by mutableStateOf(false)
     private var alertsSilenced by mutableStateOf(false)
+    private var fullScreenAllowed by mutableStateOf(true)
     private var suggestShortcuts by mutableStateOf(false)
     private var shortcutsOn by mutableStateOf(false)
     private var disclaimerAccepted by mutableStateOf(false)
@@ -77,6 +78,8 @@ class MainActivity : ComponentActivity() {
                     onOpenShortcutsSettings = ::openAccessibilitySettings,
                     onSetUnit = repository::setUnit,
                     alertsSilenced = alertsSilenced,
+                    fullScreenAllowed = fullScreenAllowed,
+                    onAllowFullScreen = ::openFullScreenSettings,
                     onOpenAlertSettings = ::openAlertSettings,
                     onMinimizeCamaps = { Camaps.openChannelSettings(this, state.camapsPackage, state.camapsChannelId) },
                 )
@@ -91,6 +94,7 @@ class MainActivity : ComponentActivity() {
             checkSelfPermission(Manifest.permission.POST_NOTIFICATIONS) == PackageManager.PERMISSION_GRANTED
         shortcutsOn = CamapsShortcuts.enabled(this)
         alertsSilenced = StatusNotifier.alertsSilenced(this)
+        fullScreenAllowed = getSystemService(android.app.NotificationManager::class.java).canUseFullScreenIntent()
         suggestShortcuts = !shortcutsOn && !getSharedPreferences(PREFS_UI, MODE_PRIVATE).getBoolean(KEY_SHORTCUTS_DISMISSED, false)
         SteadmoLog.event(
             "ui: resumed; notification access %s, notifications %s, CamAPS FX shortcuts %s, alerts silenced %s",
@@ -131,6 +135,14 @@ class MainActivity : ComponentActivity() {
         const val SOURCE_URL = "https://github.com/mikelward/steadmo"
         private const val PREFS_UI = "ui"
         private const val KEY_SHORTCUTS_DISMISSED = "shortcuts_suggestion_dismissed"
+    }
+
+    /** Android 14+'s "Full screen intents" page for Steadmo. */
+    private fun openFullScreenSettings() {
+        SteadmoLog.event("ui: opening full screen intent settings")
+        startActivity(
+            Intent(Settings.ACTION_MANAGE_APP_USE_FULL_SCREEN_INTENT, android.net.Uri.fromParts("package", packageName, null)),
+        )
     }
 
     /** Steadmo's alerts channel, where the user can raise its importance again. */

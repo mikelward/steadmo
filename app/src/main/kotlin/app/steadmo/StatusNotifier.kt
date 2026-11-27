@@ -174,7 +174,7 @@ class StatusNotifier(private val context: Context, private val clock: () -> Long
      * The urgent low alarm (SPEC.md §4.8): sounds until the user taps OK or
      * glucose comes back above 3.0, and lasts only while [latest] is fresh.
      */
-    fun showUrgentLow(latest: Reading, unit: GlucoseUnit, quiet: Boolean = false) {
+    fun showUrgentLow(latest: Reading, unit: GlucoseUnit, quiet: Boolean = false, fullScreen: Boolean = false) {
         val remaining = STALE_MILLIS - (clock() - latest.timeMillis)
         if (remaining <= 0) return
         val ok = PendingIntent.getBroadcast(
@@ -192,10 +192,23 @@ class StatusNotifier(private val context: Context, private val clock: () -> Long
             .addAction(Notification.Action.Builder(null, "OK", ok).build())
             .addAction(treatedAction())
             .setOnlyAlertOnce(quiet)
+            .apply {
+                // Ignored for a while: take over the screen, even when locked (SPEC.md §4.8).
+                if (fullScreen) {
+                    setFullScreenIntent(
+                        PendingIntent.getActivity(
+                            context, 3, Intent(context, UrgentLowActivity::class.java)
+                                .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_NO_USER_ACTION),
+                            PendingIntent.FLAG_IMMUTABLE,
+                        ),
+                        true,
+                    )
+                }
+            }
             .build()
         // Sounds over and over until it's acknowledged or cleared.
         notification.flags = notification.flags or Notification.FLAG_INSISTENT
-        SteadmoLog.warning("notify: urgent low %s", unit.reading(latest))
+        SteadmoLog.warning("notify: urgent low %s%s", unit.reading(latest), if (fullScreen) ", full screen" else "")
         post(ID_URGENT, notification)
     }
 
