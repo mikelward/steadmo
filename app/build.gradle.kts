@@ -83,6 +83,7 @@ android {
 
     buildFeatures {
         compose = true
+        buildConfig = true
     }
 
     compileOptions {
@@ -120,6 +121,7 @@ kotlin {
 
 dependencies {
     implementation(project(":core"))
+    implementation(libs.androidlog.logging.android)
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.activity.compose)
     implementation(libs.androidx.lifecycle.runtime.compose)

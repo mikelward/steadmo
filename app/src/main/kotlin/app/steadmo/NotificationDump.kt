@@ -1,11 +1,11 @@
 package app.steadmo
 
+import app.steadmo.core.SteadmoLog
 import android.app.Notification
 import android.content.Context
 import androidx.core.graphics.createBitmap
 import android.graphics.Canvas
 import android.service.notification.StatusBarNotification
-import android.util.Log
 import android.view.View
 import android.view.ViewGroup
 import android.widget.FrameLayout
@@ -62,7 +62,7 @@ data class NotificationDump(
                 views.apply(context, FrameLayout(context))
             } catch (e: RuntimeException) {
                 // A layout we can't inflate leaves the extras to go on; say so in the log.
-                Log.w(SteadmoApp.TAG, "Couldn't inflate the CamAPS FX notification layout", e)
+                SteadmoLog.failure(e, "listener: couldn't inflate the CamAPS FX notification layout")
                 return
             }
             visit(root, texts, images)
@@ -84,7 +84,7 @@ data class NotificationDump(
                 try {
                     view.resources.getResourceEntryName(view.id)
                 } catch (e: android.content.res.Resources.NotFoundException) {
-                    Log.d(SteadmoApp.TAG, "Image view id ${view.id} has no resource name", e)
+                    SteadmoLog.verbose("listener: image view id %s has no resource name: %s", view.id, e.javaClass.simpleName)
                     "id-${view.id}"
                 }
             }

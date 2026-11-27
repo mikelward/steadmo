@@ -1,5 +1,6 @@
 package app.steadmo
 
+import app.steadmo.core.SteadmoLog
 import android.app.Notification
 import android.app.NotificationChannel
 import android.app.NotificationManager
@@ -10,7 +11,6 @@ import android.content.pm.PackageManager
 import android.graphics.Bitmap
 import android.os.Build
 import androidx.annotation.RequiresApi
-import android.util.Log
 import androidx.compose.ui.graphics.toArgb
 import androidx.core.graphics.drawable.toBitmap
 import app.steadmo.core.AlertPolicy
@@ -52,6 +52,7 @@ class StatusNotifier(private val context: Context, private val clock: () -> Long
         // late it was posted (a reconnect replay, a mode-only update).
         val remaining = STALE_MILLIS - (clock() - latest.timeMillis)
         if (remaining <= 0) {
+            SteadmoLog.event("notify: reading %s ms old; status cleared", clock() - latest.timeMillis)
             manager.cancel(ID_STATUS)
             return
         }
@@ -89,7 +90,9 @@ class StatusNotifier(private val context: Context, private val clock: () -> Long
             // A reading this old is no use; better gone than wrong.
             .setTimeoutAfter(remaining)
             .setContentIntent(openApp())
-        if (promote && Build.VERSION.SDK_INT >= Build.VERSION_CODES.BAKLAVA) promote(builder, latest)
+        val promoted = promote && Build.VERSION.SDK_INT >= Build.VERSION_CODES.BAKLAVA
+        if (promoted) promote(builder, latest)
+        SteadmoLog.verbose("notify: status %s, arrow %s, live update %s (asked %s)", latest.display, arrow, promoted, promote)
         post(ID_STATUS, builder.build())
     }
 
@@ -119,7 +122,10 @@ class StatusNotifier(private val context: Context, private val clock: () -> Long
     /** Shows [alert] until its reading, taken at [readingTime], is stale. */
     fun showAlert(alert: TrendAlert, readingTime: Long) {
         val remaining = STALE_MILLIS - (clock() - readingTime)
-        if (remaining <= 0) return
+        if (remaining <= 0) {
+            SteadmoLog.event("notify: alert %s for a stale reading not shown", alert.kind)
+            return
+        }
         val color = (if (alert.arrow.name.contains("DOWN")) LowColor else HighColor).toArgb()
         val notification = Notification.Builder(context, CHANNEL_ALERTS)
             .setSmallIcon(alert.arrow.drawable())
@@ -135,11 +141,14 @@ class StatusNotifier(private val context: Context, private val clock: () -> Long
         post(ID_ALERT, notification)
     }
 
-    fun cancelAlert() = manager.cancel(ID_ALERT)
+    fun cancelAlert() {
+        SteadmoLog.event("notify: alert cancelled")
+        manager.cancel(ID_ALERT)
+    }
 
     private fun post(id: Int, notification: Notification) {
         if (context.checkSelfPermission(android.Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED) {
-            Log.i(SteadmoApp.TAG, "Notifications aren't allowed; not posting $id")
+            SteadmoLog.warning("notify: notifications aren't allowed; not posting %s", id)
             return
         }
         manager.notify(id, notification)

@@ -13,5 +13,6 @@ java {
 }
 
 dependencies {
+    api(libs.androidlog.logging.core)
     testImplementation(libs.junit)
 }

@@ -1,4 +1,5 @@
 [versions]
+androidlog = "5.1.101"
 agp = "9.5.0"
 activity = "1.13.0"
 composeBom = "2026.09.00"
@@ -13,6 +14,8 @@ androidxTestCore = "1.7.0"
 kover = "0.9.9"
 
 [libraries]
+androidlog-logging-core = { group = "com.mikelward.androidlog", name = "logging-core", version.ref = "androidlog" }
+androidlog-logging-android = { group = "com.mikelward.androidlog", name = "logging-android", version.ref = "androidlog" }
 androidx-activity-compose = { group = "androidx.activity", name = "activity-compose", version.ref = "activity" }
 androidx-compose-bom = { group = "androidx.compose", name = "compose-bom", version.ref = "composeBom" }
 androidx-compose-foundation = { group = "androidx.compose.foundation", name = "foundation" }

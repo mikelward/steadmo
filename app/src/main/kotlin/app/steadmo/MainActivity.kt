@@ -1,6 +1,7 @@
 package app.steadmo
 
 import android.Manifest
+import app.steadmo.core.SteadmoLog
 import android.content.ComponentName
 import android.content.Intent
 import android.content.pm.PackageManager
@@ -37,6 +38,7 @@ class MainActivity : ComponentActivity() {
                     onAllowNotifications = { requestNotifications.launch(Manifest.permission.POST_NOTIFICATIONS) },
                     onOpenCamaps = { Camaps.open(this, state.camapsPackage) },
                     onMeal = { grams -> Camaps.openForMeal(this, state.camapsPackage, grams) },
+                    onReportBug = { Thread { BugReport.share(this) }.start() },
                     onMinimizeCamaps = { Camaps.openChannelSettings(this, state.camapsPackage, state.camapsChannelId) },
                 )
             }
@@ -48,6 +50,7 @@ class MainActivity : ComponentActivity() {
         listenerAllowed = packageName in NotificationManagerCompat.getEnabledListenerPackages(this)
         notificationsAllowed =
             checkSelfPermission(Manifest.permission.POST_NOTIFICATIONS) == PackageManager.PERMISSION_GRANTED
+        SteadmoLog.event("ui: resumed; notification access %s, notifications %s", listenerAllowed, notificationsAllowed)
     }
 
     private fun openListenerSettings() {

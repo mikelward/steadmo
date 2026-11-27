@@ -102,9 +102,30 @@ notification" card, with a button to that channel's settings, until it is minimi
 
 ## 5. Privacy
 
-Glucose data stays on the device. The app has no `INTERNET` permission.
+Glucose data stays on the device. The app has no `INTERNET` permission. The only way
+anything leaves is a bug report the user sends themselves (§6).
+
+## 6. Debug log and bug reports
+
+Steadmo uses the shared `mikelward/androidlog` log, as the sibling apps do:
+
+- `SteadmoLog` records each step: the listener connecting, each CamAPS FX post and what
+  was parsed from it, readings added or dropped, the trend, alerts shown, held back or
+  cleared, the status notification and Live Update, and the CamAPS FX buttons. Lines go to
+  logcat and to a file in the app's cache, which keeps earlier runs. A crash is recorded
+  before the process dies, and why earlier processes ended (ANR, crash, update) is pinned
+  at the top of the next run's log.
+- **Report a bug** (bottom of the home screen) builds a report: app version, device and
+  Android version, access and permission state, CamAPS FX's package and channel, the
+  latest reading and trend, the last CamAPS FX notification as read, this run's log and
+  earlier runs. It attaches a screenshot of the screen, copies the text to the clipboard,
+  and opens the share sheet, so the user picks where it goes. If no app takes it, a toast
+  says it was copied.
+- The report includes glucose values; that is the point of it, and it goes only where the
+  user sends it.
 
 ## 6. Modules
 
 `:core` (plain Kotlin JVM): `CamapsParser`, `ReadingLog`, `TrendCalculator`,
-`AlertPolicy`. `:app`: the listener, repository, notifications and Compose UI.
+`AlertPolicy`, `SteadmoLog`. `:app`: the listener, repository, notifications, bug report
+and Compose UI.
