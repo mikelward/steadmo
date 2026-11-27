@@ -31,8 +31,9 @@
       CamAPS FX), keeps it on the timeline, holds off rise alerts it explains, and reminds
       you to recheck after 15 minutes.
 
-- [ ] Full-page home screen widget (Glance): value, arrow, graph, Auto mode, Boost,
+- [x] Full-page home screen widget (Glance): value, arrow, graph, Auto mode, Boost,
       Ease-off, 20/40/45/Other.
+- [ ] Display units setting: mmol/L or mg/dL.
 - [ ] Launcher shortcuts and Quick Settings tiles for the meal presets.
 
 ## Diagnostics

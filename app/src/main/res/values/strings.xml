@@ -10,4 +10,5 @@
     <string name="bug_report_clipboard_label">Steadmo bug report</string>
     <string name="bug_report_copied">Bug report copied. Paste it into an email or message.</string>
     <string name="bug_report_failed">Couldn\'t create the bug report.</string>
+    <string name="widget_description">Glucose, trend and graph, with Boost, Ease-off and meal buttons</string>
 </resources>

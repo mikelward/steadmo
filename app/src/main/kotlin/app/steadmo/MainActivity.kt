@@ -37,6 +37,7 @@ class MainActivity : ComponentActivity() {
                         onAccept = {
                             Disclaimer.accept(this)
                             disclaimerAccepted = true
+                            (application as? SteadmoApp)?.refreshWidgets()
                         },
                         onLeave = {
                             SteadmoLog.event("ui: disclaimer declined")

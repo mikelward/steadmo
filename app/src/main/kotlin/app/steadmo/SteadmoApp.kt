@@ -4,6 +4,13 @@ import android.app.Application
 import android.content.Context
 import android.util.Log
 import app.steadmo.core.SteadmoLog
+import app.steadmo.widget.WidgetUpdates
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.launch
 import com.mikelward.androidlog.DebugLog
 import com.mikelward.androidlog.android.DebugFileSink
 import com.mikelward.androidlog.android.LogcatSink
@@ -12,6 +19,8 @@ import com.mikelward.androidlog.android.ProcessExits
 open class SteadmoApp : Application() {
     lateinit var repository: GlucoseRepository
         private set
+
+    val appScope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
 
     /** The persisted debug log, for bug reports; null if it couldn't be set up. */
     var diagnosticSink: DebugFileSink? = null
@@ -23,6 +32,7 @@ open class SteadmoApp : Application() {
         SteadmoLog.pinnedEvent("app: started, version %s", BuildConfig.VERSION_NAME)
         repository = GlucoseRepository(this, StatusNotifier(this))
         logProcessExits()
+        watchForWidgets()
     }
 
     /**
@@ -38,6 +48,21 @@ open class SteadmoApp : Application() {
             // The debug log is what failed, so logcat is the only place left to say so.
             Log.w(TAG, "diagnostic log setup failed", e)
         }
+    }
+
+    /** Redraws placed widgets as readings arrive (WidgetUpdates). */
+    protected open fun watchForWidgets() {
+        appScope.launch {
+            repository.state
+                .map { Triple(it.latest, it.trend, it.status?.autoMode) }
+                .distinctUntilChanged()
+                .collect { WidgetUpdates.onState(this@SteadmoApp, repository.state.value) }
+        }
+    }
+
+    /** Redraws widgets now, e.g. once the disclaimer is accepted. */
+    fun refreshWidgets() {
+        appScope.launch { WidgetUpdates.onState(this@SteadmoApp, repository.state.value) }
     }
 
     /** Why the previous processes ended (ANR, crash, update), off the main thread. */
