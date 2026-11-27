@@ -158,7 +158,9 @@ class CamapsTask(val goal: CamapsGoal, val startedAt: Long) {
             // delivering stay with the user. Only once the field shows the grams.
             if (!isCarbsDialog(screen)) return giveUp("not the carbs dialog any more")
             val shown = nodeAt(screen, field).text?.trim()
-            if (shown != grams.toString()) return giveUp("the carbs field shows \"${shown.orEmpty()}\", not $grams")
+            // An event from focusing the field can arrive before ACTION_SET_TEXT updates it.
+            if (shown.isNullOrEmpty()) return CamapsStep.Wait
+            if (shown != grams.toString()) return giveUp("the carbs field shows \"$shown\", not $grams")
             val confirm = mutableListOf<List<Int>>()
             walk(screen, emptyList(), null) { node, path, _ ->
                 if (node.clickable && !node.editable && texts(node).joinToString(" ").trim().equals("Confirm", ignoreCase = true)) {

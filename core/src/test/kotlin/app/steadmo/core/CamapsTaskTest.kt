@@ -189,6 +189,12 @@ class CamapsTaskTest {
         val gone = CamapsTask(CamapsGoal.Meal(20), startedAt = 0)
         gone.next(camapsDialog, 0)
         assertEquals(CamapsStep.Wait, gone.next(camapsMeal, 10))
+
+        // Focusing the field can post an event before ACTION_SET_TEXT updates it.
+        val pending = CamapsTask(CamapsGoal.Meal(20), startedAt = 0)
+        assertTrue(pending.next(camapsDialog, 0) is CamapsStep.Fill)
+        assertEquals(CamapsStep.Wait, pending.next(camapsDialog, 10))
+        assertEquals(CamapsStep.Tap(listOf(5), "Confirm"), pending.next(typed("20"), 20))
     }
 
     @Test fun `never taps a slider or switch, or a tab once labeled`() {
