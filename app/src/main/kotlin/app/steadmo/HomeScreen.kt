@@ -91,12 +91,6 @@ fun HomeScreen(
     onOpenShortcutsSettings: () -> Unit = {},
     onSettings: () -> Unit = {},
     alertsSilenced: Boolean = false,
-    mealReminderOn: Boolean = true,
-    mealReminderTime: String = "18:00",
-    onMealReminderOn: (Boolean) -> Unit = {},
-    onPickMealReminderTime: () -> Unit = {},
-    calendarMealsOn: Boolean = false,
-    onCalendarMealsOn: (Boolean) -> Unit = {},
     fullScreenAllowed: Boolean = true,
     onAllowFullScreen: () -> Unit = {},
     onOpenAlertSettings: () -> Unit = {},
@@ -124,28 +118,14 @@ fun HomeScreen(
             // Saved, so a dialog stays open across rotation; back closes it.
             var showingShortcuts by rememberSaveable { mutableStateOf(false) }
             var showingAbout by rememberSaveable { mutableStateOf(false) }
-            var showingReminder by rememberSaveable { mutableStateOf(false) }
             TopBar(
                 onGetLatest = onGetLatest,
                 onKnownIssues = onKnownIssues,
                 onReportBug = onReportBug,
                 onShowDisclaimer = onShowDisclaimer,
-                onCamapsShortcuts = { showingShortcuts = true },
                 onSettings = onSettings,
                 onAbout = { showingAbout = true },
-                onMealReminder = { showingReminder = true },
             )
-            if (showingReminder) {
-                MealReminderDialog(
-                    on = mealReminderOn,
-                    time = mealReminderTime,
-                    onToggle = onMealReminderOn,
-                    onPickTime = onPickMealReminderTime,
-                    calendarOn = calendarMealsOn,
-                    onCalendar = onCalendarMealsOn,
-                    onDismiss = { showingReminder = false },
-                )
-            }
             if (showingAbout) {
                 AboutDialog(version = version, onSourceCode = onSourceCode, onDismiss = { showingAbout = false })
             }
@@ -320,10 +300,8 @@ private fun TopBar(
     onKnownIssues: () -> Unit,
     onReportBug: () -> Unit,
     onShowDisclaimer: () -> Unit,
-    onCamapsShortcuts: () -> Unit,
     onSettings: () -> Unit,
     onAbout: () -> Unit,
-    onMealReminder: () -> Unit,
 ) {
     var open by remember { mutableStateOf(false) }
     Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
@@ -333,8 +311,6 @@ private fun TopBar(
                 Icon(painterResource(R.drawable.ic_more_vert), contentDescription = "More options")
             }
             DropdownMenu(expanded = open, onDismissRequest = { open = false }) {
-                DropdownMenuItem(text = { Text("Meal reminder") }, onClick = { open = false; onMealReminder() })
-                DropdownMenuItem(text = { Text("CamAPS FX shortcuts") }, onClick = { open = false; onCamapsShortcuts() })
                 DropdownMenuItem(text = { Text("Get latest version") }, onClick = { open = false; onGetLatest() })
                 DropdownMenuItem(text = { Text("Known issues") }, onClick = { open = false; onKnownIssues() })
                 DropdownMenuItem(text = { Text("Report a bug") }, onClick = { open = false; onReportBug() })

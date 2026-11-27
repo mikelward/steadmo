@@ -69,7 +69,23 @@ class MainActivity : ComponentActivity() {
                 }
                 val state by repository.state.collectAsStateWithLifecycle()
                 if (screen == Screen.SETTINGS) {
-                    SettingsScreen(unit = state.unit, onSetUnit = repository::setUnit, onBack = { screen = Screen.HOME })
+                    SettingsScreen(
+                        unit = state.unit,
+                        onSetUnit = repository::setUnit,
+                        onBack = { screen = Screen.HOME },
+                        mealReminderOn = mealReminderOn,
+                        mealReminderTime = formattedMealReminderTime(),
+                        onMealReminderOn = { on ->
+                            MealReminders.set(this, on, mealReminderTime)
+                            mealReminderOn = on
+                        },
+                        onPickMealReminderTime = ::pickMealReminderTime,
+                        calendarMealsOn = calendarMealsOn,
+                        onCalendarMealsOn = ::setCalendarMeals,
+                        shortcutsOn = shortcutsOn,
+                        onOpenShortcutsSettings = ::openAccessibilitySettings,
+                        onOpenAppInfo = ::openAppInfo,
+                    )
                     return@SteadmoTheme
                 }
                 HomeScreen(
@@ -95,17 +111,6 @@ class MainActivity : ComponentActivity() {
                     onOpenShortcutsSettings = ::openAccessibilitySettings,
                     onSettings = { screen = Screen.SETTINGS },
                     alertsSilenced = alertsSilenced,
-                    mealReminderOn = mealReminderOn,
-                    mealReminderTime = android.text.format.DateFormat.getTimeFormat(this).format(
-                        java.util.Date.from(mealReminderTime.atDate(java.time.LocalDate.now()).atZone(java.time.ZoneId.systemDefault()).toInstant()),
-                    ),
-                    onMealReminderOn = { on ->
-                        MealReminders.set(this, on, mealReminderTime)
-                        mealReminderOn = on
-                    },
-                    onPickMealReminderTime = ::pickMealReminderTime,
-                    calendarMealsOn = calendarMealsOn,
-                    onCalendarMealsOn = ::setCalendarMeals,
                     fullScreenAllowed = fullScreenAllowed,
                     onAllowFullScreen = ::openFullScreenSettings,
                     onOpenAlertSettings = ::openAlertSettings,
@@ -142,7 +147,7 @@ class MainActivity : ComponentActivity() {
         startActivity(Intent(Intent.ACTION_VIEW, android.net.Uri.parse(LATEST_RELEASE_URL)))
     }
 
-    /** "Not now" on the CamAPS FX shortcuts card: don't suggest it again (⋮ still has it). */
+    /** "Not now" on the CamAPS FX shortcuts card: don't suggest it again (Settings still has it). */
     private fun dismissShortcutsSuggestion() {
         SteadmoLog.event("ui: CamAPS FX shortcuts suggestion dismissed")
         getSharedPreferences(PREFS_UI, MODE_PRIVATE).edit().putBoolean(KEY_SHORTCUTS_DISMISSED, true).apply()
@@ -177,6 +182,11 @@ class MainActivity : ComponentActivity() {
         CalendarMealReminders.set(this, on)
         calendarMealsOn = on
     }
+
+    /** The reminder's time in the phone's 12- or 24-hour format. */
+    private fun formattedMealReminderTime(): String = android.text.format.DateFormat.getTimeFormat(this).format(
+        java.util.Date.from(mealReminderTime.atDate(java.time.LocalDate.now()).atZone(java.time.ZoneId.systemDefault()).toInstant()),
+    )
 
     private fun pickMealReminderTime() {
         android.app.TimePickerDialog(

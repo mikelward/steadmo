@@ -29,11 +29,25 @@ import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
 import app.steadmo.core.GlucoseUnit
 
-/** ⋮ → Settings: Steadmo's own settings. Back, or the arrow, returns home. */
+/** ⋮ → Settings: Steadmo's own settings, each opening its dialog. Back, or the arrow, returns home. */
 @Composable
-fun SettingsScreen(unit: GlucoseUnit, onSetUnit: (GlucoseUnit) -> Unit, onBack: () -> Unit) {
+fun SettingsScreen(
+    unit: GlucoseUnit,
+    onSetUnit: (GlucoseUnit) -> Unit,
+    onBack: () -> Unit,
+    mealReminderOn: Boolean = true,
+    mealReminderTime: String = "18:00",
+    onMealReminderOn: (Boolean) -> Unit = {},
+    onPickMealReminderTime: () -> Unit = {},
+    calendarMealsOn: Boolean = false,
+    onCalendarMealsOn: (Boolean) -> Unit = {},
+    shortcutsOn: Boolean = false,
+    onOpenShortcutsSettings: () -> Unit = {},
+    onOpenAppInfo: () -> Unit = {},
+) {
     BackHandler(onBack = onBack)
-    var showingUnits by rememberSaveable { mutableStateOf(false) }
+    // Saved, so a dialog stays open across rotation; back closes it.
+    var showing by rememberSaveable { mutableStateOf<String?>(null) }
     Surface(modifier = Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background) {
         Column(modifier = Modifier.safeDrawingPadding().verticalScroll(rememberScrollState())) {
             Row(
@@ -46,19 +60,41 @@ fun SettingsScreen(unit: GlucoseUnit, onSetUnit: (GlucoseUnit) -> Unit, onBack: 
                 }
                 Text("Settings", style = MaterialTheme.typography.titleLarge, modifier = Modifier.semantics { heading() })
             }
-            Column(
-                modifier = Modifier.fillMaxWidth().clickable { showingUnits = true }.padding(horizontal = 16.dp, vertical = 12.dp),
-            ) {
-                Text("Units", style = MaterialTheme.typography.bodyLarge)
-                Text(unit.label, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
-            }
+            SettingRow("Units", unit.label) { showing = UNITS }
+            SettingRow("Meal reminder", if (mealReminderOn) "At $mealReminderTime" else "Off") { showing = MEAL_REMINDER }
+            SettingRow("CamAPS FX shortcuts", if (shortcutsOn) "On" else "Off") { showing = SHORTCUTS }
         }
     }
-    if (showingUnits) {
-        UnitsDialog(
-            unit = unit,
-            onPick = { showingUnits = false; onSetUnit(it) },
-            onDismiss = { showingUnits = false },
+    val close = { showing = null }
+    when (showing) {
+        UNITS -> UnitsDialog(unit = unit, onPick = { close(); onSetUnit(it) }, onDismiss = close)
+        MEAL_REMINDER -> MealReminderDialog(
+            on = mealReminderOn,
+            time = mealReminderTime,
+            onToggle = onMealReminderOn,
+            onPickTime = onPickMealReminderTime,
+            calendarOn = calendarMealsOn,
+            onCalendar = onCalendarMealsOn,
+            onDismiss = close,
         )
+        SHORTCUTS -> ShortcutsDialog(
+            on = shortcutsOn,
+            onOpenSettings = { close(); onOpenShortcutsSettings() },
+            onOpenAppInfo = { close(); onOpenAppInfo() },
+            onDismiss = close,
+        )
+    }
+}
+
+private const val UNITS = "units"
+private const val MEAL_REMINDER = "meal_reminder"
+private const val SHORTCUTS = "shortcuts"
+
+/** A setting's name and its current value; tapping opens its dialog. */
+@Composable
+private fun SettingRow(title: String, value: String, onClick: () -> Unit) {
+    Column(modifier = Modifier.fillMaxWidth().clickable(onClick = onClick).padding(horizontal = 16.dp, vertical = 12.dp)) {
+        Text(title, style = MaterialTheme.typography.bodyLarge)
+        Text(value, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
     }
 }

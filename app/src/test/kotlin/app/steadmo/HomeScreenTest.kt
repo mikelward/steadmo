@@ -9,6 +9,8 @@ import androidx.compose.ui.test.assertIsNotEnabled
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
+import androidx.compose.ui.test.onAllNodesWithText
+import androidx.compose.ui.test.onLast
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollTo
 import org.junit.Assert.assertEquals
@@ -143,16 +145,24 @@ class HomeScreenTest {
         assertEquals(1, disclaimerShown)
     }
 
+    private fun settings(shortcuts: Boolean = false) = compose.setContent {
+        SteadmoTheme(dark = false) {
+            SettingsScreen(
+                GlucoseUnit.MMOL, onSetUnit = {}, onBack = {}, shortcutsOn = shortcuts,
+                onOpenShortcutsSettings = { shortcutsSettings++ }, onOpenAppInfo = { appInfo++ },
+            )
+        }
+    }
+
     @Test fun `CamAPS FX shortcuts explains itself before opening settings`() {
-        show(Samples.rising())
-        compose.onNodeWithContentDescription("More options").performClick()
+        settings()
+        compose.onNodeWithText("Off").assertIsDisplayed()
         compose.onNodeWithText("CamAPS FX shortcuts").performClick()
         compose.onNodeWithText("Steadmo never delivers insulin", substring = true).assertIsDisplayed()
         compose.onNodeWithText("They're off", substring = true).assertIsDisplayed()
         compose.onNodeWithText("App info").performClick()
         assertEquals(1, appInfo)
 
-        compose.onNodeWithContentDescription("More options").performClick()
         compose.onNodeWithText("CamAPS FX shortcuts").performClick()
         compose.onNodeWithText("Open settings").performClick()
         assertEquals(1, shortcutsSettings)
@@ -160,8 +170,8 @@ class HomeScreenTest {
     }
 
     @Test fun `CamAPS FX shortcuts says when it's on`() {
-        show(Samples.rising(), shortcuts = true)
-        compose.onNodeWithContentDescription("More options").performClick()
+        settings(shortcuts = true)
+        compose.onNodeWithText("On").assertIsDisplayed()
         compose.onNodeWithText("CamAPS FX shortcuts").performClick()
         compose.onNodeWithText("They're on.").assertIsDisplayed()
         compose.onNodeWithText("App info").assertDoesNotExist()
@@ -243,19 +253,19 @@ class HomeScreenTest {
         var picks = 0
         compose.setContent {
             SteadmoTheme(dark = false) {
-                HomeScreen(
-                    Samples.rising(), true, true, {}, {}, {}, {},
+                SettingsScreen(
+                    GlucoseUnit.MMOL, onSetUnit = {}, onBack = {},
                     mealReminderOn = true, mealReminderTime = "18:00",
                     onMealReminderOn = { toggles += it }, onPickMealReminderTime = { picks++ },
-                    onCalendarMealsOn = { calendar += it }, ticking = false,
+                    onCalendarMealsOn = { calendar += it },
                 )
             }
         }
-        compose.onNodeWithContentDescription("More options").performClick()
+        compose.onNodeWithText("At 18:00").assertIsDisplayed()
         compose.onNodeWithText("Meal reminder").performClick()
         compose.onNodeWithText("Remind me").performClick()
         assertEquals(listOf(false), toggles)
-        compose.onNodeWithText("At 18:00").performClick()
+        compose.onAllNodesWithText("At 18:00").onLast().performClick()
         assertEquals(1, picks)
         compose.onNodeWithText("Calendar meals").performClick()
         assertEquals(listOf(false, true), toggles + calendar)
@@ -288,7 +298,7 @@ class HomeScreenTest {
             }
         }
         compose.onNodeWithContentDescription("More options").performClick()
-        compose.onNodeWithText("Units").assertDoesNotExist()
+        listOf("Units", "Meal reminder", "CamAPS FX shortcuts").forEach { compose.onNodeWithText(it).assertDoesNotExist() }
         compose.onNodeWithText("Settings").performClick()
         assertEquals(1, settings)
     }

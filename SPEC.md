@@ -140,7 +140,7 @@ Boost or Ease-off screens directly. With CamAPS FX shortcuts on, an accessibilit
 does the navigation, from the app's buttons and the widget's:
 
 - Off until the user turns on "Steadmo CamAPS FX shortcuts" in Android's Accessibility
-  settings. Until then, or until they tap Not now, a home screen card suggests it. ⋮ → CamAPS FX shortcuts explains what they do and their risks first, and
+  settings. Until then, or until they tap Not now, a home screen card suggests it. ⋮ → Settings → CamAPS FX shortcuts explains what they do and their risks first, and
   links there.
 - The service sees CamAPS FX's packages only (its config's `packageNames`), and can't
   perform gestures. It acts only within 20 seconds of a Steadmo button, only while CamAPS
@@ -247,14 +247,15 @@ kept in memory for a bug report the user sends.
 
 ### 4.15 Navigation
 
-⋮ opens dialogs (Meal reminder, CamAPS FX shortcuts, About) and pages (Settings, Disclaimer).
+⋮ opens About (a dialog) and the Settings and Disclaimer pages. Settings lists Units, Meal
+reminder and CamAPS FX shortcuts, each with its current value, and each opens its dialog.
 Back closes a dialog, and from a page returns home; only home's back leaves the app. On first
 run, back on the disclaimer leaves, as Leave does. The open page and dialog survive rotation.
 Dialog content scrolls when it doesn't fit.
 
 ### 4.13 Meal reminder
 
-Each day at a set time (on by default at 18:00; ⋮ → Meal reminder turns it off or changes
+Each day at a set time (on by default at 18:00; ⋮ → Settings → Meal reminder turns it off or changes
 the time), "Time to bolus for dinner?" on the Reminders channel, with Bolus (CamAPS FX's
 carbs box, like Other), In 30 min and In 60 min. Its alarms are inexact but allowed while
 idle, so Doze can't hold them until the phone wakes; they usually land within a minute or
@@ -264,7 +265,7 @@ stays at 18:00 local. Turning it off cancels any snooze and clears a shown remin
 
 ### 4.14 Calendar meals
 
-Off until turned on in ⋮ → Meal reminder, which asks for calendar access. Steadmo reads the
+Off until turned on in ⋮ → Settings → Meal reminder, which asks for calendar access. Steadmo reads the
 next day's events, on the device, for timed events named for a meal (breakfast, brunch,
 lunch, dinner, supper, meal) or a restaurant booking (reservation, restaurant, "table for
 N"), which Gmail adds from booking emails. 15 minutes before the soonest, it posts "Dinner
