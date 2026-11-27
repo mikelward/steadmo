@@ -17,6 +17,23 @@ fun git(vararg args: String): String? = try {
     null
 }
 
+// Release signing comes from the environment, so no key is ever in the repo:
+// RELEASE_KEYSTORE_FILE, RELEASE_KEYSTORE_PASSWORD, RELEASE_KEY_ALIAS and
+// RELEASE_KEY_PASSWORD, all or none (docs/RELEASES.md). With none, release
+// builds are unsigned and can't be installed.
+fun releaseEnv(name: String): String? = providers.environmentVariable(name).orNull?.takeIf { it.isNotBlank() }
+
+val releaseKeystorePath = releaseEnv("RELEASE_KEYSTORE_FILE")
+val releaseKeystorePassword = releaseEnv("RELEASE_KEYSTORE_PASSWORD")
+val releaseKeyAlias = releaseEnv("RELEASE_KEY_ALIAS")
+val releaseKeyPassword = releaseEnv("RELEASE_KEY_PASSWORD")
+val releaseVars = listOf(releaseKeystorePath, releaseKeystorePassword, releaseKeyAlias, releaseKeyPassword)
+val releaseSigningConfigured = releaseVars.all { it != null }
+check(releaseSigningConfigured || releaseVars.all { it == null }) {
+    "Set all of RELEASE_KEYSTORE_FILE, RELEASE_KEYSTORE_PASSWORD, RELEASE_KEY_ALIAS and " +
+        "RELEASE_KEY_PASSWORD, or none to build unsigned (docs/RELEASES.md)."
+}
+
 val commitCount: Int = git("rev-list", "--count", "HEAD")?.toIntOrNull() ?: 1
 val shortSha: String = git("rev-parse", "--short", "HEAD") ?: "unknown"
 
@@ -35,6 +52,17 @@ android {
         versionName = "$commitCount+$shortSha"
     }
 
+    signingConfigs {
+        create("release") {
+            if (releaseSigningConfigured) {
+                storeFile = file(releaseKeystorePath!!)
+                storePassword = releaseKeystorePassword
+                keyAlias = releaseKeyAlias
+                keyPassword = releaseKeyPassword
+            }
+        }
+    }
+
     buildTypes {
         debug {
             applicationIdSuffix = ".debug"
@@ -43,6 +71,7 @@ android {
             isMinifyEnabled = true
             isShrinkResources = true
             proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"))
+            if (releaseSigningConfigured) signingConfig = signingConfigs.getByName("release")
         }
     }
 
