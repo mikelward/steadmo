@@ -30,6 +30,27 @@
             </intent-filter>
         </activity>
 
+        <!-- The widget's buttons: no UI, just copies the amount and opens CamAPS FX. -->
+        <activity
+            android:name=".widget.WidgetActionActivity"
+            android:excludeFromRecents="true"
+            android:exported="false"
+            android:noHistory="true"
+            android:taskAffinity=""
+            android:theme="@android:style/Theme.Translucent.NoTitleBar" />
+
+        <receiver
+            android:name=".widget.SteadmoWidgetReceiver"
+            android:exported="true"
+            android:label="@string/app_name">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/steadmo_widget_info" />
+        </receiver>
+
         <!-- Shares bug report screenshots with the app the user picks. -->
         <provider
             android:name="androidx.core.content.FileProvider"

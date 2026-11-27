@@ -101,6 +101,21 @@ once a reading is back in range and no low is on the way. It needs
 `POST_PROMOTED_NOTIFICATIONS`; the user can turn it off in Settings. On Android 15 the
 same notification posts unpromoted.
 
+### 4.5 Home screen widget
+
+A resizable widget, from 2x1 to a full page (4x5 by default):
+
+- At every size: the value, coloured by range, the trend arrow, the reading's time and
+  rate, and Auto mode. A reading over 10 minutes old greys out and says so.
+- From about 200 dp tall: the 3-hour graph, drawn to a bitmap.
+- From about 320 dp tall: Boost, Ease-off, 20 g, 40 g, 45 g and Other. They open CamAPS
+  FX through a UI-less activity, which copies the meal amount first, as the app's buttons
+  do.
+- Before the disclaimer is accepted, it only offers to open Steadmo.
+
+It redraws on each new reading, and once more 10 minutes later so a stale value greys out
+without waiting for the system's 30-minute refresh.
+
 ### 4.4 CamAPS FX's notification
 
 Steadmo reads CamAPS FX's "My diabetes info" notification, so the user keeps it on but can
