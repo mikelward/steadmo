@@ -61,6 +61,7 @@ fun HomeScreen(
     onMeal: (Int) -> Unit,
     onMinimizeCamaps: () -> Unit = {},
     onReportBug: () -> Unit = {},
+    onShowDisclaimer: () -> Unit = {},
     clock: () -> Long = System::currentTimeMillis,
     ticking: Boolean = true,
 ) {
@@ -146,7 +147,15 @@ fun HomeScreen(
             )
 
             state.lastDump?.let { NotificationDetails(it) }
-            TextButton(onClick = onReportBug) { Text("Report a bug") }
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                TextButton(onClick = onReportBug) { Text("Report a bug") }
+                TextButton(onClick = onShowDisclaimer) { Text("Disclaimer") }
+            }
+            Text(
+                "Not a medical device. Use at your own risk.",
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
         }
     }
 }

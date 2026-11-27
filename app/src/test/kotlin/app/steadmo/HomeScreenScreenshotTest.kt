@@ -33,6 +33,7 @@ class HomeScreenScreenshotTest {
     @Test fun minimizeCamaps() = both("home-minimize-camaps") {
         home(Samples.rising().copy(camapsChannelId = "info", camapsChannelImportance = android.app.NotificationManager.IMPORTANCE_LOW))
     }
+    @Test fun disclaimer() = both("disclaimer") { { DisclaimerScreen(onAccept = {}, onLeave = {}) } }
     @Test fun setup() = both("home-setup") { home(GlucoseState(), listener = false, notifications = false) }
 
     private fun both(name: String, content: () -> @Composable () -> Unit) {

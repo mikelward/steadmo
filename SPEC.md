@@ -24,6 +24,14 @@ CamAPS FX. The integration research is in `docs/EXPLORATION.md`; mocks are in
 - Cloud sync or accounts.
 - Wear OS, for the MVP.
 
+### Disclaimer
+
+On first open, and again whenever its wording changes, Steadmo shows a disclaimer: use at
+your own risk, no warranty, made for the developer's family and not tested for anyone
+else's circumstances, not a medical device and not approved by any regulator, no treatment
+decisions from it, and it never doses. Continue stays disabled until the user ticks "I have
+read this and accept the risk"; Leave closes the app. The home screen links back to it.
+
 ### Appearance
 
 The app follows the system light or dark setting, with Material You colors. Range colors

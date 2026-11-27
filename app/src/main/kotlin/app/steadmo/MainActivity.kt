@@ -20,6 +20,8 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 class MainActivity : ComponentActivity() {
     private var listenerAllowed by mutableStateOf(false)
     private var notificationsAllowed by mutableStateOf(false)
+    private var disclaimerAccepted by mutableStateOf(false)
+    private var showingDisclaimer by mutableStateOf(false)
 
     private val requestNotifications =
         registerForActivityResult(ActivityResultContracts.RequestPermission()) { notificationsAllowed = it }
@@ -27,8 +29,26 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
+        disclaimerAccepted = Disclaimer.accepted(this)
         setContent {
             SteadmoTheme {
+                if (!disclaimerAccepted) {
+                    DisclaimerScreen(
+                        onAccept = {
+                            Disclaimer.accept(this)
+                            disclaimerAccepted = true
+                        },
+                        onLeave = {
+                            SteadmoLog.event("ui: disclaimer declined")
+                            finish()
+                        },
+                    )
+                    return@SteadmoTheme
+                }
+                if (showingDisclaimer) {
+                    DisclaimerScreen(onAccept = null, onLeave = { showingDisclaimer = false })
+                    return@SteadmoTheme
+                }
                 val state by repository.state.collectAsStateWithLifecycle()
                 HomeScreen(
                     state = state,
@@ -39,6 +59,7 @@ class MainActivity : ComponentActivity() {
                     onOpenCamaps = { Camaps.open(this, state.camapsPackage) },
                     onMeal = { grams -> Camaps.openForMeal(this, state.camapsPackage, grams) },
                     onReportBug = { Thread { BugReport.share(this) }.start() },
+                    onShowDisclaimer = { showingDisclaimer = true },
                     onMinimizeCamaps = { Camaps.openChannelSettings(this, state.camapsPackage, state.camapsChannelId) },
                 )
             }

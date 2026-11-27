@@ -15,7 +15,12 @@ import org.robolectric.Shadows.shadowOf
 
 @RunWith(RobolectricTestRunner::class)
 class MainActivityTest {
-    @get:Rule val compose = createAndroidComposeRule<MainActivity>()
+    // Accepted before the activity starts; DisclaimerFlowTest covers first run.
+    @get:Rule(order = 0) val accepted = object : org.junit.rules.ExternalResource() {
+        override fun before() = Disclaimer.accept(ApplicationProvider.getApplicationContext())
+    }
+
+    @get:Rule(order = 1) val compose = createAndroidComposeRule<MainActivity>()
     private val app = ApplicationProvider.getApplicationContext<Application>()
 
     @Test fun `Allow opens Steadmo's notification access page`() {
