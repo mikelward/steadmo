@@ -105,8 +105,11 @@ object CalendarMealReminders {
             CalendarContract.Instances.EVENT_ID, CalendarContract.Instances.TITLE,
             CalendarContract.Instances.BEGIN, CalendarContract.Instances.ALL_DAY,
         )
+        val selection = "${CalendarContract.Instances.VISIBLE} = 1 " +
+            "AND (${CalendarContract.Instances.STATUS} IS NULL OR ${CalendarContract.Instances.STATUS} != ${CalendarContract.Events.STATUS_CANCELED}) " +
+            "AND (${CalendarContract.Instances.SELF_ATTENDEE_STATUS} IS NULL OR ${CalendarContract.Instances.SELF_ATTENDEE_STATUS} != ${CalendarContract.Attendees.ATTENDEE_STATUS_DECLINED})"
         return try {
-            context.contentResolver.query(uri, columns, null, null, null)?.use { c ->
+            context.contentResolver.query(uri, columns, selection, null, null)?.use { c ->
                 buildList {
                     while (c.moveToNext()) add(CalendarMeals.Event(c.getLong(0), c.getString(1).orEmpty(), c.getLong(2), c.getInt(3) != 0))
                 }
