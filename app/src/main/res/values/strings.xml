@@ -3,6 +3,8 @@
     <string name="app_name">Steadmo</string>
     <string name="channel_glucose">Glucose</string>
     <string name="channel_glucose_description">Current glucose and trend</string>
+    <string name="channel_urgent">Urgent low</string>
+    <string name="channel_urgent_description">Glucose below 3.0 mmol/L (54 mg/dL), as an alarm until you tap OK</string>
     <string name="channel_alerts">Alerts</string>
     <string name="channel_alerts_description">Fast rises and falls, lows or highs on the way, and no glucose from CamAPS FX</string>
     <string name="bug_report_subject">Steadmo bug report</string>

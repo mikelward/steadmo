@@ -12,6 +12,7 @@ import app.steadmo.core.Reading
 import app.steadmo.core.ReadingLog
 import app.steadmo.core.Trend
 import app.steadmo.core.TrendCalculator
+import app.steadmo.core.UrgentLow
 import java.io.File
 import java.io.IOException
 import java.util.concurrent.Executor
@@ -76,6 +77,23 @@ class GlucoseRepository(
         if (redrawn != null && time != null && redrawn.kind == shownAlert && notifier.alertShowing()) {
             notifier.showAlert(redrawn, time, quiet = true)
         }
+        // Likewise the urgent low alarm, without restarting its sound.
+        if (notifier.urgentLowShowing()) notifier.showUrgentLow(latest, unit, quiet = true)
+    }
+
+    /** The urgent low alarm for a fresh reading (SPEC.md §4.8). */
+    private fun urgentLow(latest: Reading, fresh: Boolean) {
+        when (UrgentLow.decide(latest, UrgentLowAck.get(appContext))) {
+            // Only a reading posted just now sounds; a replay may still clear one.
+            UrgentLow.Decision.ALERT ->
+                if (fresh) notifier.showUrgentLow(latest, _state.value.unit)
+                else SteadmoLog.event("urgent low: replayed reading; not sounding")
+            UrgentLow.Decision.SNOOZED -> SteadmoLog.event("urgent low: acknowledged recently; not sounding")
+            UrgentLow.Decision.CLEAR -> {
+                notifier.cancelUrgentLow()
+                UrgentLowAck.clear(appContext)
+            }
+        }
     }
 
     private fun loadUnit(): GlucoseUnit {
@@ -136,6 +154,7 @@ class GlucoseRepository(
             if (age != null && age >= ALERT_MAX_AGE_MILLIS) {
                 SteadmoLog.event("alerts: reading is %s ms old; a replay doesn't alert", age)
             }
+            latest?.let { urgentLow(it, fresh = clock() - it.timeMillis < ALERT_MAX_AGE_MILLIS) }
             latest?.takeIf { clock() - it.timeMillis < ALERT_MAX_AGE_MILLIS }?.let {
                 alerts.evaluate(it, trend, _state.value.unit)?.let { alert ->
                     SteadmoLog.event("alerts: %s (%s)", alert.kind, alert.title)

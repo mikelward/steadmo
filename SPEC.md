@@ -182,6 +182,17 @@ Alerts go on one channel, "Alerts". When the user has set it below Default (no s
 off, the home screen says so with a button to the channel's settings, as it does when
 notifications are off.
 
+### 4.8 Urgent low
+
+Below 3.0 mmol/L (54 mg/dL), or under the sensor's range, each fresh reading sounds
+Steadmo's urgent low alarm on its own "Urgent low" channel: an alarm sound with alarm
+usage and the alarm category, so Do Not Disturb lets it through wherever it lets alarms
+through, and insistent, so it repeats until acknowledged. OK (or swiping it away) quiets it
+for 15 minutes; a reading at or above 3.0 clears it and the acknowledgement. The channel
+asks to bypass Do Not Disturb, which Android honours only with notification policy
+access. It adds to CamAPS FX's and the sensor's own urgent low alarms and never replaces
+them.
+
 ### 4.4 CamAPS FX's notification
 
 Steadmo reads CamAPS FX's "My diabetes info" notification, so the user keeps it on but can
