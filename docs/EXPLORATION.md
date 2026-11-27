@@ -10,7 +10,7 @@ Interactive mocks: [`mocks.html`](mocks.html).
 
 > **Update, 2026-11-27.** The Dexcom G7 app isn't compatible with CamAPS FX, so the MVP
 > reads only CamAPS FX's "My diabetes info" notification (`SPEC.md` D1). Takeaway orders
-> are Phase 3 in `TODO.md`. The rest of this page is the original research.
+> are Phase 3 in `TODO.md`, and Wear OS is out of scope for the MVP. The rest of this page is the original research.
 
 ## Main constraint
 
