@@ -9,7 +9,9 @@ import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollTo
 import androidx.test.core.app.ApplicationProvider
+import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
+import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Rule
 import org.junit.Test
@@ -56,6 +58,12 @@ class DisclaimerFlowTest {
         compose.onNodeWithText(AGREEMENT).assertDoesNotExist()
         compose.onNodeWithText("Close").performScrollTo().performClick()
         compose.onNodeWithText("Allow notification access").assertExists()
+    }
+
+    @Test fun `acceptance records when`() {
+        assertNull(Disclaimer.acceptedAt(context))
+        Disclaimer.accept(context, now = 1234L)
+        assertEquals(1234L, Disclaimer.acceptedAt(context))
     }
 
     @Test fun `a newer wording asks again`() {

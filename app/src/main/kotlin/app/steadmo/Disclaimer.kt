@@ -53,13 +53,22 @@ object Disclaimer {
 
     private const val PREFS = "steadmo"
     private const val KEY = "disclaimer_accepted_version"
+    private const val KEY_AT = "disclaimer_accepted_at"
 
     fun accepted(context: Context): Boolean =
         context.getSharedPreferences(PREFS, Context.MODE_PRIVATE).getInt(KEY, 0) >= VERSION
 
-    fun accept(context: Context) {
-        context.getSharedPreferences(PREFS, Context.MODE_PRIVATE).edit().putInt(KEY, VERSION).apply()
-        SteadmoLog.event("ui: disclaimer version %s accepted", VERSION)
+    /** When the current wording was accepted, as a record; null if it hasn't been. */
+    fun acceptedAt(context: Context): Long? =
+        context.getSharedPreferences(PREFS, Context.MODE_PRIVATE).getLong(KEY_AT, 0L)
+            .takeIf { it > 0 && accepted(context) }
+
+    fun accept(context: Context, now: Long = System.currentTimeMillis()) {
+        context.getSharedPreferences(PREFS, Context.MODE_PRIVATE).edit()
+            .putInt(KEY, VERSION)
+            .putLong(KEY_AT, now)
+            .apply()
+        SteadmoLog.event("ui: disclaimer version %s accepted at %s", VERSION, now)
     }
 }
 
