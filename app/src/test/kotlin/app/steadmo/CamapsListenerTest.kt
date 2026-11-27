@@ -31,6 +31,19 @@ class CamapsListenerTest {
         assertEquals(before, app.repository.state.value.readings.size)
     }
 
+    @Test fun `a channel change with CamAPS FX's ranking unknown changes nothing`() {
+        val map = android.service.notification.NotificationListenerService.RankingMap::class.java
+            .getDeclaredConstructor(Array<android.service.notification.NotificationListenerService.Ranking>::class.java)
+            .apply { isAccessible = true }
+            .newInstance(arrayOf<android.service.notification.NotificationListenerService.Ranking>())
+        listener.onNotificationRankingUpdate(map)
+        val post = camapsPost(app, "6.0", postTime = 1000)
+        app.getSystemService(android.app.NotificationManager::class.java).notify(post.id, post.notification)
+        val before = app.repository.state.value.camapsChannelImportance
+        listener.onNotificationRankingUpdate(map)
+        assertEquals(before, app.repository.state.value.camapsChannelImportance)
+    }
+
     @Test fun `connecting marks the listener connected`() {
         listener.onListenerConnected()
         assertTrue(app.repository.state.value.listenerConnected)

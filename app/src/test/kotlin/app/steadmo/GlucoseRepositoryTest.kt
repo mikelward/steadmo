@@ -193,6 +193,23 @@ class GlucoseRepositoryTest {
         assertEquals(2, repo.state.value.camapsChannelImportance)
     }
 
+    @Test fun `minimizing CamAPS FX's channel is picked up before its next post`() {
+        val repo = repository()
+        val dump = NotificationDump.of(app, camapsPost(app, "6.0", 0), channelImportance = 3).copy(channelId = "info")
+        repo.onCamapsNotification(dump, CamapsParser.parse(dump.viewTexts))
+        repo.onCamapsChannel("info", android.app.NotificationManager.IMPORTANCE_MIN)
+        assertEquals(android.app.NotificationManager.IMPORTANCE_MIN, repo.state.value.camapsChannelImportance)
+        repo.onCamapsChannel("info", android.app.NotificationManager.IMPORTANCE_MIN)
+        assertEquals("info", repo.state.value.camapsChannelId)
+    }
+
+    @Test fun `an unreadable post still updates the channel`() {
+        val repo = repository()
+        val dump = NotificationDump.of(app, camapsPost(app, null, 0), channelImportance = 1).copy(channelId = "info")
+        repo.onCamapsNotification(dump, null)
+        assertEquals(1, repo.state.value.camapsChannelImportance)
+    }
+
     @Test fun `a bound is kept, shown, and left out of the trend`() {
         val repo = repository()
         repo.post("4.0", 0)
