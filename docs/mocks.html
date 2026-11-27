@@ -1,0 +1,457 @@
+<title>Bolusmo</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Sora:wght@500;600;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@500;700&display=swap">
+<style>
+/* Layout: long-form explainer, one column of prose with full-width "device bench" bands holding phone/watch mocks side by side */
+:root{
+  --bg:#f3f5f7; --surface:#ffffff; --ink:#14202b; --muted:#5a6b7a; --line:#d8dfe6;
+  --accent:#0a7c8c; --accent-ink:#ffffff;
+  --inrange:#1f9d55; --high:#d98a00; --low:#d6334a;
+  --dev-bg:#0f1720; --dev-surface:#18232f; --dev-ink:#eaf1f6; --dev-muted:#8ea1b2; --dev-line:#263545;
+  --f-display:"Sora", system-ui, sans-serif;
+  --f-body:"Inter", system-ui, sans-serif;
+  --f-data:"JetBrains Mono", ui-monospace, monospace;
+  --chip:#e6f1f3;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#0b1117; --surface:#121b24; --ink:#e3eaf0; --muted:#94a5b4; --line:#243241;
+  --accent:#3cc2d3; --accent-ink:#04252a; --chip:#14303a;
+  --inrange:#3ccf7a; --high:#f2a93b; --low:#ff5c73; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#0b1117; --surface:#121b24; --ink:#e3eaf0; --muted:#94a5b4; --line:#243241;
+  --accent:#3cc2d3; --accent-ink:#04252a; --chip:#14303a;
+  --inrange:#3ccf7a; --high:#f2a93b; --low:#ff5c73; color-scheme:dark}
+
+body{background:var(--bg);color:var(--ink);font-family:var(--f-body);font-size:16px;line-height:1.55}
+.wrap{max-width:1080px;margin:0 auto;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:2.5rem 4rem}
+.prose{max-width:70ch}
+h1,h2,h3{font-family:var(--f-display);text-wrap:balance;line-height:1.2;margin:0}
+h1{font-size:clamp(2rem,5vw,3rem);letter-spacing:-.02em}
+h2{font-size:1.6rem;margin-top:3.5rem;margin-bottom:.75rem}
+h3{font-size:1.1rem;margin-top:1.75rem;margin-bottom:.4rem}
+p{margin:.6rem 0}
+.eyebrow{font-family:var(--f-data);font-size:.75rem;letter-spacing:.12em;text-transform:uppercase;color:var(--accent)}
+.lede{font-size:1.15rem;color:var(--muted);max-width:62ch}
+a{color:var(--accent)}
+code{font-family:var(--f-data);font-size:.85em;background:var(--chip);padding:.1em .35em;border-radius:4px}
+.note{border-left:3px solid var(--high);padding:.6rem 1rem;background:var(--surface);margin:1rem 0;max-width:70ch}
+.note.crit{border-color:var(--low)}
+
+/* Bench of devices */
+.bench{display:flex;flex-wrap:wrap;gap:2rem;justify-content:center;align-items:flex-start;margin:2rem 0}
+.figure{display:flex;flex-direction:column;align-items:center;gap:.75rem;max-width:100%}
+.figure figcaption{font-size:.85rem;color:var(--muted);max-width:300px;text-align:center}
+
+.phone{width:300px;max-width:100%;aspect-ratio:9/19.5;border-radius:38px;background:var(--dev-bg);border:8px solid #222c36;box-shadow:0 20px 40px rgba(10,20,30,.25);overflow:hidden;position:relative;color:var(--dev-ink);font-family:var(--f-body);display:flex;flex-direction:column}
+.phone .status{display:flex;justify-content:space-between;font-size:11px;color:var(--dev-muted);padding:8px 18px 4px;font-family:var(--f-data)}
+.phone .screen{flex:1;padding:6px 12px 12px;display:flex;flex-direction:column;gap:8px;min-height:0}
+.wallpaper{background:radial-gradient(120% 70% at 20% 0%,#1d3b4a 0%,#0f1720 60%),#0f1720}
+
+.bg-row{display:flex;align-items:flex-end;justify-content:space-between}
+.bg-val{font-family:var(--f-data);font-size:56px;font-weight:700;line-height:1;letter-spacing:-.03em}
+.bg-arrow{font-size:34px;margin-left:4px}
+.bg-meta{text-align:right;font-family:var(--f-data);font-size:12px;color:var(--dev-muted);line-height:1.4}
+.bg-meta b{color:var(--dev-ink);font-size:15px}
+.unit{font-size:12px;color:var(--dev-muted);font-family:var(--f-data)}
+.graph{background:var(--dev-surface);border-radius:14px;padding:6px 4px 2px}
+.graph svg{display:block;width:100%;height:auto}
+.pill{display:inline-flex;align-items:center;gap:6px;font-size:12px;padding:4px 10px;border-radius:99px;background:var(--dev-surface);border:1px solid var(--dev-line);white-space:nowrap}
+.dot{width:8px;height:8px;border-radius:50%;background:var(--inrange)}
+.row{display:flex;gap:8px}
+.row>*{flex:1}
+.btn{border:0;border-radius:14px;padding:10px 8px;font:600 14px var(--f-body);color:var(--dev-ink);background:var(--dev-surface);border:1px solid var(--dev-line);cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:2px}
+.btn small{font-weight:400;font-size:11px;color:var(--dev-muted)}
+.btn:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.btn.boost{border-color:#c7671f}
+.btn.ease{border-color:#4f7fd6}
+.btn.on{background:#c7671f;color:#fff}
+.btn.on small{color:#ffe3cc}
+.btn.ease.on{background:#4f7fd6}
+.btn.ease.on small{color:#dde8ff}
+.bolus{background:#3cc2d3;color:#04252a;border:0;border-radius:20px;padding:14px;font:700 20px var(--f-display);display:flex;justify-content:center;align-items:center;gap:8px;cursor:pointer}
+.bolus:focus-visible{outline:2px solid #fff;outline-offset:2px}
+.chips{display:grid;grid-template-columns:repeat(4,1fr);gap:6px}
+.chip{background:var(--dev-surface);border:1px solid var(--dev-line);color:var(--dev-ink);border-radius:12px;padding:9px 0;font:600 14px var(--f-data);text-align:center;cursor:pointer}
+.chip:focus-visible{outline:2px solid var(--accent)}
+.alert{border-radius:12px;padding:8px 10px;font-size:12.5px;line-height:1.35;display:flex;gap:8px;align-items:flex-start}
+.alert.fall{background:rgba(214,51,74,.18);border:1px solid rgba(255,92,115,.5)}
+.alert.rise{background:rgba(217,138,0,.16);border:1px solid rgba(242,169,59,.5)}
+.alert b{display:block;font-size:13px}
+.icon{font-family:var(--f-data);font-weight:700;font-size:16px;line-height:1}
+.small{font-size:11px;color:var(--dev-muted)}
+.spacer{flex:1}
+.src{display:flex;justify-content:space-between;font-size:12px;padding:7px 0;border-bottom:1px solid var(--dev-line)}
+.src span:last-child{font-family:var(--f-data);color:var(--dev-muted)}
+.ok{color:var(--inrange)} .warn{color:var(--high)}
+.tl{font-size:12px;display:grid;grid-template-columns:44px 1fr auto;gap:4px 8px;align-items:baseline}
+.tl .t{font-family:var(--f-data);color:var(--dev-muted)}
+.tl .v{font-family:var(--f-data)}
+.stat{background:var(--dev-surface);border-radius:12px;padding:8px;text-align:center}
+.stat b{font-family:var(--f-data);font-size:18px;display:block}
+.stat span{font-size:10.5px;color:var(--dev-muted);text-transform:uppercase;letter-spacing:.06em}
+.tirbar{display:flex;height:8px;border-radius:4px;overflow:hidden}
+.sheet{margin-top:auto;background:var(--dev-surface);border-radius:22px 22px 0 0;margin-inline:-12px;margin-bottom:-12px;padding:14px 14px 18px;display:flex;flex-direction:column;gap:10px;border-top:1px solid var(--dev-line)}
+.grab{width:36px;height:4px;border-radius:2px;background:var(--dev-line);margin:0 auto}
+.big-g{font-family:var(--f-data);font-size:44px;font-weight:700;text-align:center}
+.stepper{display:flex;justify-content:center;gap:10px}
+.stepper .chip{width:52px}
+.notif{background:var(--dev-surface);border-radius:16px;padding:10px 12px;font-size:12.5px;border:1px solid var(--dev-line)}
+.notif .app{font-size:11px;color:var(--dev-muted);display:flex;gap:6px;align-items:center;margin-bottom:4px}
+.notif .acts{display:flex;gap:14px;margin-top:8px;font-weight:600;color:#3cc2d3;font-size:12.5px}
+.dimmed{opacity:.45}
+
+.watch{width:220px;height:220px;border-radius:50%;background:var(--dev-bg);border:10px solid #222c36;box-shadow:0 14px 30px rgba(10,20,30,.25);color:var(--dev-ink);display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:22px;gap:6px}
+.watch .w-title{font:600 14px var(--f-display)}
+.watch .w-body{font-size:11.5px;color:var(--dev-muted);line-height:1.35}
+.watch .w-btn{background:#3cc2d3;color:#04252a;border-radius:99px;padding:7px 16px;font:700 13px var(--f-body)}
+.watch .w-btn2{font-size:11px;color:var(--dev-muted)}
+
+/* Tables */
+.tbl{overflow-x:auto;margin:1rem 0;border:1px solid var(--line);border-radius:10px;background:var(--surface)}
+table{border-collapse:collapse;width:100%;min-width:760px;font-size:.9rem}
+th,td{padding:.6rem .75rem;text-align:left;vertical-align:top;border-bottom:1px solid var(--line)}
+th{font-family:var(--f-data);font-size:.72rem;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);background:var(--bg)}
+tr:last-child td{border-bottom:0}
+.tag{display:inline-block;font-family:var(--f-data);font-size:.72rem;padding:.1rem .45rem;border-radius:4px;white-space:nowrap}
+.tag.g{background:color-mix(in srgb,var(--inrange) 18%,transparent);color:var(--inrange)}
+.tag.a{background:color-mix(in srgb,var(--high) 20%,transparent);color:var(--high)}
+.tag.r{background:color-mix(in srgb,var(--low) 18%,transparent);color:var(--low)}
+
+.cols{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:1rem;margin:1rem 0}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:1rem 1.1rem;min-width:0}
+.card h3{margin-top:0}
+.card ul{padding-left:1.1rem;margin:.4rem 0}
+pre.mermaid{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:1rem;overflow-x:auto}
+.toast{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(20px + env(safe-area-inset-bottom,0px));background:var(--ink);color:var(--bg);padding:.6rem 1rem;border-radius:10px;font-size:.9rem;max-width:calc(100% - 32px)}
+@media (prefers-reduced-motion:no-preference){.btn,.chip,.bolus{transition:transform .08s}.btn:active,.chip:active,.bolus:active{transform:scale(.97)}}
+</style>
+
+<div class="wrap">
+  <div class="eyebrow">Exploration · Android · Ypsopump + Dexcom G7 + CamAPS FX</div>
+  <h1>Bolusmo</h1>
+  <p class="lede">One place to see glucose, loop state and insulin, and to act on them quickly. It reads data from CamAPS FX, Dexcom and Glooko, and sends you to the right app when there is something to do.</p>
+
+  <div class="note crit"><b>Read this first.</b> No official API exists for CamAPS FX or the Ypsopump. Bolusmo can <em>read</em> from them in several ways. It cannot <em>deliver insulin</em> on its own, and it should not try. Every bolus, Boost and Ease-off is confirmed inside CamAPS FX. Bolusmo gets you to that screen in one tap, with the amount ready to enter.</div>
+
+  <!-- ============ MOCKS ============ -->
+  <h2>The mocks</h2>
+  <p class="prose">Sample data, mmol/L. The buttons are live: try Boost, Ease-off, the carb chips and the Bolus button.</p>
+
+  <div class="bench">
+    <figure class="figure">
+      <div class="phone wallpaper" aria-label="Full-page home screen widget mock">
+        <div class="status"><span>18:42</span><span>5G ▮▮▮ 81%</span></div>
+        <div class="screen">
+          <div class="bg-row">
+            <div><span class="bg-val" id="w-bg">8.9</span><span class="bg-arrow" id="w-arrow">↗</span><div class="unit">mmol/L</div></div>
+            <div class="bg-meta"><b id="w-delta">+0.6</b> /5 min<br>2 min ago<br>IOB 1.8 U</div>
+          </div>
+          <div class="alert rise"><span class="icon">⇈</span><div><b>Rising 0.12 mmol/L/min</b>Likely above 10 in about 10 min. No carbs logged in the last hour.</div></div>
+          <div class="graph"><svg id="g1" viewBox="0 0 280 120" role="img" aria-label="Glucose over the last 3 hours"></svg></div>
+          <div style="display:flex;gap:6px;flex-wrap:wrap">
+            <span class="pill"><span class="dot"></span>Auto mode on</span>
+            <span class="pill" id="w-mode">Boost / Ease-off off</span>
+          </div>
+          <div class="row">
+            <button class="btn boost" id="b-boost" type="button">Boost<small>tap to start</small></button>
+            <button class="btn ease" id="b-ease" type="button">Ease-off<small>tap to start</small></button>
+          </div>
+          <div class="spacer"></div>
+          <div class="chips">
+            <button class="chip" type="button" data-g="20">20g</button>
+            <button class="chip" type="button" data-g="40">40g</button>
+            <button class="chip" type="button" data-g="45">45g</button>
+            <button class="chip" type="button" data-g="other">Other</button>
+          </div>
+          <button class="bolus" id="b-bolus" type="button">Bolus</button>
+        </div>
+      </div>
+      <figcaption>Full-page home screen widget. Reading, trend and graph at the top; the controls sit at the bottom where your thumb reaches.</figcaption>
+    </figure>
+
+    <figure class="figure">
+      <div class="phone" aria-label="App overview screen mock">
+        <div class="status"><span>18:42</span><span>5G ▮▮▮ 81%</span></div>
+        <div class="screen">
+          <div style="display:flex;justify-content:space-between;align-items:center"><b style="font-family:var(--f-display)">Today</b><span class="small">Thu 27 Nov</span></div>
+          <div class="row">
+            <div class="stat"><b>78%</b><span>in range</span></div>
+            <div class="stat"><b>7.4</b><span>average</span></div>
+            <div class="stat"><b>32.5</b><span>insulin U</span></div>
+          </div>
+          <div class="tirbar" aria-label="Time in range bar"><span style="width:2%;background:var(--low)"></span><span style="width:78%;background:var(--inrange)"></span><span style="width:20%;background:var(--high)"></span></div>
+          <div class="graph"><svg id="g2" viewBox="0 0 280 120" role="img" aria-label="Glucose today with events"></svg></div>
+          <div class="small" style="text-transform:uppercase;letter-spacing:.08em">Timeline</div>
+          <div class="tl">
+            <span class="t">18:05</span><span>Carbs · bolus <span class="small">CamAPS</span></span><span class="v">45g · 4.1U</span>
+            <span class="t">16:30</span><span>Ease-off ended</span><span class="v">2h</span>
+            <span class="t">13:10</span><span>Carbs · bolus</span><span class="v">40g · 3.6U</span>
+            <span class="t">11:52</span><span>Low 3.7 · treated</span><span class="v">15g</span>
+          </div>
+          <div class="spacer"></div>
+          <div class="small" style="text-transform:uppercase;letter-spacing:.08em">Sources</div>
+          <div>
+            <div class="src"><span><span class="ok">●</span> Dexcom G7 (notification)</span><span>2 min</span></div>
+            <div class="src"><span><span class="ok">●</span> CamAPS FX (notification)</span><span>2 min</span></div>
+            <div class="src"><span><span class="warn">●</span> Glooko (history)</span><span>3 h</span></div>
+          </div>
+        </div>
+      </div>
+      <figcaption>App home. One timeline combines readings, CamAPS events and Glooko history. Each source shows how fresh its data is, so you can tell when one has stopped.</figcaption>
+    </figure>
+
+    <figure class="figure">
+      <div class="phone" aria-label="Bolus sheet mock">
+        <div class="status"><span>18:42</span><span>5G ▮▮▮ 81%</span></div>
+        <div class="screen">
+          <div class="bg-row dimmed"><div><span class="bg-val" style="font-size:40px">8.9</span><span class="bg-arrow" style="font-size:26px">↗</span></div><div class="bg-meta">IOB 1.8 U</div></div>
+          <div class="graph dimmed"><svg id="g3" viewBox="0 0 280 120" aria-hidden="true"></svg></div>
+          <div class="sheet">
+            <div class="grab"></div>
+            <b style="font-family:var(--f-display);text-align:center">Meal bolus</b>
+            <div class="big-g"><span id="s-g">45</span><span style="font-size:20px;color:var(--dev-muted)"> g</span></div>
+            <div class="stepper">
+              <button class="chip" type="button" data-step="-5">−5</button>
+              <button class="chip" type="button" data-step="5">+5</button>
+            </div>
+            <div class="chips">
+              <button class="chip" type="button" data-set="20">20</button>
+              <button class="chip" type="button" data-set="40">40</button>
+              <button class="chip" type="button" data-set="45">45</button>
+              <button class="chip" type="button" data-set="60">60</button>
+            </div>
+            <div class="small" style="line-height:1.4">CamAPS FX opens on its meal screen. Enter <b style="color:var(--dev-ink)" id="s-g2">45</b> g there (copied to the clipboard), check the dose, and confirm.</div>
+            <button class="bolus" type="button" id="s-go">Open CamAPS FX</button>
+          </div>
+        </div>
+      </div>
+      <figcaption>Bolus sheet. Bolusmo picks the amount; CamAPS FX calculates and delivers the dose.</figcaption>
+    </figure>
+  </div>
+
+  <div class="bench">
+    <figure class="figure">
+      <div class="phone wallpaper" aria-label="Lock screen notifications mock">
+        <div class="status"><span>19:27</span><span>5G ▮▮▮ 74%</span></div>
+        <div class="screen">
+          <div style="text-align:center;font:600 48px var(--f-display);margin:10px 0 4px">19:27</div>
+          <div style="text-align:center" class="small">Thursday 27 November</div>
+          <div style="height:10px"></div>
+          <div class="notif">
+            <div class="app"><span class="icon" style="color:#3cc2d3">◆</span>Bolusmo · now</div>
+            <b>Food arriving in ~8 min</b>
+            <div>Deliveroo says your rider is nearby. BG 6.4 →. Pre-bolus now?</div>
+            <div class="acts"><span>Bolus 45g</span><span>Other</span><span>Ate already</span></div>
+          </div>
+          <div class="notif" style="border-color:rgba(255,92,115,.5)">
+            <div class="app"><span class="icon" style="color:var(--low)">⇊</span>Bolusmo · 4 min ago</div>
+            <b>Falling fast: 5.1, −0.15/min</b>
+            <div>Projected 3.9 in about 8 min. IOB 2.4 U from the 18:05 bolus.</div>
+            <div class="acts"><span>Ease-off</span><span>Logged 15g</span><span>Snooze 30m</span></div>
+          </div>
+          <div class="notif dimmed">
+            <div class="app">CamAPS FX · ongoing</div>
+            <div>6.4 mmol/L → · Auto mode</div>
+          </div>
+        </div>
+      </div>
+      <figcaption>Alerts that say what to do. Each one gives the rate, a projection, and the relevant context (IOB, recent carbs), with actions on the notification.</figcaption>
+    </figure>
+
+    <figure class="figure">
+      <div class="watch" aria-label="Wear OS notification mock">
+        <div class="w-title">Deliveroo nearby</div>
+        <div style="font:700 26px var(--f-data)">6.4 <span style="font-size:18px">→</span></div>
+        <div class="w-body">Pre-bolus for dinner?</div>
+        <div class="w-btn">Bolus 45g</div>
+        <div class="w-btn2">Other amount · Dismiss</div>
+      </div>
+      <figcaption>Wear OS. The same notification is mirrored to the watch. Tapping "Bolus 45g" opens CamAPS FX on the phone with 45 copied, ready to confirm.</figcaption>
+    </figure>
+
+    <figure class="figure">
+      <div class="watch" aria-label="Watch tile mock" style="gap:4px">
+        <div class="small" style="font-family:var(--f-data)">AUTO · BOOST 1:12</div>
+        <div style="font:700 40px var(--f-data);line-height:1">8.9<span style="font-size:24px">↗</span></div>
+        <svg id="g4" viewBox="0 0 280 120" style="width:150px;height:auto" aria-hidden="true"></svg>
+        <div class="small">+0.6 · IOB 1.8</div>
+      </div>
+      <figcaption>Wear OS tile and complication. Reading, trend, a 3-hour sparkline and loop mode.</figcaption>
+    </figure>
+  </div>
+
+  <!-- ============ INTEGRATIONS ============ -->
+  <h2>How each piece can connect</h2>
+  <p class="prose">Ranked by how useful each route is to Bolusmo. <span class="tag g">good</span> means it works today without hacks; <span class="tag a">fragile</span> means it works but can break when the other app updates; <span class="tag r">no</span> means not possible or not sensible.</p>
+
+  <div class="tbl"><table>
+    <thead><tr><th>Source</th><th>Route</th><th>What you get</th><th>Latency</th><th>Verdict</th></tr></thead>
+    <tbody>
+      <tr><td><b>Dexcom G7</b></td><td>Read the G7 app's ongoing notification (<code>NotificationListenerService</code>)</td><td>Glucose, trend arrow</td><td>Real time (5 min)</td><td><span class="tag a">fragile</span> Main route. xDrip+ "companion mode" works the same way.</td></tr>
+      <tr><td></td><td>xDrip+ as a collector, then its local broadcast</td><td>Glucose, trend, xDrip's own smoothing</td><td>Real time</td><td><span class="tag g">good</span> Lets xDrip handle the parsing and gives a stable intent API.</td></tr>
+      <tr><td></td><td>Dexcom Share (unofficial cloud API, as used by Nightscout bridges)</td><td>Glucose, trend</td><td>~5–10 min, needs network</td><td><span class="tag a">fragile</span> Good fallback, and works on a second device.</td></tr>
+      <tr><td></td><td>Dexcom developer API (official, OAuth)</td><td>EGVs, events</td><td>Hours (delayed outside US)</td><td><span class="tag r">no</span> for live use; fine for reports</td></tr>
+      <tr><td></td><td>Health Connect</td><td>Blood glucose records</td><td>A few hours</td><td><span class="tag r">no</span> for live use</td></tr>
+      <tr><td><b>CamAPS FX</b></td><td>Read its ongoing notification</td><td>Glucose, trend, sometimes mode</td><td>Real time</td><td><span class="tag a">fragile</span> Most reliable live loop signal.</td></tr>
+      <tr><td></td><td>Accessibility service reading the CamAPS screen</td><td>Auto mode, Boost/Ease-off state and time left, IOB, last bolus</td><td>When the screen is shown</td><td><span class="tag a">fragile</span> Powerful but brittle. Needs care and testing after every CamAPS update.</td></tr>
+      <tr><td></td><td>Launch intent / deep link</td><td>Open the app (and possibly a specific screen)</td><td>—</td><td><span class="tag g">good</span> for "Open CamAPS". Deep links to the meal or Boost screen need checking.</td></tr>
+      <tr><td></td><td>Bolus or Boost via API</td><td>—</td><td>—</td><td><span class="tag r">no</span> No public interface. Automating the confirm tap would bypass a medical-device safety step.</td></tr>
+      <tr><td><b>Ypsopump</b></td><td>Direct Bluetooth</td><td>—</td><td>—</td><td><span class="tag r">no</span> Heavily encrypted. CamAPS owns the connection. AAPS lists it as not loopable.</td></tr>
+      <tr><td><b>Glooko</b></td><td>Web API behind the Glooko app and site (unofficial)</td><td>Boluses, carbs, basal, CGM history</td><td>Hours, after CamAPS uploads</td><td><span class="tag a">fragile</span> History and reports only.</td></tr>
+      <tr><td></td><td>CSV export from Glooko web</td><td>Same, manual</td><td>Manual</td><td><span class="tag g">good</span> for one-off analysis</td></tr>
+      <tr><td><b>Deliveroo</b> (and Uber Eats, Just Eat)</td><td>Read order notifications</td><td>Order placed, picked up, rider nearby</td><td>Real time</td><td><span class="tag a">fragile</span> Text matching, but low risk if it misses.</td></tr>
+    </tbody>
+  </table></div>
+
+  <h3>Recommended architecture</h3>
+  <p class="prose">A foreground service holds a small local store of readings and events. Adapters feed it, and every screen (widget, app, watch, alerts) reads from it. Nothing leaves the phone unless you opt into Nightscout or Share.</p>
+<pre class="mermaid">
+flowchart LR
+  subgraph Sources
+    DX[Dexcom G7 app notification]
+    CA[CamAPS FX notification]
+    AX[CamAPS screen via Accessibility]
+    XD[xDrip+ broadcast]
+    SH[Dexcom Share cloud]
+    GL[Glooko history]
+    FD[Deliveroo / Uber Eats notifications]
+  end
+  subgraph Bolusmo["Bolusmo (foreground service)"]
+    AD[Source adapters] --> ST[(Room store: readings, events, loop state)]
+    ST --> EN[Trend + alert engine]
+    ST --> MD[Meal detector]
+  end
+  DX --> AD
+  CA --> AD
+  AX --> AD
+  XD --> AD
+  SH --> AD
+  GL --> AD
+  FD --> MD
+  EN --> NT[Notifications + Wear OS]
+  MD --> NT
+  ST --> WG[Glance widget]
+  ST --> UI[Compose app]
+  ST --> WT[Wear tile + complication]
+  NT -->|action| LC[Open CamAPS FX on meal / Boost / Ease-off]
+  WG -->|tap| LC
+</pre>
+
+  <!-- ============ FEATURES ============ -->
+  <h2>Features, and how each one works</h2>
+  <div class="cols">
+    <div class="card">
+      <h3>Full-page widget</h3>
+      <p>Jetpack Glance widget sized 4×6 or larger. The service pushes an update on each new reading, so it does not depend on the 30-minute minimum for scheduled widget updates. The graph is drawn to a bitmap, because Glance has no canvas.</p>
+    </div>
+    <div class="card">
+      <h3>Boost and Ease-off</h3>
+      <p>The buttons open CamAPS FX on the right screen, where you set the duration and confirm. The current state and time left come from the notification, or from the Accessibility reader when it is enabled.</p>
+    </div>
+    <div class="card">
+      <h3>Big bolus button and 20/40/45 shortcuts</h3>
+      <p>Carb amounts (this assumes your 20, 40 and 45 are grams). Each one copies the number and opens CamAPS FX's meal entry. As an option, the Accessibility service can type the number in. It never presses confirm. Also exposed as launcher app shortcuts and Quick Settings tiles.</p>
+    </div>
+    <div class="card">
+      <h3>Rate-of-change alerts</h3>
+      <ul>
+        <li>Slope from a least-squares fit over the last 15 min.</li>
+        <li>Fast rise from 0.1 mmol/L/min, fast fall from −0.1.</li>
+        <li>Projects time to 3.9 and 10.0 and states it.</li>
+        <li>Adds context: IOB, last bolus, carbs logged or not.</li>
+        <li>One action per alert (Ease-off, log carbs, bolus, snooze).</li>
+      </ul>
+    </div>
+    <div class="card">
+      <h3>Takeaway pre-bolus prompt</h3>
+      <p>A notification listener matches "picked up" and "nearby" messages from Deliveroo, Uber Eats and Just Eat. Bolusmo suggests your usual takeaway amount (it learns from past meals) and mirrors the prompt to the watch. If you bolus in the next 20 minutes it marks the prompt done.</p>
+    </div>
+    <div class="card">
+      <h3>Watch</h3>
+      <p>Phone notifications bridge to Wear OS automatically. A small Wear app adds a tile and a complication fed by the Data Layer API. Actions run on the phone, because CamAPS FX does.</p>
+    </div>
+  </div>
+
+  <h2>Risks and open questions</h2>
+  <div class="cols">
+    <div class="card">
+      <h3>Safety</h3>
+      <ul>
+        <li>Bolusmo is a companion display. CamAPS FX and Dexcom alarms stay on and stay authoritative.</li>
+        <li>Never automate the bolus confirmation.</li>
+        <li>Show data age everywhere, and grey a reading out after 10 min.</li>
+      </ul>
+    </div>
+    <div class="card">
+      <h3>Fragility</h3>
+      <ul>
+        <li>Notification text and layouts change with app updates. Keep parsers small, versioned and covered by tests with captured samples.</li>
+        <li>Some OEMs kill background services. Needs battery optimisation exemptions.</li>
+      </ul>
+    </div>
+    <div class="card">
+      <h3>To verify on your phone</h3>
+      <ul>
+        <li>Exactly what the CamAPS FX and G7 notifications contain (mode? IOB?).</li>
+        <li>Whether CamAPS FX exposes deep links to meal, Boost or Ease-off screens.</li>
+        <li>Whether CamAPS reads G7 directly or through the Dexcom app on your setup.</li>
+        <li>Deliveroo's current notification wording.</li>
+      </ul>
+    </div>
+  </div>
+
+  <h2>Suggested first milestone</h2>
+  <p class="prose">A read-only build: the notification adapters for G7 and CamAPS FX, the Room store, the full-page widget with the graph, and rate-of-change alerts. Buttons open CamAPS FX. This tests whether the data is good enough before any work on Accessibility, Glooko or the watch.</p>
+
+  <p class="small" style="color:var(--muted);margin-top:3rem">Sources: <a href="https://navid200.github.io/xDrip/docs/Follow/CompanionApp.html">xDrip+ companion app mode</a> · <a href="https://androidaps.readthedocs.io/en/latest/Getting-Started/Future-possible-Pump-Drivers.html">AAPS future pump drivers (Ypsomed)</a> · <a href="https://www.dexcom.com/en-AU/how-do-i-navigate-to-health-connect?ipc=US">Dexcom and Health Connect</a> · <a href="https://adces.org/education/danatech/apps-dtx/find-apps-tools/product-detail/dexcom-g7-app">ADCES on G7 Health Connect delay</a> · <a href="https://www.mylife-diabetescare.com/en/dexcom-g7-rollout-pat">mylife: Dexcom G7 with myLoop/CamAPS</a></p>
+</div>
+<div class="toast" id="toast" hidden></div>
+
+<script>
+// ---- sample data: 3h of 5-min readings, mmol/L ----
+const series = [6.1,6.0,5.9,5.8,5.8,5.9,6.2,6.8,7.6,8.4,9.0,9.3,9.2,8.9,8.5,8.0,7.5,7.1,6.8,6.6,6.5,6.6,6.8,7.0,7.3,7.6,7.9,8.3,8.6,8.9,9.2];
+const day = [6.5,6.2,5.9,5.6,5.4,5.2,5.0,4.8,4.6,4.4,4.1,3.8,3.7,3.9,4.5,5.2,5.9,6.4,6.6,6.7,7.4,8.6,9.8,10.6,10.9,10.4,9.6,8.7,7.9,7.3,6.9,6.7,6.6,6.6,6.8,7.1,7.4,8.3,9.6,10.8,11.2,10.7,9.9,9.1,8.6,8.4,8.6,8.9];
+const css = n => getComputedStyle(document.documentElement).getPropertyValue(n).trim();
+
+function drawGraph(svg, data, opts={}){
+  const W=280,H=120,pl=22,pr=6,pt=6,pb=16;
+  const ymin=2,ymax=14;
+  const x=i=>pl+(W-pl-pr)*i/(data.length-1);
+  const y=v=>pt+(H-pt-pb)*(1-(v-ymin)/(ymax-ymin));
+  const muted='#8ea1b2', line='#263545';
+  let s='';
+  // target band 3.9–10
+  s+=`<rect x="${pl}" y="${y(10)}" width="${W-pl-pr}" height="${y(3.9)-y(10)}" fill="#1f9d55" fill-opacity=".14"/>`;
+  [4,10].forEach(v=>{s+=`<line x1="${pl}" x2="${W-pr}" y1="${y(v)}" y2="${y(v)}" stroke="${line}" stroke-dasharray="2 3"/>`;});
+  [4,7,10,13].forEach(v=>{s+=`<text x="${pl-4}" y="${y(v)+3}" font-size="8" fill="${muted}" text-anchor="end" font-family="JetBrains Mono, monospace">${v}</text>`;});
+  (opts.xlabels||['-3h','-2h','-1h','now']).forEach((t,i,a)=>{const xx=pl+(W-pl-pr)*i/(a.length-1);s+=`<text x="${xx}" y="${H-3}" font-size="8" fill="${muted}" text-anchor="${i===0?'start':i===a.length-1?'end':'middle'}" font-family="JetBrains Mono, monospace">${t}</text>`;});
+  (opts.events||[]).forEach(e=>{const xx=x(e.i);s+=`<line x1="${xx}" x2="${xx}" y1="${pt}" y2="${H-pb}" stroke="#3cc2d3" stroke-opacity=".5"/><text x="${xx+2}" y="${pt+8}" font-size="7.5" fill="#3cc2d3" font-family="JetBrains Mono, monospace">${e.t}</text>`;});
+  data.forEach((v,i)=>{const c=v<3.9?'#ff5c73':v>10?'#f2a93b':'#3ccf7a';const last=i===data.length-1;s+=`<circle cx="${x(i)}" cy="${y(v)}" r="${last?3.6:1.9}" fill="${c}"${last?' stroke="#eaf1f6" stroke-width="1.2"':''}/>`;});
+  svg.innerHTML=s;
+}
+drawGraph(document.getElementById('g1'),series);
+drawGraph(document.getElementById('g2'),day,{xlabels:['06','10','14','18'],events:[{i:13,t:'15g'},{i:20,t:'40g'},{i:36,t:'45g'}]});
+drawGraph(document.getElementById('g3'),series);
+drawGraph(document.getElementById('g4'),series,{xlabels:[]});
+
+// ---- interactions ----
+const toast=document.getElementById('toast');let tt;
+function say(msg){toast.textContent=msg;toast.hidden=false;clearTimeout(tt);tt=setTimeout(()=>toast.hidden=true,2600);}
+const boost=document.getElementById('b-boost'), ease=document.getElementById('b-ease'), mode=document.getElementById('w-mode');
+function setMode(m){
+  boost.classList.toggle('on',m==='boost');ease.classList.toggle('on',m==='ease');
+  boost.querySelector('small').textContent=m==='boost'?'1:59 left':'tap to start';
+  ease.querySelector('small').textContent=m==='ease'?'1:59 left':'tap to start';
+  mode.textContent=m==='boost'?'Boost on · 1:59':m==='ease'?'Ease-off on · 1:59':'Boost / Ease-off off';
+}
+let cur=null;
+boost.onclick=()=>{cur=cur==='boost'?null:'boost';setMode(cur);say(cur?'Would open CamAPS FX on Boost. You confirm the duration there.':'Would open CamAPS FX to cancel Boost.');};
+ease.onclick=()=>{cur=cur==='ease'?null:'ease';setMode(cur);say(cur?'Would open CamAPS FX on Ease-off. You confirm the duration there.':'Would open CamAPS FX to cancel Ease-off.');};
+let grams=45;const sg=document.getElementById('s-g'),sg2=document.getElementById('s-g2');
+function setG(g){grams=Math.max(5,Math.min(150,g));sg.textContent=grams;sg2.textContent=grams;}
+document.querySelectorAll('[data-g]').forEach(b=>b.onclick=()=>{const g=b.dataset.g;if(g==='other'){say('Would open the bolus sheet to choose an amount.');return;}setG(+g);say(`${g} g copied. Would open CamAPS FX meal entry.`);});
+document.querySelectorAll('[data-step]').forEach(b=>b.onclick=()=>setG(grams+ +b.dataset.step));
+document.querySelectorAll('[data-set]').forEach(b=>b.onclick=()=>setG(+b.dataset.set));
+document.getElementById('b-bolus').onclick=()=>say('Would open the bolus sheet (third mock).');
+document.getElementById('s-go').onclick=()=>say(`${grams} g copied. Would open CamAPS FX. Confirm the dose there.`);
+</script>
