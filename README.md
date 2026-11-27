@@ -31,6 +31,8 @@ real phone.
 ```sh
 ./gradlew assembleDebug   # build debug APK
 ./gradlew test            # unit tests
+./gradlew test -Proborazzi.test.record=true   # also re-record screenshots
+./gradlew koverVerify     # line coverage of 95% or more
 ./gradlew lint            # lint
 ```
 

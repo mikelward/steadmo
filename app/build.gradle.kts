@@ -1,6 +1,7 @@
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.compose)
+    alias(libs.plugins.kover)
 }
 
 // versionCode is the commit count, so every build of main is newer than the
@@ -54,9 +55,25 @@ android {
         targetCompatibility = JavaVersion.VERSION_17
     }
 
+    testOptions {
+        unitTests {
+            isIncludeAndroidResources = true
+        }
+    }
+
     lint {
         abortOnError = true
         warningsAsErrors = false
+    }
+}
+
+// Screenshot tests write PNGs only when asked: -Proborazzi.test.record=true.
+tasks.withType<Test>().configureEach {
+    // Robolectric's native graphics read FileDescriptor internals on JDK 17+.
+    jvmArgs("--add-exports=java.base/jdk.internal.access=ALL-UNNAMED")
+    if (project.hasProperty("roborazzi.test.record")) {
+        jvmArgs("-Droborazzi.test.record=true")
+        outputs.upToDateWhen { false }
     }
 }
 
@@ -79,4 +96,9 @@ dependencies {
     implementation(libs.androidx.compose.ui.tooling.preview)
     debugImplementation(libs.androidx.compose.ui.tooling)
     testImplementation(libs.junit)
+    testImplementation(libs.androidx.test.core)
+    testImplementation(libs.androidx.compose.ui.test.junit4)
+    testImplementation(libs.robolectric)
+    testImplementation(libs.roborazzi)
+    debugImplementation(libs.androidx.compose.ui.test.manifest)
 }

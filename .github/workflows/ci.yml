@@ -41,8 +41,32 @@ jobs:
       - name: Core tests, without Android
         run: ./gradlew :core:test
 
-      - name: Unit tests
-        run: ./gradlew test
+      - name: Unit tests and screenshots
+        # Re-records every screenshot; the drift check below fails if any changed.
+        run: ./gradlew test -Proborazzi.test.record=true
+
+      - name: Coverage
+        run: ./gradlew koverVerify koverHtmlReport
+
+      - name: Fail on screenshot drift
+        run: |
+          if [ -n "$(git status --porcelain -- app/src/test/snapshots/images)" ]; then
+            git status --porcelain -- app/src/test/snapshots/images
+            echo "::error::Recorded screenshots differ from the committed ones; re-record (./gradlew test -Proborazzi.test.record=true) and commit them."
+            exit 1
+          fi
+
+      - name: Print failing test details
+        if: failure()
+        run: |
+          shopt -s nullglob globstar
+          for xml in */build/test-results/**/TEST-*.xml; do
+            if grep -q "<\(failure\|error\)" "$xml"; then
+              echo "::group::$xml"
+              cat "$xml"
+              echo "::endgroup::"
+            fi
+          done
 
       - name: Lint
         run: ./gradlew lint
@@ -56,3 +80,13 @@ jobs:
           name: steadmo-debug
           path: app/build/outputs/apk/debug/*.apk
           if-no-files-found: error
+
+      - name: Upload screenshots and coverage
+        if: always()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9  # v7.0.2
+        with:
+          name: screenshots-and-coverage
+          path: |
+            app/src/test/snapshots/images/
+            build/reports/kover/
+          if-no-files-found: ignore

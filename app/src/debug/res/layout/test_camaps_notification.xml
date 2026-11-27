@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Debug-only stand-in for CamAPS FX's "My diabetes info" layout, for NotificationDumpTest. -->
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="horizontal"
+    tools:ignore="HardcodedText,UnusedResources,ContentDescription">
+    <LinearLayout android:layout_width="wrap_content" android:layout_height="wrap_content" android:orientation="vertical">
+        <TextView android:id="@+id/app" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="CamAPS FX" />
+        <TextView android:id="@+id/mode_label" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="Auto mode" />
+        <TextView android:id="@+id/mode" android:layout_width="wrap_content" android:layout_height="wrap_content" />
+    </LinearLayout>
+    <TextView android:id="@+id/value" android:layout_width="wrap_content" android:layout_height="wrap_content" />
+    <TextView android:id="@+id/unit" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="mmol/L" />
+    <TextView android:id="@+id/hidden" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="Hidden" android:visibility="gone" />
+    <ImageView android:id="@+id/arrow" android:layout_width="24dp" android:layout_height="24dp" android:src="@drawable/ic_trend_flat" />
+</LinearLayout>

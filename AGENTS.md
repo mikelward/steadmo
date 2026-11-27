@@ -146,6 +146,10 @@ Shared by every mikelward repo and the user-level agent config; canonical in mik
 - **Build**. `./gradlew test` and `./gradlew lint`; `.claude/hooks/session-start.sh`
   sets up the SDK. Notification access and CamAPS FX need a real phone: say what you
   couldn't verify.
+- **Tests**. `./gradlew test koverVerify` keeps line coverage at 95% or more.
+- **Screenshots**. `./gradlew test -Proborazzi.test.record=true` re-records
+  `app/src/test/snapshots/images`; commit the PNGs with the change. CI re-records and fails
+  on any difference. Light and dark for every screen.
 - **UI**. 4dp grid, short copy, standard Material icons. Trend arrows use the seven
   standard CGM arrows (`SPEC.md` §4).
 - **Units**. mmol/L first; mg/dL is converted on the way in.
