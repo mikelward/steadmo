@@ -59,7 +59,7 @@ The app follows the system light or dark setting, with Material You colors. Rang
 | # | Decision | Rationale |
 |---|---|---|
 | D1 | **CamAPS FX is the only source for the MVP** | The Dexcom G7 app can't run alongside CamAPS FX on the same phone, and CamAPS FX already receives the G7's readings. Other sources wait (`TODO.md`). |
-| D2 | **Read, never dose** | No public CamAPS FX or Ypsopump API exists; automating the confirm tap would bypass a medical-device safety step. Actions copy the amount and open CamAPS FX. CamAPS FX shortcuts (§4.6), which the user turns on, also tap through to the meal entry and enter the carbs, or open Boost or Ease-off's dialog: CamAPS FX exposes no screen but its launcher (checked on v1.4), and the user asked for it. The only confirm they press is the Carbohydrates dialog's, which enters up to 60 g into the bolus calculator; Next and delivering stay manual. |
+| D2 | **Read, never dose** | No public CamAPS FX or Ypsopump API exists; automating the confirm tap would bypass a medical-device safety step. Actions copy the amount and open CamAPS FX. CamAPS FX shortcuts (§4.6), which the user turns on, also tap through to the meal entry and enter the carbs, or open Boost or Ease-off's dialog: CamAPS FX exposes no screen but its launcher (checked on v1.4), and the user asked for it. They type the carbs in and press no confirm: confirming the carbs, Next and delivering stay manual. |
 | D3 | **Read CamAPS FX's "My diabetes info" notification** with a `NotificationListenerService` | It shows the value, unit, Auto mode state and a trend arrow, updates in real time, and needs no network. It is a custom layout, so its views are inflated and their text read in layout order. |
 | D4 | **Compute the trend in Steadmo** | CamAPS FX draws its arrow as an image, with no text to read. Steadmo fits its own slope to the readings, so the arrow works the same everywhere Steadmo shows it. The CamAPS image is logged so the two can be compared (`TODO.md`). |
 | D5 | **Logic in a plain-Kotlin `:core`** | Parser, trend and alerts are tested on the JVM without an SDK. |
@@ -149,11 +149,9 @@ does the navigation, from the app's buttons and the widget's:
 - `CamapsTask` in `:core` decides each step from the screen's views. In CamAPS FX v1.4
   (from the maintainer's phone):
   - Meal: the meal tab (the second of three unlabeled icon tabs), the Carbs "---" cell,
-    then it types the grams into the Carbohydrates dialog. Up to 60 g, on a dialog with
-    one field, carbs on it and nothing about insulin anywhere (ids included), once the
-    field shows exactly those grams, it taps that dialog's only Confirm, which enters them into
-    the bolus calculator; over 60 g it stops and the user confirms. The user always
-    checks the bolus and taps Next in CamAPS FX.
+    then it types the grams into the Carbohydrates dialog and stops: prefill only. The user
+    confirms the carbs, checks the bolus and taps Next in CamAPS FX. (It used to tap the
+    dialog's Confirm up to 60 g; the maintainer chose prefill only.)
   - Other: the same way to the Carbohydrates dialog, then it stops with the field open
     for the user to type the grams. It types nothing, so no repeat guard applies.
   - Boost or Ease-off: the home tab if needed, then the button reading exactly "Boost" or
@@ -163,14 +161,12 @@ does the navigation, from the app's buttons and the widget's:
   anything about insulin, units, bolus or dose beside it, or on its dialog, is never one.
 - It never taps a button that reads like confirming, delivering, saving, Auto mode or a
   setting, nor a slider or switch, nor anything on a screen with a field (forms are
-  where confirm buttons are), except the carbs dialog's Confirm above, and presses
-  nothing after its last step. Boost and Ease-off
+  where confirm buttons are), and presses nothing after its last step. Boost and Ease-off
   are tapped only on an exact match, never "Stop Boost" or similar.
 - No repeats: within a minute of a meal shortcut (any grams), or of the same Boost or
   Ease-off shortcut, the button only opens CamAPS FX and says why, so a double tap or a
   second meal can't enter carbs twice. The time is kept across restarts. It is cleared
-  only when a shortcut fails before typing anything; once grams are typed, a later
-  failure keeps it, and says the grams were typed but not confirmed.
+  only when a shortcut fails before typing anything.
 - Unsure means stop: two candidate fields or buttons, a form with no carbs field, or not
   there within 3 taps or 20 seconds. It says so in a toast; a meal's grams are always
   copied to paste instead.

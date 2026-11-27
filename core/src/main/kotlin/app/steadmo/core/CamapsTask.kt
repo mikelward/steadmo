@@ -79,8 +79,8 @@ sealed interface CamapsGoal {
  *
  * A meal: in CamAPS FX v1.4 that is the meal tab (an unlabeled icon, see
  * [tab]), then the Carbs "---" cell, then typing the grams into the
- * Carbohydrates dialog and, up to [MAX_CONFIRM_GRAMS], tapping its Confirm,
- * which only enters the carbs; Next and delivering stay with the user. Boost or Ease-off:
+ * Carbohydrates dialog, and nothing more: Confirm, Next and delivering stay
+ * with the user. Boost or Ease-off:
  * the home tab if needed, then its button, which opens CamAPS FX's own
  * dialog to set and confirm.
  *
@@ -94,7 +94,7 @@ sealed interface CamapsGoal {
 class CamapsTask(val goal: CamapsGoal, val startedAt: Long) {
     private val tapped = mutableSetOf<String>()
 
-    /** Set once a meal's grams are typed, while waiting to tap the dialog's Confirm. */
+    /** Set once a meal's grams are typed: the task's last step. */
     private var typed = false
 
     /** Whether this task has entered anything in CamAPS FX (a meal's grams). */
@@ -154,27 +154,12 @@ class CamapsTask(val goal: CamapsGoal, val startedAt: Long) {
         val fields = carbFields(screen)
         if (fields.size > 1) return giveUp("${fields.size} fields look like carbs")
         fields.singleOrNull()?.let { field ->
-            if (!typed) {
-                typed = true
-                finished = grams > MAX_CONFIRM_GRAMS || !isCarbsDialog(screen)
-                return CamapsStep.Fill(field, grams.toString())
-            }
-            // Confirm only enters the carbs into the bolus calculator; Next and
-            // delivering stay with the user. Only once the field shows the grams.
-            if (!isCarbsDialog(screen)) return giveUp("not the carbs dialog any more")
-            val shown = nodeAt(screen, field).text?.trim()
-            // An event from focusing the field can arrive before ACTION_SET_TEXT updates it.
-            if (shown.isNullOrEmpty()) return CamapsStep.Wait
-            if (shown != grams.toString()) return giveUp("the carbs field shows \"$shown\", not $grams")
-            val confirm = mutableListOf<List<Int>>()
-            walk(screen, emptyList(), null) { node, path, _ ->
-                if (node.clickable && !node.editable && texts(node).joinToString(" ").trim().equals("Confirm", ignoreCase = true)) {
-                    confirm += path
-                }
-            }
-            if (confirm.size != 1) return giveUp("${confirm.size} Confirm buttons by the carbs field")
+            // Prefill only: typing the grams is the last thing Steadmo does. Confirm,
+            // Next and delivering all stay with the user (SPEC.md §4.6).
+            if (typed) return CamapsStep.Wait
+            typed = true
             finished = true
-            return CamapsStep.Tap(confirm.single(), "Confirm")
+            return CamapsStep.Fill(field, grams.toString())
         }
         if (typed) return CamapsStep.Wait
 
@@ -204,9 +189,6 @@ class CamapsTask(val goal: CamapsGoal, val startedAt: Long) {
     companion object {
         const val TIMEOUT_MILLIS = 20_000L
         const val MAX_TAPS = 3
-
-        /** Carbs above this are typed but left for the user to confirm. */
-        const val MAX_CONFIRM_GRAMS = 60
 
         private val CARBS = Regex("""carb|meal|\bcho\b|\bgrams?\b|\(g\)""", RegexOption.IGNORE_CASE)
 
@@ -270,20 +252,6 @@ class CamapsTask(val goal: CamapsGoal, val startedAt: Long) {
                 }
             }
             return found
-        }
-
-        /**
-         * Only a dialog like CamAPS FX's Carbohydrates may be confirmed: one field,
-         * carbs on it, and nothing about insulin anywhere, ids included.
-         */
-        fun isCarbsDialog(screen: ScreenNode): Boolean {
-            var fields = 0
-            val all = mutableListOf<String>()
-            walk(screen, emptyList(), null) { node, _, _ ->
-                if (node.editable) fields++
-                all += listOfNotNull(node.text, node.description, node.hint, node.viewId?.substringAfter(":id/"))
-            }
-            return fields == 1 && all.any { CARBS.containsMatchIn(it) } && all.none { INSULIN.containsMatchIn(it) }
         }
 
         private fun nodeAt(screen: ScreenNode, path: List<Int>) = path.fold(screen) { node, i -> node.children[i] }
