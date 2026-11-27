@@ -270,7 +270,8 @@ stays at 18:00 local. Turning it off cancels any snooze and clears a shown remin
 Off until turned on in ⋮ → Settings → Meal reminder, which asks for calendar access. Steadmo reads the
 next day's events, on the device, for timed events named for a meal (breakfast, brunch,
 lunch, dinner, supper, meal) or a restaurant booking (reservation, restaurant, "table for
-N"), which Gmail adds from booking emails. When the soonest starts, it posts "Dinner with
+N"), which Gmail adds from booking emails. It skips events you've declined, cancelled
+events and hidden calendars. When the soonest starts, it posts "Dinner with
 Sam at 19:00. Bolus before you eat?" on the Reminders channel, with Bolus, In 30 min and In
 60 min. (It used to remind 15 minutes before; the maintainer chose the start time.) It looks
 again within about a minute of any calendar change (a WorkManager content trigger), every 3
