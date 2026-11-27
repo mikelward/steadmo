@@ -64,10 +64,16 @@ android {
     }
 
     buildTypes {
+        // Debug builds install beside the release (app.steadmo.debug) and carry
+        // the sibling apps' DEBUG badge and label, so the two are easy to tell apart.
         debug {
             applicationIdSuffix = ".debug"
+            manifestPlaceholders["launcherIcon"] = "@mipmap/ic_launcher_debug"
+            manifestPlaceholders["appLabel"] = "Steadmo Debug"
         }
         release {
+            manifestPlaceholders["launcherIcon"] = "@mipmap/ic_launcher"
+            manifestPlaceholders["appLabel"] = "@string/app_name"
             isMinifyEnabled = true
             isShrinkResources = true
             proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"))
