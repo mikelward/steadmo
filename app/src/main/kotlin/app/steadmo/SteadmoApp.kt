@@ -33,6 +33,7 @@ open class SteadmoApp : Application() {
         repository = GlucoseRepository(this, StatusNotifier(this))
         logProcessExits()
         watchForWidgets()
+        watchSignal()
     }
 
     /**
@@ -60,6 +61,9 @@ open class SteadmoApp : Application() {
                 .collect { WidgetUpdates.onState(this@SteadmoApp, repository.state.value) }
         }
     }
+
+    /** Picks up the signal watch after a restart (the alarm doesn't survive a reboot). */
+    protected open fun watchSignal() = SignalWatch.run(this)
 
     /** Redraws widgets now, e.g. once the disclaimer is accepted. */
     fun refreshWidgets() {

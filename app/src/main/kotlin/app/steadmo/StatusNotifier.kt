@@ -152,6 +152,33 @@ class StatusNotifier(private val context: Context, private val clock: () -> Long
     /** Whether a trend alert is still on screen (not dismissed, tapped or timed out). */
     fun alertShowing(): Boolean = manager.activeNotifications.any { it.id == ID_ALERT }
 
+    /**
+     * Nothing from CamAPS FX for [quietMinutes] since [since]: sensor signal,
+     * Bluetooth or CamAPS FX may be down, or Steadmo has lost [access] to its
+     * notification. Stays until the next reading clears it.
+     */
+    fun showSignalLoss(quietMinutes: Long, since: Long, access: Boolean) {
+        val at = android.text.format.DateFormat.getTimeFormat(context).format(java.util.Date(since))
+        val text = if (access) {
+            "Nothing from CamAPS FX since $at. The sensor, Bluetooth or CamAPS FX may be down: check CamAPS FX."
+        } else {
+            "Steadmo can't read CamAPS FX: notification access is off. Open Steadmo to turn it back on."
+        }
+        val notification = Notification.Builder(context, CHANNEL_ALERTS)
+            .setSmallIcon((null as TrendArrow?).drawable())
+            .setContentTitle("No glucose for ${duration(quietMinutes)}")
+            .setContentText(text)
+            .setStyle(Notification.BigTextStyle().bigText(text))
+            .setColor(HighColor.toArgb())
+            .setCategory(Notification.CATEGORY_ALARM)
+            .setAutoCancel(true)
+            .setContentIntent(openApp())
+            .build()
+        post(ID_SIGNAL, notification)
+    }
+
+    fun cancelSignalLoss() = manager.cancel(ID_SIGNAL)
+
     fun cancelAlert() {
         SteadmoLog.event("notify: alert cancelled")
         manager.cancel(ID_ALERT)
@@ -182,6 +209,11 @@ class StatusNotifier(private val context: Context, private val clock: () -> Long
         const val CHANNEL_ALERTS = "trend_alerts"
         private const val ID_STATUS = 1
         private const val ID_ALERT = 2
+        private const val ID_SIGNAL = 3
+
+        /** e.g. "15 min", "1 h 15 min". */
+        fun duration(minutes: Long): String =
+            if (minutes < 60) "$minutes min" else "${minutes / 60} h" + (minutes % 60).let { if (it > 0) " $it min" else "" }
         private const val ICON_PX = 128
         const val STALE_MILLIS = 15 * 60_000L
 

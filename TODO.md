@@ -62,9 +62,13 @@ CamAPS FX's. Each step needs the maintainer's sign-off: these are safety decisio
       its channels set to Silent) and which must stay on. An urgent low must always reach
       the user, from CamAPS FX or Steadmo, even if Steadmo is killed or loses notification
       access.
-- [ ] Before relying on Steadmo's alerts, prove they fire: a heartbeat that warns when
-      CamAPS FX hasn't posted for 15 minutes, and a check that notification access,
-      notification permission and the alert channel's importance are intact.
+- [x] Signal loss: warn when no glucose has come from CamAPS FX for 15 minutes (sensor,
+      Bluetooth, CamAPS FX, or Steadmo's notification access), repeating every 30 minutes
+      for 2 hours (SPEC.md §4.7).
+- [ ] Check that notification permission and the alert channel's importance are intact,
+      and say so in the app when they aren't.
+- [ ] Pump connection: find what CamAPS FX's notifications say when it loses the pump
+      (bug report while disconnected), then warn, and say so on the Boost and meal buttons.
 - [ ] Do Not Disturb: let urgent low alerts through (channel bypass needs notification
       policy access, which the user grants), and decide whether highs may stay quiet.
 - [ ] Escalation for an unacknowledged urgent low: repeat, louder, then full screen.
@@ -97,3 +101,6 @@ CamAPS FX's. Each step needs the maintainer's sign-off: these are safety decisio
   limit), and only once the field shows exactly the grams typed.
 - Repeat interval for alerts is 30 minutes.
 - minSdk 35, as in snoozemo.
+- Signal loss warns after 15 minutes without a reading, repeats every 30 minutes, and stops
+  after 2 hours (CamAPS FX is likely off on purpose by then; the app still says so). The
+  check is an inexact alarm allowed while idle, so it can land a few minutes late.
