@@ -25,6 +25,12 @@ class RangeTest {
         assertEquals(5 * min, outOfRangeSince(listOf(Reading(0, 12.0), Reading(5 * min, 3.0))))
     }
 
+    @Test fun aGapInReadingsEndsTheRun() {
+        val readings = listOf(Reading(0, 3.5), Reading(5 * min, 3.4), Reading(8 * 60 * min, 3.6))
+        assertEquals(8 * 60 * min, outOfRangeSince(readings))
+        assertEquals(0L, outOfRangeSince(listOf(Reading(0, 3.5), Reading(15 * min, 3.4))))
+    }
+
     @Test fun inRangeHasNoRun() {
         assertNull(outOfRangeSince(listOf(Reading(0, 3.0), Reading(5 * min, 6.0))))
         assertNull(outOfRangeSince(emptyList()))
