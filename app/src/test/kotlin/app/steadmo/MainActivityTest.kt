@@ -50,6 +50,14 @@ class MainActivityTest {
         assertEquals(MainActivity.LATEST_RELEASE_URL, intent.dataString)
     }
 
+    @Test fun `Known issues opens the GitHub issues`() {
+        compose.onNodeWithContentDescription("More options").performClick()
+        compose.onNodeWithText("Known issues").performClick()
+        val intent = shadowOf(app).nextStartedActivity
+        assertEquals(android.content.Intent.ACTION_VIEW, intent.action)
+        assertEquals(MainActivity.KNOWN_ISSUES_URL, intent.dataString)
+    }
+
     @Test fun `Other with no CamAPS FX installed starts nothing`() {
         compose.onNodeWithText("Other").performClick()
         assertEquals(null, shadowOf(app).nextStartedActivity)

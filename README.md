@@ -8,6 +8,7 @@ Steadmo never doses.
 - **Plan**: [TODO.md](TODO.md)
 - **Integration research and mocks**: [docs/EXPLORATION.md](docs/EXPLORATION.md),
   [docs/mocks.html](docs/mocks.html)
+- **Known issues**: [GitHub issues](https://github.com/mikelward/steadmo/issues), or ⋮ → Known issues in the app
 - **Engineering conventions**: [AGENTS.md](AGENTS.md)
 - **Installing a release APK**: [docs/RELEASES.md](docs/RELEASES.md), or ⋮ → Get latest version
   in the app
@@ -49,3 +50,7 @@ and keep CamAPS FX's and your CGM's alarms on.
 ```
 
 Requires JDK 17+ and an Android SDK (`ANDROID_HOME`).
+
+## Licence
+
+[Apache License 2.0](LICENSE). Like the disclaimer, it comes with no warranty of any kind.

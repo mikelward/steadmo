@@ -68,6 +68,7 @@ fun HomeScreen(
     onShowDisclaimer: () -> Unit = {},
     onOpenAppInfo: () -> Unit = {},
     onGetLatest: () -> Unit = {},
+    onKnownIssues: () -> Unit = {},
     clock: () -> Long = System::currentTimeMillis,
     ticking: Boolean = true,
 ) {
@@ -89,7 +90,12 @@ fun HomeScreen(
                 .padding(horizontal = 16.dp, vertical = 12.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp),
         ) {
-            TopBar(onGetLatest = onGetLatest, onReportBug = onReportBug, onShowDisclaimer = onShowDisclaimer)
+            TopBar(
+                onGetLatest = onGetLatest,
+                onKnownIssues = onKnownIssues,
+                onReportBug = onReportBug,
+                onShowDisclaimer = onShowDisclaimer,
+            )
             if (!listenerAllowed) {
                 SetupCard(
                     "Allow notification access",
@@ -220,7 +226,12 @@ private fun Reading(state: GlucoseState, now: Long, stale: Boolean) {
 
 /** The app name, and a ⋮ menu for the things used rarely. */
 @Composable
-private fun TopBar(onGetLatest: () -> Unit, onReportBug: () -> Unit, onShowDisclaimer: () -> Unit) {
+private fun TopBar(
+    onGetLatest: () -> Unit,
+    onKnownIssues: () -> Unit,
+    onReportBug: () -> Unit,
+    onShowDisclaimer: () -> Unit,
+) {
     var open by remember { mutableStateOf(false) }
     Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
         Text("Steadmo", style = MaterialTheme.typography.titleLarge, modifier = Modifier.weight(1f))
@@ -230,6 +241,7 @@ private fun TopBar(onGetLatest: () -> Unit, onReportBug: () -> Unit, onShowDiscl
             }
             DropdownMenu(expanded = open, onDismissRequest = { open = false }) {
                 DropdownMenuItem(text = { Text("Get latest version") }, onClick = { open = false; onGetLatest() })
+                DropdownMenuItem(text = { Text("Known issues") }, onClick = { open = false; onKnownIssues() })
                 DropdownMenuItem(text = { Text("Report a bug") }, onClick = { open = false; onReportBug() })
                 DropdownMenuItem(text = { Text("Disclaimer") }, onClick = { open = false; onShowDisclaimer() })
             }
