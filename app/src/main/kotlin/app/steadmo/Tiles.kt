@@ -57,8 +57,11 @@ class GlucoseTileService : TileService() {
         startActivityAndCollapse(target())
     }
 
-    internal fun target(): PendingIntent =
-        PendingIntent.getActivity(this, 0, Intent(this, MainActivity::class.java), PendingIntent.FLAG_IMMUTABLE)
+    internal fun target(): PendingIntent = PendingIntent.getActivity(
+        this, 0,
+        Intent(this, MainActivity::class.java).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP),
+        PendingIntent.FLAG_IMMUTABLE,
+    )
 }
 
 /** The meal tile: like Other, CamAPS FX's carbs box for the user to type into. */
@@ -78,7 +81,9 @@ class MealTileService : TileService() {
     /** The widget's Other: copy nothing, open CamAPS FX's carbs box (with shortcuts on). */
     internal fun target(): PendingIntent = PendingIntent.getActivity(
         this, 1,
-        Intent(this, WidgetActionActivity::class.java).setData(Uri.parse("${WidgetActionActivity.SCHEME}://widget/camaps/meal")),
+        Intent(this, WidgetActionActivity::class.java)
+            .setData(Uri.parse("${WidgetActionActivity.SCHEME}://widget/camaps/meal"))
+            .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK),
         PendingIntent.FLAG_IMMUTABLE,
     )
 }
