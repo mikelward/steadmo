@@ -42,10 +42,18 @@ class ReadingLogTest {
         assertFalse(log.add(Reading(0, 5.0)))
     }
 
+    @Test fun aBoundReplacesTheSameNumberWithoutOne() {
+        val log = ReadingLog()
+        log.add(Reading(0, 2.2))
+        assertTrue(log.add(Reading(min, 2.2, Bound.BELOW)))
+        assertEquals(listOf(Reading(min, 2.2, Bound.BELOW)), log.all)
+    }
+
     @Test fun encodeRoundTrips() {
         val log = ReadingLog()
         log.add(Reading(0, 6.0))
         log.add(Reading(5 * min, 6.4))
+        log.add(Reading(10 * min, 2.2, Bound.BELOW))
         assertEquals(log.all, ReadingLog.decode(log.encode() + "\ngarbage\n").all)
     }
 }

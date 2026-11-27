@@ -19,7 +19,7 @@ import app.steadmo.core.TrendArrow
  * Steadmo's own notifications. The status bar icon is the trend arrow, so the
  * direction shows without pulling the shade down.
  */
-class StatusNotifier(private val context: Context) {
+class StatusNotifier(private val context: Context, private val clock: () -> Long = System::currentTimeMillis) {
     private val manager = context.getSystemService(NotificationManager::class.java)
 
     init {
@@ -35,6 +35,13 @@ class StatusNotifier(private val context: Context) {
 
     fun showStatus(state: GlucoseState) {
         val latest = state.latest ?: return
+        // The notification lives only as long as its reading is fresh, however
+        // late it was posted (a reconnect replay, a mode-only update).
+        val remaining = STALE_MILLIS - (clock() - latest.timeMillis)
+        if (remaining <= 0) {
+            manager.cancel(ID_STATUS)
+            return
+        }
         val arrow = state.trend?.arrow
         val rate = state.trend?.mmolPerMinute
         val detail = listOfNotNull(
@@ -47,7 +54,7 @@ class StatusNotifier(private val context: Context) {
             .setSmallIcon(arrow.drawable())
             .setLargeIcon(arrowBitmap(arrow, color))
             .setColor(color)
-            .setContentTitle("${AlertPolicy.fmt(latest.mmol)} mmol/L")
+            .setContentTitle("${latest.display} mmol/L")
             .setContentText(detail)
             .setWhen(latest.timeMillis)
             .setShowWhen(true)
@@ -55,7 +62,7 @@ class StatusNotifier(private val context: Context) {
             .setOnlyAlertOnce(true)
             .setCategory(Notification.CATEGORY_STATUS)
             // A reading this old is no use; better gone than wrong.
-            .setTimeoutAfter(STALE_MILLIS)
+            .setTimeoutAfter(remaining)
             .setContentIntent(openApp())
             .build()
         post(ID_STATUS, notification)

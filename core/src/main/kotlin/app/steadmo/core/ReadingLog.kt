@@ -21,7 +21,7 @@ class ReadingLog(initial: List<Reading> = emptyList()) {
             last == null -> { readings += reading; true }
             reading.timeMillis < last.timeMillis -> false
             reading.timeMillis - last.timeMillis < MIN_INTERVAL_MILLIS ->
-                if (reading.mmol == last.mmol) {
+                if (reading.mmol == last.mmol && reading.bound == last.bound) {
                     false
                 } else {
                     readings[readings.lastIndex] = reading; true
@@ -33,10 +33,10 @@ class ReadingLog(initial: List<Reading> = emptyList()) {
         return changed
     }
 
-    fun since(timeMillis: Long): List<Reading> = readings.filter { it.timeMillis >= timeMillis }
-
-    /** One `time,mmol` line per reading, for the on-device store. */
-    fun encode(): String = readings.joinToString("\n") { "${it.timeMillis},${it.mmol}" }
+    /** One `time,mmol[,bound]` line per reading, for the on-device store. */
+    fun encode(): String = readings.joinToString("\n") { r ->
+        listOfNotNull(r.timeMillis, r.mmol, r.bound?.name).joinToString(",")
+    }
 
     companion object {
         const val MIN_INTERVAL_MILLIS = 4 * 60_000L
@@ -48,7 +48,8 @@ class ReadingLog(initial: List<Reading> = emptyList()) {
                 val parts = line.split(',')
                 val time = parts.getOrNull(0)?.toLongOrNull()
                 val mmol = parts.getOrNull(1)?.toDoubleOrNull()
-                if (time != null && mmol != null) Reading(time, mmol) else null
+                val bound = parts.getOrNull(2)?.let { name -> Bound.entries.firstOrNull { it.name == name } }
+                if (time != null && mmol != null) Reading(time, mmol, bound) else null
             }.toList(),
         )
     }

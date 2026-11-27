@@ -52,9 +52,28 @@ class TrendTest {
         assertEquals(TrendArrow.DOUBLE_DOWN, trend.arrow)
     }
 
+    @Test fun boundedReadingsAreLeftOutOfTheTrend() {
+        val readings = series(6.0, 6.5, 7.0).toMutableList()
+        readings += Reading(15 * 60_000L, 2.2, Bound.BELOW)
+        assertNull(TrendCalculator.trend(readings))
+        val earlierBound = listOf(Reading(0, 22.2, Bound.ABOVE), Reading(5 * 60_000L, 6.0), Reading(10 * 60_000L, 6.0))
+        assertEquals(TrendArrow.FLAT, TrendCalculator.trend(earlierBound)!!.arrow)
+    }
+
+    @Test fun displayShowsTheBound() {
+        assertEquals("8.9", Reading(0, 8.9).display)
+        assertEquals("<2.2", Reading(0, 2.2, Bound.BELOW).display)
+        assertEquals(">22.2", Reading(0, 22.2, Bound.ABOVE).display)
+    }
+
+    @Test fun flatReadingsHaveNoSlopeProblem() {
+        assertNull(TrendCalculator.trend(listOf(Reading(0, 6.0), Reading(0, 6.1))))
+    }
+
     @Test fun minutesUntilAThreshold() {
         assertEquals(10, TrendCalculator.minutesUntil(5.0, 3.9, -0.11))
         assertNull(TrendCalculator.minutesUntil(5.0, 3.9, 0.1))
         assertNull(TrendCalculator.minutesUntil(9.0, 3.9, -0.1))
+        assertNull(TrendCalculator.minutesUntil(9.0, 3.9, 0.0))
     }
 }

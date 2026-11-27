@@ -58,12 +58,16 @@ fun HomeScreen(
     onAllowNotifications: () -> Unit,
     onOpenCamaps: () -> Unit,
     onMeal: (Int) -> Unit,
+    clock: () -> Long = System::currentTimeMillis,
+    ticking: Boolean = true,
 ) {
-    var now by remember { mutableLongStateOf(System.currentTimeMillis()) }
-    LaunchedEffect(Unit) {
-        while (true) {
-            delay(30_000)
-            now = System.currentTimeMillis()
+    var now by remember { mutableLongStateOf(clock()) }
+    if (ticking) {
+        LaunchedEffect(Unit) {
+            while (true) {
+                delay(30_000)
+                now = clock()
+            }
         }
     }
 
@@ -139,7 +143,7 @@ private fun Reading(state: GlucoseState, now: Long, stale: Boolean) {
     val color = if (stale) MaterialTheme.colorScheme.outline else rangeColor(latest.mmol)
     Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
         Text(
-            AlertPolicy.fmt(latest.mmol),
+            latest.display,
             fontSize = 72.sp,
             fontWeight = FontWeight.Bold,
             fontFamily = FontFamily.Monospace,
@@ -158,7 +162,11 @@ private fun Reading(state: GlucoseState, now: Long, stale: Boolean) {
         style = MaterialTheme.typography.titleMedium,
     )
     Text(
-        "mmol/L · " + DateUtils.getRelativeTimeSpanString(latest.timeMillis, now, DateUtils.MINUTE_IN_MILLIS),
+        "mmol/L · " + if (now - latest.timeMillis < DateUtils.MINUTE_IN_MILLIS) {
+            "just now"
+        } else {
+            DateUtils.getRelativeTimeSpanString(latest.timeMillis, now, DateUtils.MINUTE_IN_MILLIS)
+        },
         style = MaterialTheme.typography.bodyMedium,
         color = MaterialTheme.colorScheme.onSurfaceVariant,
     )
