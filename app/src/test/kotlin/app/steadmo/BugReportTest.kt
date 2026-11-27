@@ -42,6 +42,11 @@ class BugReportTest {
         assertTrue(text, text.endsWith("--- log ---\nline one\nline two"))
     }
 
+    @Test fun `CamAPS FX's screens are listed when known`() {
+        val text = BugReport.section(facts(GlucoseState()).copy(camapsEntryPoints = "exported: x.Main"), emptyList())
+        assertTrue(text, text.contains("--- CamAPS FX screens other apps can open ---\nexported: x.Main"))
+    }
+
     @Test fun `an empty state says so`() {
         val text = BugReport.section(facts(GlucoseState()), emptyList())
         assertTrue(text, text.contains("CamAPS FX: not seen; channel unknown, importance unknown"))
