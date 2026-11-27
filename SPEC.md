@@ -34,6 +34,14 @@ missing, and its trends are its own estimates; no treatment decisions from it, a
 doses. Continue stays disabled until the user ticks "I have
 read this and accept the risk"; Leave closes the app. The home screen links back to it.
 
+### Units
+
+Readings are stored and computed in mmol/L. ⋮ → Units shows them in mmol/L (one
+decimal, the default) or mg/dL (whole numbers) everywhere: the app, graph labels, widget,
+status notification, Live Update chip and alert text. Rates are per minute in the same
+unit (0.01 mmol/L, 0.1 mg/dL). The choice is kept on the device and redraws the status
+notification and widgets at once.
+
 ### Appearance
 
 The app follows the system light or dark setting, with Material You colors. Range colors

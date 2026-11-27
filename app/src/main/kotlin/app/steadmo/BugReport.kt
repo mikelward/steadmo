@@ -69,6 +69,7 @@ object BugReport {
             val age = (facts.now - latest.timeMillis) / 1000
             appendLine("Readings: ${s.readings.size}; latest ${latest.display} mmol/L, ${age}s old")
         }
+        appendLine("Units: ${s.unit.label}")
         appendLine("Trend: ${s.trend?.arrow ?: "none"}${s.trend?.let { ", ${AlertPolicy.fmt2(it.mmolPerMinute)} mmol/L/min" } ?: ""}")
         appendLine("Auto mode: ${s.status?.autoMode ?: "unknown"}")
         s.lastDump?.let {

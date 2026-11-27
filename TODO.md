@@ -33,7 +33,9 @@
 
 - [x] Full-page home screen widget (Glance): value, arrow, graph, Auto mode, Boost,
       Ease-off, 20/40/45/Other.
-- [ ] Display units setting: mmol/L or mg/dL.
+- [x] Display units setting: mmol/L or mg/dL (⋮ → Units).
+- [ ] Bolus progress: if CamAPS FX shows a notification while a bolus is delivering,
+      mirror its progress as a Live Update (check on a real phone first).
 - [ ] Launcher shortcuts and Quick Settings tiles for the meal presets.
 - [x] CamAPS FX shortcuts: an accessibility service, limited to CamAPS FX, that takes the
       meal, Boost and Ease-off buttons (app and widget) to their CamAPS FX screens and types

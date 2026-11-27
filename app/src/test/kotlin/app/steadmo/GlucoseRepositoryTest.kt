@@ -1,5 +1,6 @@
 package app.steadmo
 
+import app.steadmo.core.GlucoseUnit
 import android.app.Application
 import androidx.test.core.app.ApplicationProvider
 import app.steadmo.core.CamapsParser
@@ -52,6 +53,24 @@ class GlucoseRepositoryTest {
         assertEquals(R.drawable.ic_trend_up_slight, app.posted(1)!!.smallIcon.resId)
     }
 
+    @Test fun `the unit is kept across restarts and redraws the status`() {
+        val repo = repository()
+        assertEquals(GlucoseUnit.MMOL, repo.state.value.unit)
+        repo.setUnit(GlucoseUnit.MGDL)
+        assertNull(app.posted(1))
+        repo.post("6.0", 0)
+        assertEquals("108 mg/dL", app.posted(1)!!.extras.getString(android.app.Notification.EXTRA_TITLE))
+        repo.setUnit(GlucoseUnit.MMOL)
+        assertEquals("6.0 mmol/L", app.posted(1)!!.extras.getString(android.app.Notification.EXTRA_TITLE))
+        repo.setUnit(GlucoseUnit.MGDL)
+        assertEquals(GlucoseUnit.MGDL, repository().state.value.unit)
+    }
+
+    @Test fun `an unknown saved unit falls back to mmol per L`() {
+        app.getSharedPreferences("settings", android.content.Context.MODE_PRIVATE).edit().putString("unit", "BOGUS").commit()
+        assertEquals(GlucoseUnit.MMOL, repository().state.value.unit)
+    }
+
     @Test fun `saved readings come back after a restart`() {
         repository().apply {
             post("6.0", 0)
@@ -68,6 +87,34 @@ class GlucoseRepositoryTest {
         repo.post("14.0", 5 * MINUTE)
         repo.post("13.0", 10 * MINUTE)
         assertEquals("Falling fast: 14.0", app.posted(2)!!.extras.getString(android.app.Notification.EXTRA_TITLE))
+    }
+
+    @Test fun `a shown alert is redrawn quietly in the new unit, keeping its expiry`() {
+        val repo = repository()
+        repo.post("15.0", 0)
+        repo.post("14.0", 5 * MINUTE)
+        val first = app.posted(2)!!
+        repo.setUnit(GlucoseUnit.MGDL)
+        val redrawn = app.posted(2)!!
+        assertEquals("Falling fast: 252", redrawn.extras.getString(android.app.Notification.EXTRA_TITLE))
+        assertTrue(redrawn.flags and android.app.Notification.FLAG_ONLY_ALERT_ONCE != 0)
+        assertEquals(first.timeoutAfter, redrawn.timeoutAfter)
+    }
+
+    @Test fun `a dismissed alert stays dismissed when the unit changes`() {
+        val repo = repository()
+        repo.post("15.0", 0)
+        repo.post("14.0", 5 * MINUTE)
+        app.getSystemService(android.app.NotificationManager::class.java).cancel(2)
+        repo.setUnit(GlucoseUnit.MGDL)
+        assertNull(app.posted(2))
+    }
+
+    @Test fun `no alert, nothing to redraw`() {
+        val repo = repository()
+        repo.post("6.0", 0)
+        repo.setUnit(GlucoseUnit.MGDL)
+        assertNull(app.posted(2))
     }
 
     @Test fun `old posts replayed on reconnect neither alert nor show`() {

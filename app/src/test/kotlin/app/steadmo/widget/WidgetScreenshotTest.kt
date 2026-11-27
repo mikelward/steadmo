@@ -1,5 +1,6 @@
 package app.steadmo.widget
 
+import app.steadmo.core.GlucoseUnit
 import android.content.Context
 import android.content.res.Configuration
 import android.graphics.Bitmap
@@ -39,6 +40,8 @@ class WidgetScreenshotTest {
             capture("widget-small-$theme.png", DpSize(250.dp, 90.dp), dark) { WidgetContent(model, Samples.NOW) }
             capture("widget-medium-$theme.png", DpSize(320.dp, 240.dp), dark) { WidgetContent(model, Samples.NOW) }
             capture("widget-full-$theme.png", DpSize(360.dp, 480.dp), dark) { WidgetContent(model, Samples.NOW) }
+            val mgdl = WidgetModel.of(Samples.rising().copy(unit = GlucoseUnit.MGDL), true, Samples.NOW, fmt)
+            capture("widget-full-mgdl-$theme.png", DpSize(360.dp, 480.dp), dark) { WidgetContent(mgdl, Samples.NOW) }
             // The narrowest width at full height: meal buttons in two rows.
             capture("widget-narrow-$theme.png", DpSize(250.dp, 480.dp), dark) { WidgetContent(model, Samples.NOW) }
             // The smallest size with buttons: narrow, so three button rows and no graph.

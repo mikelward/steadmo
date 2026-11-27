@@ -18,8 +18,8 @@ data class TrendAlert(val kind: AlertKind, val arrow: TrendArrow, val title: Str
  */
 class AlertPolicy(private val lastAlerted: MutableMap<AlertKind, Long> = mutableMapOf()) {
 
-    fun evaluate(latest: Reading, trend: Trend?): TrendAlert? {
-        val alert = applying(latest, trend) ?: return null
+    fun evaluate(latest: Reading, trend: Trend?, unit: GlucoseUnit = GlucoseUnit.MMOL): TrendAlert? {
+        val alert = applying(latest, trend, unit) ?: return null
         val last = lastAlerted[alert.kind]
         if (last != null && latest.timeMillis - last < REPEAT_MILLIS) return null
         lastAlerted[alert.kind] = latest.timeMillis
@@ -30,38 +30,38 @@ class AlertPolicy(private val lastAlerted: MutableMap<AlertKind, Long> = mutable
      * The alert [latest] and [trend] call for, ignoring repeat limits: what a
      * shown alert must still match to stay up.
      */
-    fun applying(latest: Reading, trend: Trend?): TrendAlert? {
+    fun applying(latest: Reading, trend: Trend?, unit: GlucoseUnit = GlucoseUnit.MMOL): TrendAlert? {
         trend ?: return null
         if (latest.bound != null) return null
-        return candidate(latest, trend)
+        return candidate(latest, trend, unit)
     }
 
-    private fun candidate(latest: Reading, trend: Trend): TrendAlert? {
+    private fun candidate(latest: Reading, trend: Trend, unit: GlucoseUnit): TrendAlert? {
         val rate = trend.mmolPerMinute
-        val value = latest.display
-        val rateText = "${if (rate >= 0) "+" else "−"}${fmt2(abs(rate))}/min"
+        val value = unit.reading(latest)
+        val rateText = "${unit.rate(rate)}/min"
 
         if (rate < 0 && latest.mmol > LOW_MMOL) {
             TrendCalculator.minutesUntil(latest.mmol, LOW_MMOL, rate, horizonMinutes = 20)?.let { minutes ->
                 return TrendAlert(AlertKind.LOW_SOON, trend.arrow, "Low in about $minutes min",
-                    "$value, $rateText. Heading below ${fmt(LOW_MMOL)}.")
+                    "$value, $rateText. Heading below ${unit.value(LOW_MMOL)}.")
             }
         }
         if (trend.arrow == TrendArrow.DOUBLE_DOWN) {
             return TrendAlert(AlertKind.FALLING_FAST, trend.arrow, "Falling fast: $value",
-                "$rateText, ${fmt(abs(rate) * 30)} mmol/L in 30 min at this rate.")
+                "$rateText, ${unit.value(abs(rate) * 30)} ${unit.label} in 30 min at this rate.")
         }
         if (rate > 0 && latest.mmol < HIGH_MMOL) {
             TrendCalculator.minutesUntil(latest.mmol, HIGH_MMOL, rate, horizonMinutes = 15)?.let { minutes ->
                 if (trend.arrow == TrendArrow.UP || trend.arrow == TrendArrow.DOUBLE_UP) {
                     return TrendAlert(AlertKind.HIGH_SOON, trend.arrow, "High in about $minutes min",
-                        "$value, $rateText. Heading above ${fmt(HIGH_MMOL)}.")
+                        "$value, $rateText. Heading above ${unit.value(HIGH_MMOL)}.")
                 }
             }
         }
         if (trend.arrow == TrendArrow.DOUBLE_UP) {
             return TrendAlert(AlertKind.RISING_FAST, trend.arrow, "Rising fast: $value",
-                "$rateText, +${fmt(rate * 30)} mmol/L in 30 min at this rate.")
+                "$rateText, +${unit.value(rate * 30)} ${unit.label} in 30 min at this rate.")
         }
         return null
     }
