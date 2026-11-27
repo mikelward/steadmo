@@ -88,7 +88,7 @@ CamAPS FX's. Each step needs the maintainer's sign-off: these are safety decisio
       nearby (SPEC.md §4.12). Pre-bolus only: no detection of unannounced meals afterwards.
 - [ ] Check the delivery apps' real wording and package names from bug reports (the last
       delivery notification is in the report), and tune the matching.
-- [x] Daily meal reminder (default on at 18:00, adjustable in ⋮ → Meal reminder) with
+- [x] Daily meal reminder (default on at 18:00, adjustable in ⋮ → Settings → Meal reminder) with
       Bolus, In 30 min and In 60 min (SPEC.md §4.13).
 - [ ] Pre-bolus prompt on arriving at a restaurant, by location (needs location permission,
       likely in the background; find an approach that works offline, without saved places).

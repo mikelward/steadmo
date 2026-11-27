@@ -61,13 +61,24 @@ class NavigationTest {
         compose.onNodeWithContentDescription("Back").assertExists()
     }
 
-    @Test fun `back closes each home dialog`() {
-        for ((item, title) in listOf("About" to "Licence", "Meal reminder" to "Remind me", "CamAPS FX shortcuts" to "Open settings")) {
-            menu(item)
+    @Test fun `back closes About`() {
+        menu("About")
+        compose.onNodeWithText("Licence").assertExists()
+        back()
+        compose.onNodeWithText("Licence").assertDoesNotExist()
+        assertHome()
+    }
+
+    @Test fun `back closes each Settings dialog, then returns home`() {
+        menu("Settings")
+        for ((item, title) in listOf("Units" to "mg/dL", "Meal reminder" to "Remind me", "CamAPS FX shortcuts" to "Open settings")) {
+            compose.onNodeWithText(item).performClick()
             compose.onNodeWithText(title).assertExists()
             back()
             compose.onNodeWithText(title).assertDoesNotExist()
-            assertHome()
+            compose.onNodeWithContentDescription("Back").assertExists()
         }
+        back()
+        assertHome()
     }
 }

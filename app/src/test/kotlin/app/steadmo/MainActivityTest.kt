@@ -54,6 +54,7 @@ class MainActivityTest {
 
     @Test fun `CamAPS FX shortcuts opens Accessibility settings`() {
         compose.onNodeWithContentDescription("More options").performClick()
+        compose.onNodeWithText("Settings").performClick()
         compose.onNodeWithText("CamAPS FX shortcuts").performClick()
         compose.onNodeWithText("Open settings").performClick()
         assertEquals(Settings.ACTION_ACCESSIBILITY_SETTINGS, shadowOf(app).nextStartedActivity.action)

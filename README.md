@@ -34,7 +34,7 @@ Don't base treatment decisions on it, and keep CamAPS FX's and your CGM's alarms
    says notification access is "controlled by a restricted setting" (sideloaded apps, Android
    13 and later), open Steadmo's App info, tap ⋮, choose **Allow restricted settings**, then
    try again.
-3. Optional: ⋮ → CamAPS FX shortcuts, then turn on **Steadmo CamAPS FX shortcuts** in Accessibility
+3. Optional: ⋮ → Settings → CamAPS FX shortcuts, then turn on **Steadmo CamAPS FX shortcuts** in Accessibility
    (allow restricted settings first, as above, if it's greyed out).
 4. Wait for the next CamAPS FX update. The trend arrow appears after 5 minutes of
    readings. "Show CamAPS FX notification" shows exactly what Steadmo read.
