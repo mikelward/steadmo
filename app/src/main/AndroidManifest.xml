@@ -61,6 +61,14 @@
             android:name=".UrgentLowAckReceiver"
             android:exported="false" />
 
+        <!-- "Treated" on low alerts, and its recheck reminder (SPEC.md §4.10). -->
+        <receiver
+            android:name=".TreatedReceiver"
+            android:exported="false" />
+        <receiver
+            android:name=".RecheckReceiver"
+            android:exported="false" />
+
         <!-- Shares bug report screenshots with the app the user picks. -->
         <provider
             android:name="androidx.core.content.FileProvider"

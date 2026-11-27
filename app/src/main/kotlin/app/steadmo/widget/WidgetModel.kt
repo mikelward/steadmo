@@ -34,6 +34,7 @@ sealed interface WidgetModel {
         val autoMode: String?,
         val readings: List<Reading>,
         val unit: GlucoseUnit = GlucoseUnit.MMOL,
+        val treatments: List<Long> = emptyList(),
     ) : WidgetModel
 
     companion object {
@@ -64,6 +65,7 @@ sealed interface WidgetModel {
                 },
                 readings = state.readings,
                 unit = state.unit,
+                treatments = state.treatments,
             )
         }
     }

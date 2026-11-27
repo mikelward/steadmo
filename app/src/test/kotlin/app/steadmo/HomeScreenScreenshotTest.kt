@@ -39,6 +39,9 @@ class HomeScreenScreenshotTest {
     @Test fun alertsSilenced() = both("home-alerts-silenced") {
         { HomeScreen(Samples.rising(), true, true, {}, {}, {}, {}, alertsSilenced = true, clock = { Samples.NOW }, ticking = false) }
     }
+    @Test fun treated() = both("home-treated") {
+        home(Samples.rising().copy(treatments = listOf(Samples.NOW - 60 * MINUTE)))
+    }
     @Test fun setup() = both("home-setup") { home(GlucoseState(), listener = false, notifications = false) }
 
     @Test fun aboutLight() = dialog("about", dark = false) { AboutDialog("48+abc1234", onSourceCode = {}, onDismiss = {}) }

@@ -195,6 +195,7 @@ private fun ColumnScope.Showing(model: WidgetModel.Showing, now: Long, size: DpS
                 grid = StaleColor.copy(alpha = 0.6f).toArgb(), label = StaleColor.toArgb(),
             ),
             model.unit,
+            model.treatments,
         )
         Image(
             provider = ImageProvider(bitmap),

@@ -23,6 +23,8 @@ import app.steadmo.core.Reading
 import app.steadmo.core.outOfRangeSince
 import app.steadmo.core.side
 import app.steadmo.core.TrendAlert
+import app.steadmo.core.isLow
+import app.steadmo.core.AlertKind
 import app.steadmo.core.GlucoseUnit
 import app.steadmo.core.TrendArrow
 
@@ -162,6 +164,8 @@ class StatusNotifier(private val context: Context, private val clock: () -> Long
             .setOnlyAlertOnce(quiet)
             .setTimeoutAfter(remaining)
             .setContentIntent(openApp())
+            .apply { if (alert.kind.isLow) addAction(treatedAction()) }
+            .addExtras(android.os.Bundle().apply { putString(EXTRA_KIND, alert.kind.name) })
             .build()
         post(ID_ALERT, notification)
     }
@@ -186,6 +190,7 @@ class StatusNotifier(private val context: Context, private val clock: () -> Long
             .setContentIntent(openApp())
             .setDeleteIntent(ok)
             .addAction(Notification.Action.Builder(null, "OK", ok).build())
+            .addAction(treatedAction())
             .setOnlyAlertOnce(quiet)
             .build()
         // Sounds over and over until it's acknowledged or cleared.
@@ -195,6 +200,43 @@ class StatusNotifier(private val context: Context, private val clock: () -> Long
     }
 
     fun cancelUrgentLow() = manager.cancel(ID_URGENT)
+
+    private fun treatedAction(): Notification.Action = Notification.Action.Builder(
+        null, "Treated",
+        PendingIntent.getBroadcast(context, 2, Intent(context, TreatedReceiver::class.java), PendingIntent.FLAG_IMMUTABLE),
+    ).build()
+
+    /**
+     * The kind of trend alert on screen, from the notification itself, so it
+     * survives the process being restarted.
+     */
+    fun shownAlertKind(): AlertKind? = manager.activeNotifications.firstOrNull { it.id == ID_ALERT }
+        ?.notification?.extras?.getString(EXTRA_KIND)?.let { name -> AlertKind.entries.firstOrNull { it.name == name } }
+
+    /**
+     * 15 minutes after "Treated": check glucose is coming back up. The latest
+     * reading is given with its time, never as "now", and only if it is fresh.
+     */
+    fun showRecheck(latest: Reading?, unit: GlucoseUnit) {
+        val age = latest?.let { clock() - it.timeMillis }
+        val at = latest?.let { android.text.format.DateFormat.getTimeFormat(context).format(java.util.Date(it.timeMillis)) }
+        val now = when {
+            latest == null -> "No reading yet."
+            age!! < STALE_MILLIS -> "Latest ${unit.reading(latest)} ${unit.label} at $at."
+            else -> "No glucose from CamAPS FX since $at."
+        }
+        val notification = Notification.Builder(context, CHANNEL_ALERTS)
+            .setSmallIcon((null as TrendArrow?).drawable())
+            .setColor(LowColor.toArgb())
+            .setContentTitle("Recheck your glucose")
+            .setContentText("You treated a low 15 min ago. $now")
+            .setCategory(Notification.CATEGORY_REMINDER)
+            .apply { if (latest != null) setWhen(latest.timeMillis).setShowWhen(true) }
+            .setAutoCancel(true)
+            .setContentIntent(openApp())
+            .build()
+        post(ID_RECHECK, notification)
+    }
 
     /** Whether the urgent low alarm is still on screen (not acknowledged or timed out). */
     fun urgentLowShowing(): Boolean = manager.activeNotifications.any { it.id == ID_URGENT }
@@ -261,6 +303,8 @@ class StatusNotifier(private val context: Context, private val clock: () -> Long
         private const val ID_ALERT = 2
         private const val ID_SIGNAL = 3
         private const val ID_URGENT = 4
+        private const val ID_RECHECK = 5
+        private const val EXTRA_KIND = "app.steadmo.alert_kind"
         const val CHANNEL_URGENT = "urgent_low"
 
         /** e.g. "15 min", "1 h 15 min". */
