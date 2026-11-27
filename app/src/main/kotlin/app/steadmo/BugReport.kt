@@ -124,7 +124,7 @@ object BugReport {
     internal fun screenshotUri(file: File, log: DebugLog, mint: (File) -> Uri): Uri? = try {
         mint(file)
     } catch (e: Exception) {
-        log.warning("report: couldn't share the screenshot: %s", e.javaClass.simpleName)
+        log.failure(e, "report: couldn't share the screenshot; sending text only")
         file.delete()
         null
     }
