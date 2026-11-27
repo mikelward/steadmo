@@ -23,6 +23,13 @@ class MainActivity : ComponentActivity() {
     private var alertsSilenced by mutableStateOf(false)
     private var fullScreenAllowed by mutableStateOf(true)
     private var mealReminderOn by mutableStateOf(true)
+    private var calendarMealsOn by mutableStateOf(false)
+    private val requestCalendar =
+        registerForActivityResult(ActivityResultContracts.RequestPermission()) { granted ->
+            SteadmoLog.event("ui: calendar access %s", if (granted) "granted" else "refused")
+            CalendarMealReminders.set(this, granted)
+            calendarMealsOn = granted
+        }
     private var mealReminderTime by mutableStateOf(app.steadmo.core.MealReminder.DEFAULT_TIME)
     private var suggestShortcuts by mutableStateOf(false)
     private var shortcutsOn by mutableStateOf(false)
@@ -89,6 +96,8 @@ class MainActivity : ComponentActivity() {
                         mealReminderOn = on
                     },
                     onPickMealReminderTime = ::pickMealReminderTime,
+                    calendarMealsOn = calendarMealsOn,
+                    onCalendarMealsOn = ::setCalendarMeals,
                     fullScreenAllowed = fullScreenAllowed,
                     onAllowFullScreen = ::openFullScreenSettings,
                     onOpenAlertSettings = ::openAlertSettings,
@@ -106,6 +115,7 @@ class MainActivity : ComponentActivity() {
         shortcutsOn = CamapsShortcuts.enabled(this)
         alertsSilenced = StatusNotifier.alertsSilenced(this)
         mealReminderOn = MealReminders.enabled(this)
+        calendarMealsOn = CalendarMealReminders.enabled(this) && CalendarMealReminders.permitted(this)
         mealReminderTime = MealReminders.time(this)
         fullScreenAllowed = getSystemService(android.app.NotificationManager::class.java).canUseFullScreenIntent()
         suggestShortcuts = !shortcutsOn && !getSharedPreferences(PREFS_UI, MODE_PRIVATE).getBoolean(KEY_SHORTCUTS_DISMISSED, false)
@@ -148,6 +158,16 @@ class MainActivity : ComponentActivity() {
         const val SOURCE_URL = "https://github.com/mikelward/steadmo"
         private const val PREFS_UI = "ui"
         private const val KEY_SHORTCUTS_DISMISSED = "shortcuts_suggestion_dismissed"
+    }
+
+    /** Turning calendar meals on asks for calendar access first, if needed. */
+    private fun setCalendarMeals(on: Boolean) {
+        if (on && !CalendarMealReminders.permitted(this)) {
+            requestCalendar.launch(Manifest.permission.READ_CALENDAR)
+            return
+        }
+        CalendarMealReminders.set(this, on)
+        calendarMealsOn = on
     }
 
     private fun pickMealReminderTime() {

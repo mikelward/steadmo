@@ -6,6 +6,8 @@
     <uses-permission android:name="android.permission.POST_PROMOTED_NOTIFICATIONS" />
     <!-- The urgent low alarm takes over the screen once ignored (SPEC.md §4.8). -->
     <uses-permission android:name="android.permission.USE_FULL_SCREEN_INTENT" />
+    <!-- Calendar meals and restaurant bookings, read on the device (SPEC.md §4.14); asked for only when turned on. -->
+    <uses-permission android:name="android.permission.READ_CALENDAR" />
 
     <!-- Package visibility, to open CamAPS FX from the Boost, Ease-off and bolus buttons. -->
     <queries>

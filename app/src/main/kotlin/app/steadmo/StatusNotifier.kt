@@ -219,7 +219,7 @@ class StatusNotifier(private val context: Context, private val clock: () -> Long
     fun cancelUrgentLow() = manager.cancel(ID_URGENT)
 
     /** The daily meal reminder: Bolus, or remind again in 30 or 60 minutes (SPEC.md §4.13). */
-    fun showMealReminder() {
+    fun showMealReminder(event: String? = null) {
         val bolus = PendingIntent.getActivity(
             context, 5,
             Intent(context, app.steadmo.widget.WidgetActionActivity::class.java)
@@ -230,13 +230,15 @@ class StatusNotifier(private val context: Context, private val clock: () -> Long
             null, "In $minutes min",
             PendingIntent.getBroadcast(
                 context, 10 + minutes,
-                Intent(context, MealReminderReceiver::class.java).putExtra(MealReminders.EXTRA_SNOOZE, minutes),
+                Intent(context, MealReminderReceiver::class.java).putExtra(MealReminders.EXTRA_SNOOZE, minutes)
+                    .putExtra(MealReminders.EXTRA_EVENT, event),
                 PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT,
             ),
         ).build()
         val notification = Notification.Builder(context, CHANNEL_REMINDERS)
             .setSmallIcon(R.drawable.ic_shortcut_meal)
-            .setContentTitle("Time to bolus for dinner?")
+            .setContentTitle(if (event == null) "Time to bolus for dinner?" else "$event. Bolus before you eat?")
+            .apply { if (event != null) extras.putBoolean(EXTRA_CALENDAR, true) }
             .setContentText("Bolus before you eat, so insulin is working by the time you do.")
             .setCategory(Notification.CATEGORY_REMINDER)
             .setAutoCancel(true)
@@ -248,6 +250,12 @@ class StatusNotifier(private val context: Context, private val clock: () -> Long
     }
 
     fun cancelMealReminder() = manager.cancel(ID_MEAL_REMINDER)
+
+    /** Clears the meal reminder if it's a calendar meal's ([calendar]) or the daily one's, leaving the other. */
+    fun cancelMealReminder(calendar: Boolean) {
+        val shown = manager.activeNotifications.firstOrNull { it.id == ID_MEAL_REMINDER } ?: return
+        if (shown.notification.extras.getBoolean(EXTRA_CALENDAR) == calendar) manager.cancel(ID_MEAL_REMINDER)
+    }
 
     /** A delivery app says the rider is nearby: bolus now, so insulin is working by the time it's here. */
     fun showPreBolus(appLabel: String) {
@@ -367,6 +375,7 @@ class StatusNotifier(private val context: Context, private val clock: () -> Long
 
     companion object {
         const val CHANNEL_GLUCOSE = "glucose"
+        private const val EXTRA_CALENDAR = "app.steadmo.calendar_meal"
         const val CHANNEL_ALERTS = "trend_alerts"
         private const val ID_STATUS = 1
         private const val ID_ALERT = 2

@@ -239,13 +239,15 @@ class HomeScreenTest {
 
     @Test fun `Meal reminder turns on and off and picks a time`() {
         val toggles = mutableListOf<Boolean>()
+        val calendar = mutableListOf<Boolean>()
         var picks = 0
         compose.setContent {
             SteadmoTheme(dark = false) {
                 HomeScreen(
                     Samples.rising(), true, true, {}, {}, {}, {},
                     mealReminderOn = true, mealReminderTime = "18:00",
-                    onMealReminderOn = { toggles += it }, onPickMealReminderTime = { picks++ }, ticking = false,
+                    onMealReminderOn = { toggles += it }, onPickMealReminderTime = { picks++ },
+                    onCalendarMealsOn = { calendar += it }, ticking = false,
                 )
             }
         }
@@ -255,6 +257,8 @@ class HomeScreenTest {
         assertEquals(listOf(false), toggles)
         compose.onNodeWithText("At 18:00").performClick()
         assertEquals(1, picks)
+        compose.onNodeWithText("Calendar meals").performClick()
+        assertEquals(listOf(false, true), toggles + calendar)
         compose.onNodeWithText("Close").performClick()
         compose.onNodeWithText("Remind me").assertDoesNotExist()
     }
