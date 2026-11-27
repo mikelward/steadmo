@@ -291,6 +291,18 @@ class HomeScreenTest {
         compose.onNodeWithText("On time").assertDoesNotExist()
     }
 
+    @Test fun `Settings shows Calendar meals in the Meal reminder summary`() {
+        compose.setContent {
+            SteadmoTheme(dark = false) {
+                SettingsScreen(
+                    GlucoseUnit.MMOL, onSetUnit = {}, onBack = {},
+                    mealReminderOn = false, calendarMealsOn = true,
+                )
+            }
+        }
+        compose.onNodeWithText("Calendar meals").assertIsDisplayed()
+    }
+
     @Test fun `Settings picks mmol per L or mg per dL, and Back returns`() {
         val picked = mutableListOf<GlucoseUnit>()
         var back = 0
