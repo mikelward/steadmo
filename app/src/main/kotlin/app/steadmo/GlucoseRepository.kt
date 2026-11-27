@@ -124,6 +124,7 @@ class GlucoseRepository(
         if (shownAlert?.isLow == true || notifier.shownAlertKind()?.isLow == true) {
             notifier.cancelAlert()
             shownAlert = null
+            shownAlertTime = null
         }
         notifier.cancelUrgentLow()
         UrgentLowAck.acknowledge(appContext, at)
@@ -153,7 +154,8 @@ class GlucoseRepository(
     /** A Live Update while out of range, or while a low is on the way. */
     private fun promote(): Boolean {
         val current = _state.value.latest
-        return current != null && (current.side() != RangeSide.IN_RANGE || shownAlert == AlertKind.LOW_SOON)
+        val activeAlert = shownAlert ?: notifier.shownAlertKind()
+        return current != null && (current.side() != RangeSide.IN_RANGE || activeAlert == AlertKind.LOW_SOON)
     }
 
     fun setListenerConnected(connected: Boolean) = _state.update { it.copy(listenerConnected = connected) }
@@ -203,10 +205,12 @@ class GlucoseRepository(
             val latest = log.latest
             latest?.let { SignalWatch.onReading(appContext, it.timeMillis, notifier, clock()) }
             // A newer reading that no longer calls for the shown alert clears it.
-            if (shownAlert != null && latest != null && alerts.applying(latest, trend, _state.value.unit)?.kind != shownAlert) {
-                SteadmoLog.event("alerts: %s no longer applies; cleared", shownAlert)
+            val activeAlert = shownAlert ?: notifier.shownAlertKind()
+            if (activeAlert != null && latest != null && alerts.applying(latest, trend, _state.value.unit)?.kind != activeAlert) {
+                SteadmoLog.event("alerts: %s no longer applies; cleared", activeAlert)
                 notifier.cancelAlert()
                 shownAlert = null
+                shownAlertTime = null
             }
             // Only a reading posted just now alerts. A replay (e.g. on reconnect)
             // is history: its projection was about a moment that has passed.
