@@ -36,6 +36,26 @@ class MainActivityTest {
         )
     }
 
+    @Test fun `with no page for one app, Allow opens the list of all`() {
+        shadowOf(app).checkActivities(true)
+        val fallback = android.content.Intent(Settings.ACTION_NOTIFICATION_LISTENER_SETTINGS)
+        shadowOf(app.packageManager).addResolveInfoForIntent(
+            fallback,
+            android.content.pm.ResolveInfo().apply {
+                activityInfo = android.content.pm.ActivityInfo().apply { packageName = "com.android.settings"; name = "Listeners" }
+            },
+        )
+        compose.onAllNodesWithTextFirst("Allow").performClick()
+        assertEquals(Settings.ACTION_NOTIFICATION_LISTENER_SETTINGS, shadowOf(app).nextStartedActivity.action)
+    }
+
+    @Test fun `with no browser, a link says so instead of crashing`() {
+        shadowOf(app).checkActivities(true)
+        compose.onNodeWithContentDescription("More options").performClick()
+        compose.onNodeWithText("Known issues").performClick()
+        assertEquals("Couldn't open known issues on this phone.", org.robolectric.shadows.ShadowToast.getTextOfLatestToast())
+    }
+
     @Test fun `Open App info opens Steadmo's app details`() {
         compose.onNodeWithText("Open App info").performClick()
         val intent = shadowOf(app).nextStartedActivity
