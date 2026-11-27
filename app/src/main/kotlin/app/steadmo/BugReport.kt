@@ -34,6 +34,8 @@ object BugReport {
         val notificationsAllowed: Boolean,
         val state: GlucoseState,
         val now: Long,
+        /** What CamAPS FX lets other apps open ([CamapsEntryPoints]). */
+        val camapsEntryPoints: String = "",
     )
 
     fun facts(context: Context, state: GlucoseState, now: Long = System.currentTimeMillis()) = Facts(
@@ -45,6 +47,7 @@ object BugReport {
             context.checkSelfPermission(Manifest.permission.POST_NOTIFICATIONS) == PackageManager.PERMISSION_GRANTED,
         state = state,
         now = now,
+        camapsEntryPoints = CamapsEntryPoints.describe(context, state.camapsPackage),
     )
 
     /** The app's section of the report: facts, then the newest log lines that fit. */
@@ -66,6 +69,11 @@ object BugReport {
             appendLine()
             appendLine("--- last CamAPS FX notification ---")
             appendLine(it.describe())
+        }
+        if (facts.camapsEntryPoints.isNotEmpty()) {
+            appendLine()
+            appendLine("--- CamAPS FX screens other apps can open ---")
+            appendLine(facts.camapsEntryPoints)
         }
         appendLine()
         appendLine("--- log ---")
