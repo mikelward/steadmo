@@ -28,6 +28,7 @@ sealed interface WidgetModel {
         /** When the reading was taken, e.g. "18:42". */
         val time: String,
         val rate: String?,
+        /** e.g. "Auto mode on", or "Auto mode on at 18:20" once that report is stale. */
         val autoMode: String?,
         val readings: List<Reading>,
     ) : WidgetModel
@@ -52,7 +53,12 @@ sealed interface WidgetModel {
                 stale = now - latest.timeMillis > STALE_MILLIS,
                 time = timeFormat.format(Date(latest.timeMillis)),
                 rate = trend?.let { "${if (it.mmolPerMinute >= 0) "+" else "−"}${AlertPolicy.fmt2(kotlin.math.abs(it.mmolPerMinute))}/min" },
-                autoMode = state.status?.autoMode,
+                autoMode = state.status?.autoMode?.let { mode ->
+                    val at = state.statusTime ?: latest.timeMillis
+                    // An old report must not look like the loop is still running.
+                    if (now - at > STALE_MILLIS) "Auto mode ${mode.lowercase()} at ${timeFormat.format(Date(at))}"
+                    else "Auto mode ${mode.lowercase()}"
+                },
                 readings = state.readings,
             )
         }

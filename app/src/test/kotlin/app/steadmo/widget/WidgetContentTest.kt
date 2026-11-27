@@ -57,7 +57,7 @@ class WidgetContentTest {
         setAppWidgetSize(DpSize(250.dp, 120.dp))
         val model = WidgetModel.of(Samples.rising(), true, Samples.NOW + 20 * 60_000, fmt)
         provideComposable { GlanceTheme { WidgetContent(model, Samples.NOW + 20 * 60_000) } }
-        onNode(hasText("Auto mode on · No new reading for over 10 min")).assertExists()
+        onNode(hasText("Auto mode on at ${fmt.format(Samples.NOW)} · No new reading for over 10 min")).assertExists()
     }
 
     @Test fun `before the disclaimer, only a prompt`() = runGlanceAppWidgetUnitTest {
