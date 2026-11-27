@@ -266,6 +266,8 @@ private fun Reading(state: GlucoseState, now: Long, stale: Boolean) {
     Text(
         listOfNotNull(trend?.arrow?.label ?: "Trend after 5 min of readings", rate).joinToString(" · "),
         style = MaterialTheme.typography.titleMedium,
+        // An old trend greys out with its value: it's not how glucose is moving now.
+        color = if (stale) MaterialTheme.colorScheme.outline else androidx.compose.ui.graphics.Color.Unspecified,
     )
     Text(
         "${state.unit.label} · " + if (now - latest.timeMillis < DateUtils.MINUTE_IN_MILLIS) {

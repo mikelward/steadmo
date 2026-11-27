@@ -77,7 +77,11 @@ class SteadmoWidget(private val clock: () -> Long = System::currentTimeMillis) :
 @Composable
 fun WidgetRoot(states: StateFlow<GlucoseState>, context: Context, clock: () -> Long) {
     val state by states.collectAsState()
-    val model = WidgetModel.of(state, Disclaimer.accepted(context), clock())
+    // The phone's own 12- or 24-hour setting, not just its locale's.
+    val model = WidgetModel.of(
+        state, Disclaimer.accepted(context), clock(),
+        timeFormat = android.text.format.DateFormat.getTimeFormat(context),
+    )
     GlanceTheme { WidgetContent(model, clock()) }
 }
 
