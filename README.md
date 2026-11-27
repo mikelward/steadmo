@@ -25,7 +25,10 @@ and keep CamAPS FX's and your CGM's alarms on.
 
 1. In CamAPS FX's notification settings (Android Settings → Apps → CamAPS FX →
    Notifications), turn on **My diabetes info**.
-2. Install Steadmo, open it, and allow notification access and notifications.
+2. Install Steadmo, open it, and allow notification access and notifications. If Android
+   says notification access is "controlled by a restricted setting" (sideloaded apps, Android
+   13 and later), open Steadmo's App info, tap ⋮, choose **Allow restricted settings**, then
+   try again.
 3. Wait for the next CamAPS FX update. The trend arrow appears after 5 minutes of
    readings. "Show CamAPS FX notification" shows exactly what Steadmo read.
 

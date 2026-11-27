@@ -34,6 +34,13 @@ class MainActivityTest {
         )
     }
 
+    @Test fun `Open App info opens Steadmo's app details`() {
+        compose.onNodeWithText("Open App info").performClick()
+        val intent = shadowOf(app).nextStartedActivity
+        assertEquals(Settings.ACTION_APPLICATION_DETAILS_SETTINGS, intent.action)
+        assertEquals("package:${app.packageName}", intent.dataString)
+    }
+
     @Test fun `Other with no CamAPS FX installed starts nothing`() {
         compose.onNodeWithText("Other").performClick()
         assertEquals(null, shadowOf(app).nextStartedActivity)
