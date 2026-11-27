@@ -362,7 +362,7 @@ internal fun ShortcutsDialog(on: Boolean, onOpenSettings: () -> Unit, onOpenAppI
         onDismissRequest = onDismiss,
         title = { Text("CamAPS FX shortcuts") },
         text = {
-            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            DialogBody {
                 Text(
                     "Steadmo's meal, Boost and Ease-off buttons go straight to that screen in CamAPS FX. " +
                         "Meal buttons enter the carbs, up to 60 g. You check the bolus and deliver it in " +
@@ -405,13 +405,7 @@ internal fun AboutDialog(version: String, onSourceCode: () -> Unit, onDismiss: (
         AlertDialog(
             onDismissRequest = { showingLicence = false },
             title = { Text("Apache License 2.0") },
-            text = {
-                Text(
-                    text,
-                    style = MaterialTheme.typography.bodySmall,
-                    modifier = Modifier.verticalScroll(rememberScrollState()),
-                )
-            },
+            text = { DialogBody { Text(text, style = MaterialTheme.typography.bodySmall) } },
             confirmButton = { TextButton(onClick = { showingLicence = false }) { Text("Close") } },
         )
         return
@@ -420,7 +414,7 @@ internal fun AboutDialog(version: String, onSourceCode: () -> Unit, onDismiss: (
         onDismissRequest = onDismiss,
         title = { Text("Steadmo") },
         text = {
-            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            DialogBody {
                 Text("Version $version", fontWeight = FontWeight.Bold)
                 Text("A companion display for CamAPS FX. Not a medical device.")
                 Text(
@@ -439,6 +433,20 @@ internal fun AboutDialog(version: String, onSourceCode: () -> Unit, onDismiss: (
     )
 }
 
+/**
+ * A dialog's content, scrolling when it's taller than the dialog can be (a
+ * small phone, landscape, or large text), so nothing is cut off. Every
+ * dialog's `text` uses it.
+ */
+@Composable
+internal fun DialogBody(spacing: androidx.compose.ui.unit.Dp = 8.dp, content: @Composable androidx.compose.foundation.layout.ColumnScope.() -> Unit) {
+    Column(
+        modifier = Modifier.verticalScroll(rememberScrollState()),
+        verticalArrangement = Arrangement.spacedBy(spacing),
+        content = content,
+    )
+}
+
 /** The daily meal reminder: on or off, and when (SPEC.md §4.13). */
 @Composable
 internal fun MealReminderDialog(
@@ -454,7 +462,7 @@ internal fun MealReminderDialog(
         onDismissRequest = onDismiss,
         title = { Text("Meal reminder") },
         text = {
-            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            DialogBody {
                 Text("Each day, a reminder to bolus before dinner, with Bolus and remind me in 30 or 60 minutes.")
                 Row(
                     modifier = Modifier.fillMaxWidth()
@@ -495,7 +503,7 @@ internal fun UnitsDialog(unit: GlucoseUnit, onPick: (GlucoseUnit) -> Unit, onDis
         onDismissRequest = onDismiss,
         title = { Text("Units") },
         text = {
-            Column {
+            DialogBody(spacing = 0.dp) {
                 GlucoseUnit.entries.forEach { option ->
                     Row(
                         modifier = Modifier
