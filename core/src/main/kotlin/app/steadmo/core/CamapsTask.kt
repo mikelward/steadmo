@@ -137,11 +137,16 @@ class CamapsTask(val goal: CamapsGoal, val startedAt: Long) {
             }
         }
         if (found.size > 1) return giveUp("${found.size} buttons read $name")
+        // Boost's and Ease-off's own dialogs are where they're started: on a form or a
+        // dialog, a button reading the mode's name may start it, so Steadmo taps nothing.
+        if (hasField(screen)) return giveUp("a form, not the home screen")
+        if (clickableLabels(screen).any { DISMISS.containsMatchIn(it) }) {
+            return giveUp("a dialog, not the home screen")
+        }
         found.singleOrNull()?.let {
             finished = true
             return CamapsStep.Tap(it, name)
         }
-        if (hasField(screen)) return giveUp("a form, not the home screen")
         return tapOnce(listOfNotNull(tab(screen, 0)))
     }
 
@@ -215,13 +220,24 @@ class CamapsTask(val goal: CamapsGoal, val startedAt: Long) {
             Regex("""(?<![a-z])bolus(?![a-z])""", RegexOption.IGNORE_CASE),
         )
 
-        /** Never tapped, even if it also reads like the way to the meal screen. */
+        /**
+         * Never tapped, even if it also reads like the way to the meal screen:
+         * anything that acts, and anything about a dose ("Bolus 2 U", "Give
+         * bolus", "Bolus now"). A bolus button with any number on it is [DOSED].
+         */
         private val NEVER = Regex(
             """deliver|confirm|start|send|\bok\b|yes|apply|accept|save|done|next|continue|submit|""" +
                 """boost|ease|stop|suspend|resume|cancel|delete|remove|auto\s*mode|prime|fill|""" +
-                """basal|temp|alarm|alert|setting|pair|sensor|pump|units?\b""",
+                """basal|temp|alarm|alert|setting|pair|sensor|pump|units?\b|\bi?u\b|""" +
+                """give|inject|dose|insulin|\bnow\b""",
             RegexOption.IGNORE_CASE,
         )
+
+        /** A bolus button showing an amount ("Bolus 2.5") may deliver it. */
+        private val DOSED = Regex("""bolus.*\d|\d.*bolus""", RegexOption.IGNORE_CASE)
+
+        /** A button that closes a dialog: its presence means the screen is one. */
+        private val DISMISS = Regex("""^\s*(cancel|close|not now|no|dismiss)\s*$""", RegexOption.IGNORE_CASE)
 
         /** Controls that change a value when tapped, never navigation. */
         private val CONTROLS = Regex("""SeekBar|Slider|Switch|CheckBox|RadioButton|ToggleButton|Spinner""")
@@ -286,7 +302,7 @@ class CamapsTask(val goal: CamapsGoal, val startedAt: Long) {
                         .lastOrNull { !it.clickable && texts(it).any { t -> t.any(Char::isLetter) } }
                     if (before != null) label = (texts(before) + label).joinToString(" ").trim()
                 }
-                if (label.isEmpty() || NEVER.containsMatchIn(label)) return@walk
+                if (label.isEmpty() || NEVER.containsMatchIn(label) || DOSED.containsMatchIn(label)) return@walk
                 if (NAVIGATION.any { it.containsMatchIn(label) }) found += path to label
             }
             return found
@@ -303,6 +319,14 @@ class CamapsTask(val goal: CamapsGoal, val startedAt: Long) {
             }
             if (tabs.size != 3 || tabs.any { (_, tab) -> texts(tab).any { it.isNotBlank() } }) return null
             return tabs[index].first to "tab ${index + 1} of 3"
+        }
+
+        private fun clickableLabels(screen: ScreenNode): List<String> {
+            val found = mutableListOf<String>()
+            walk(screen, emptyList(), null) { node, _, _ ->
+                if (node.clickable && !node.editable) found += texts(node).joinToString(" ").trim()
+            }
+            return found
         }
 
         private fun hasField(node: ScreenNode): Boolean = node.editable || node.children.any { hasField(it) }

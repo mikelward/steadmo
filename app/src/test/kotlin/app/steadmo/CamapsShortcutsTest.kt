@@ -242,15 +242,30 @@ class CamapsShortcutsTest {
         val offscreen = node(text = "Meal", clickable = true).apply { isVisibleToUser = false }
         val root = node(null, null, false, false, offscreen, node(text = "x"))
         assertEquals("x", CamapsShortcuts.read(root).children.single().text)
-        assertEquals("x", CamapsShortcuts.find(root, listOf(0))!!.text)
+        assertEquals("x", CamapsShortcuts.find(root, listOf(0), CamapsShortcuts.read(root))!!.text)
     }
 
     @Test fun `finds views by the path it read`() {
         val leaf = node(text = "x")
         val root = node(null, null, false, false, node(null, null, false, false, leaf))
-        assertEquals("x", CamapsShortcuts.find(root, listOf(0, 0))!!.text)
-        assertNull(CamapsShortcuts.find(root, listOf(1)))
+        val screen = CamapsShortcuts.read(root)
+        assertEquals("x", CamapsShortcuts.find(root, listOf(0, 0), screen)!!.text)
+        assertNull(CamapsShortcuts.find(root, listOf(1), screen))
         assertEquals("x", CamapsShortcuts.read(root).children[0].children[0].text)
+    }
+
+    @Test fun `never acts on a view that changed after it was read`() {
+        val leaf = node(text = "Meal", clickable = true)
+        val root = node(null, null, false, false, leaf)
+        val screen = CamapsShortcuts.read(root)
+        leaf.text = "Deliver"
+        assertNull(CamapsShortcuts.find(root, listOf(0), screen))
+    }
+
+    @Test fun `an empty field's hint isn't read as what's typed`() {
+        val empty = node(text = "Value", hint = "Value", editable = true).apply { isShowingHintText = true }
+        assertNull(CamapsShortcuts.read(empty).text)
+        assertEquals("Value", CamapsShortcuts.read(empty).hint)
     }
 
     @Test fun `logs its lifecycle`() {

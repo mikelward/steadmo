@@ -66,6 +66,7 @@ class CamapsTaskTest {
         val dangerous = listOf(
             "Deliver bolus", "Confirm bolus", "Start bolus", "OK", "Boost", "Ease-off", "Stop insulin",
             "Bolus settings", "Meal: save", "Next", "Bolus 2 units", "Auto mode",
+            "Bolus 2U", "Bolus 2.5", "2 U bolus", "Give bolus", "Bolus now", "Inject", "Insulin",
         )
         dangerous.forEach { text ->
             assertEquals(text, emptyList<Pair<List<Int>, String>>(), CamapsTask.buttons(screen(button(text))))
@@ -238,6 +239,11 @@ class CamapsTaskTest {
             CamapsStep.GiveUp("a form, not the home screen"),
             CamapsTask(CamapsGoal.EASE_OFF, 0).next(camapsDialog, 0),
         )
+    }
+
+    @Test fun `Boost never taps on a dialog, whose Boost button would start it`() {
+        val dialog = screen(label("Boost for 2 hours?"), button("Cancel"), button("Boost"))
+        assertEquals(CamapsStep.GiveUp("a dialog, not the home screen"), CamapsTask(CamapsGoal.BOOST, 0).next(dialog, 0))
     }
 
     @Test fun `Other goes to the meal entry and stops, typing nothing`() {
