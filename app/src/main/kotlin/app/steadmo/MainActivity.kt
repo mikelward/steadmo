@@ -62,6 +62,7 @@ class MainActivity : ComponentActivity() {
                     onReportBug = { Thread { BugReport.share(this) }.start() },
                     onShowDisclaimer = { showingDisclaimer = true },
                     onOpenAppInfo = ::openAppInfo,
+                    onGetLatest = ::openLatestRelease,
                     onMinimizeCamaps = { Camaps.openChannelSettings(this, state.camapsPackage, state.camapsChannelId) },
                 )
             }
@@ -74,6 +75,16 @@ class MainActivity : ComponentActivity() {
         notificationsAllowed =
             checkSelfPermission(Manifest.permission.POST_NOTIFICATIONS) == PackageManager.PERMISSION_GRANTED
         SteadmoLog.event("ui: resumed; notification access %s, notifications %s", listenerAllowed, notificationsAllowed)
+    }
+
+    /** The newest signed APK, on GitHub (docs/RELEASES.md); the browser downloads it. */
+    private fun openLatestRelease() {
+        SteadmoLog.event("ui: opening the latest release")
+        startActivity(Intent(Intent.ACTION_VIEW, android.net.Uri.parse(LATEST_RELEASE_URL)))
+    }
+
+    companion object {
+        const val LATEST_RELEASE_URL = "https://github.com/mikelward/steadmo/releases/latest"
     }
 
     /** App info, where Android 13+ hides "Allow restricted settings" for sideloaded apps. */

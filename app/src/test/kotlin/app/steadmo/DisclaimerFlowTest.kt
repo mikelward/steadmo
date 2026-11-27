@@ -4,6 +4,7 @@ import android.content.Context
 import androidx.compose.ui.test.assertIsEnabled
 import androidx.compose.ui.test.assertIsNotEnabled
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
+import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollTo
@@ -49,7 +50,8 @@ class DisclaimerFlowTest {
     @Test fun `once accepted it can be read again and closed`() {
         compose.onNodeWithText(AGREEMENT).performScrollTo().performClick()
         compose.onNodeWithText("Continue").performClick()
-        compose.onNodeWithText("Disclaimer").performScrollTo().performClick()
+        compose.onNodeWithContentDescription("More options").performClick()
+        compose.onNodeWithText("Disclaimer").performClick()
         compose.onNodeWithText("Before you use Steadmo").assertExists()
         compose.onNodeWithText(AGREEMENT).assertDoesNotExist()
         compose.onNodeWithText("Close").performScrollTo().performClick()

@@ -6,6 +6,7 @@ import android.content.ClipboardManager
 import android.text.format.DateUtils
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -21,6 +22,9 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.FilledTonalButton
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.DropdownMenuItem
+import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Surface
@@ -63,6 +67,7 @@ fun HomeScreen(
     onReportBug: () -> Unit = {},
     onShowDisclaimer: () -> Unit = {},
     onOpenAppInfo: () -> Unit = {},
+    onGetLatest: () -> Unit = {},
     clock: () -> Long = System::currentTimeMillis,
     ticking: Boolean = true,
 ) {
@@ -84,6 +89,7 @@ fun HomeScreen(
                 .padding(horizontal = 16.dp, vertical = 12.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp),
         ) {
+            TopBar(onGetLatest = onGetLatest, onReportBug = onReportBug, onShowDisclaimer = onShowDisclaimer)
             if (!listenerAllowed) {
                 SetupCard(
                     "Allow notification access",
@@ -152,10 +158,6 @@ fun HomeScreen(
             )
 
             state.lastDump?.let { NotificationDetails(it) }
-            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                TextButton(onClick = onReportBug) { Text("Report a bug") }
-                TextButton(onClick = onShowDisclaimer) { Text("Disclaimer") }
-            }
             Text(
                 "Not a medical device. Use at your own risk.",
                 style = MaterialTheme.typography.bodySmall,
@@ -213,6 +215,25 @@ private fun Reading(state: GlucoseState, now: Long, stale: Boolean) {
     }
     if (stale) {
         Text("No new reading from CamAPS FX for over 10 minutes.", color = MaterialTheme.colorScheme.error)
+    }
+}
+
+/** The app name, and a ⋮ menu for the things used rarely. */
+@Composable
+private fun TopBar(onGetLatest: () -> Unit, onReportBug: () -> Unit, onShowDisclaimer: () -> Unit) {
+    var open by remember { mutableStateOf(false) }
+    Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+        Text("Steadmo", style = MaterialTheme.typography.titleLarge, modifier = Modifier.weight(1f))
+        Box {
+            IconButton(onClick = { open = true }) {
+                Icon(painterResource(R.drawable.ic_more_vert), contentDescription = "More options")
+            }
+            DropdownMenu(expanded = open, onDismissRequest = { open = false }) {
+                DropdownMenuItem(text = { Text("Get latest version") }, onClick = { open = false; onGetLatest() })
+                DropdownMenuItem(text = { Text("Report a bug") }, onClick = { open = false; onReportBug() })
+                DropdownMenuItem(text = { Text("Disclaimer") }, onClick = { open = false; onShowDisclaimer() })
+            }
+        }
     }
 }
 
