@@ -1,5 +1,6 @@
 package app.steadmo
 
+import android.app.NotificationManager
 import android.content.ClipData
 import android.content.ClipboardManager
 import android.text.format.DateUtils
@@ -58,6 +59,7 @@ fun HomeScreen(
     onAllowNotifications: () -> Unit,
     onOpenCamaps: () -> Unit,
     onMeal: (Int) -> Unit,
+    onMinimizeCamaps: () -> Unit = {},
     clock: () -> Long = System::currentTimeMillis,
     ticking: Boolean = true,
 ) {
@@ -93,6 +95,17 @@ fun HomeScreen(
                     "For the trend arrow in the status bar and fast rise and fall alerts.",
                     "Allow",
                     onAllowNotifications,
+                )
+            }
+
+            val importance = state.camapsChannelImportance
+            if (state.camapsChannelId != null && importance != null && importance > NotificationManager.IMPORTANCE_MIN) {
+                SetupCard(
+                    "Minimize CamAPS FX's notification",
+                    "Steadmo now shows your glucose. Set CamAPS FX's My diabetes info to Silent, " +
+                        "then Minimize. Leave it on: Steadmo reads it.",
+                    "Open settings",
+                    onMinimizeCamaps,
                 )
             }
 

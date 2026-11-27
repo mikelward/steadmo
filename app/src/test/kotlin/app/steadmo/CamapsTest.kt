@@ -49,6 +49,29 @@ class CamapsTest {
         assertEquals("com.camdiab.fx_alert.hx.mmoll", shadowOf(app).nextStartedActivity.component!!.packageName)
     }
 
+    @Test fun `opens the channel's settings`() {
+        Camaps.openChannelSettings(app, CAMAPS, "info")
+        val intent = shadowOf(app).nextStartedActivity
+        assertEquals(android.provider.Settings.ACTION_CHANNEL_NOTIFICATION_SETTINGS, intent.action)
+        assertEquals(CAMAPS, intent.getStringExtra(android.provider.Settings.EXTRA_APP_PACKAGE))
+        assertEquals("info", intent.getStringExtra(android.provider.Settings.EXTRA_CHANNEL_ID))
+    }
+
+    @Test fun `falls back to the app's notification settings`() {
+        shadowOf(app).checkActivities(true)
+        val appSettings = Intent(android.provider.Settings.ACTION_APP_NOTIFICATION_SETTINGS)
+        shadowOf(app.packageManager).addResolveInfoForIntent(
+            appSettings,
+            android.content.pm.ResolveInfo().apply {
+                activityInfo = android.content.pm.ActivityInfo().apply { packageName = "com.android.settings"; name = "Settings" }
+            },
+        )
+        Camaps.openChannelSettings(app, null, null)
+        val intent = shadowOf(app).nextStartedActivity
+        assertEquals(android.provider.Settings.ACTION_APP_NOTIFICATION_SETTINGS, intent.action)
+        assertEquals(CAMAPS, intent.getStringExtra(android.provider.Settings.EXTRA_APP_PACKAGE))
+    }
+
     @Test fun `meal copies the grams then opens CamAPS FX`() {
         installCamaps()
         Camaps.openForMeal(app, null, 45)

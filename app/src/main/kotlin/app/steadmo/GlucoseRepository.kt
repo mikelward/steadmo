@@ -26,6 +26,9 @@ data class GlucoseState(
     val statusTime: Long? = null,
     val camapsPackage: String? = null,
     val lastDump: NotificationDump? = null,
+    /** The channel of CamAPS FX's "My diabetes info", once a reading has come from it. */
+    val camapsChannelId: String? = null,
+    val camapsChannelImportance: Int? = null,
     val listenerConnected: Boolean = false,
 ) {
     val latest: Reading? get() = readings.lastOrNull()
@@ -69,6 +72,8 @@ class GlucoseRepository(
                 statusTime = dump.postTime,
                 camapsPackage = dump.packageName,
                 lastDump = dump,
+                camapsChannelId = dump.channelId,
+                camapsChannelImportance = dump.channelImportance,
             )
         }
         if (added) {

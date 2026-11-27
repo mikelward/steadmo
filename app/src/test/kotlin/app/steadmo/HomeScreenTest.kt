@@ -1,5 +1,6 @@
 package app.steadmo
 
+import android.app.NotificationManager
 import androidx.activity.ComponentActivity
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.assertIsNotEnabled
@@ -23,6 +24,8 @@ class HomeScreenTest {
     private var listenerAsked = 0
     private var notificationsAsked = 0
 
+    private var minimizeAsked = 0
+
     private fun show(state: GlucoseState, listener: Boolean = true, notifications: Boolean = true, now: Long = Samples.NOW) {
         compose.setContent {
             SteadmoTheme(dark = false) {
@@ -34,6 +37,7 @@ class HomeScreenTest {
                     onAllowNotifications = { notificationsAsked++ },
                     onOpenCamaps = { opened++ },
                     onMeal = { meals += it },
+                    onMinimizeCamaps = { minimizeAsked++ },
                     clock = { now },
                     ticking = false,
                 )
@@ -81,6 +85,17 @@ class HomeScreenTest {
     @Test fun `an old Auto mode report says how old it is`() {
         show(Samples.rising(), now = Samples.NOW + 20 * MINUTE)
         compose.onNodeWithText("Auto mode on, 20 minutes ago").assertIsDisplayed().assertIsNotEnabled()
+    }
+
+    @Test fun `suggests minimizing CamAPS FX until it is`() {
+        show(Samples.rising().copy(camapsChannelId = "info", camapsChannelImportance = NotificationManager.IMPORTANCE_LOW))
+        compose.onNodeWithText("Open settings").performClick()
+        assertEquals(1, minimizeAsked)
+    }
+
+    @Test fun `no suggestion once CamAPS FX is minimized`() {
+        show(Samples.rising().copy(camapsChannelId = "info", camapsChannelImportance = NotificationManager.IMPORTANCE_MIN))
+        compose.onNodeWithText("Open settings").assertDoesNotExist()
     }
 
     @Test fun `a bound shows its sign`() {
