@@ -1,24 +1,29 @@
 # Releases
 
-Every push to `main` builds a signed release APK and publishes it as a GitHub prerelease
-tagged `v<versionCode>`, with `steadmo-<versionCode>.apk` attached
-([`.github/workflows/release.yml`](../.github/workflows/release.yml)). Pull requests
-upload a debug APK as a workflow artifact instead (`ci.yml`).
+Every push to `main` publishes a GitHub release tagged `v<versionCode>`, marked latest
+([`.github/workflows/release.yml`](../.github/workflows/release.yml)):
 
-## Installing
+- `steadmo-debug.apk`: the debug build (`app.steadmo.debug`, "Steadmo Debug"). Until Steadmo is
+  on Google Play, this is the one to install.
+- `steadmo.apk`: the signed release build (`app.steadmo`), once release signing is set up
+  (below).
 
-On the phone, open the repository's
-[Releases page](https://github.com/mikelward/steadmo/releases), download the newest
-`steadmo-<n>.apk`, open it, and allow installing from that source when Android asks.
-Later releases install over it and keep your data, because every release is signed with
-the same key. The release app (`app.steadmo`) and a debug build (`app.steadmo.debug`)
-can be installed side by side.
+## Installing and updating the debug build
 
-## One-time setup: the signing key
+On the phone, tap **⋮ → Get latest version** in Steadmo, or open
+<https://github.com/mikelward/steadmo/releases/latest/download/steadmo-debug.apk>. The
+browser downloads the APK; open it and allow installing from that source when Android asks.
 
-Releases need four repository secrets. Until they exist, the release workflow builds
-nothing and leaves a warning saying so. Create the key once, on your own computer, and
-keep the keystore file and passwords somewhere safe: losing them means the next release
+Every debug build, from CI or a developer's machine, is signed with the same debug key,
+committed as `app/debug.keystore` (Android's standard debug key, password `android`). So each
+new debug APK installs over the last one and keeps your data. The key isn't a secret, and
+nobody should treat a debug build as more than a family test build.
+
+## Release signing (for later, and for Play)
+
+The signed release APK needs four repository secrets. Until they exist, the workflow
+publishes the debug APK only and leaves a notice saying so. Create the key once, on your own
+computer, and keep the keystore file and passwords safe: losing them means the next release
 can't install over the old one.
 
 ```sh

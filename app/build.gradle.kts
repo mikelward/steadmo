@@ -34,6 +34,9 @@ check(releaseSigningConfigured || releaseVars.all { it == null }) {
         "RELEASE_KEY_PASSWORD, or none to build unsigned (docs/RELEASES.md)."
 }
 
+/** The newest debug APK; the release workflow attaches it under this fixed name. */
+val latestDebugApkUrl = "https://github.com/mikelward/steadmo/releases/latest/download/steadmo-debug.apk"
+
 val commitCount: Int = git("rev-list", "--count", "HEAD")?.toIntOrNull() ?: 1
 val shortSha: String = git("rev-parse", "--short", "HEAD") ?: "unknown"
 
@@ -53,6 +56,15 @@ android {
     }
 
     signingConfigs {
+        // One debug key for every machine and CI, committed on purpose: debug APKs are
+        // what the family installs until Play, and each must install over the last.
+        // It's Android's standard debug key (password "android"), not a secret.
+        getByName("debug") {
+            storeFile = file("debug.keystore")
+            storePassword = "android"
+            keyAlias = "androiddebugkey"
+            keyPassword = "android"
+        }
         create("release") {
             if (releaseSigningConfigured) {
                 storeFile = file(releaseKeystorePath!!)
@@ -68,10 +80,13 @@ android {
         // the sibling apps' DEBUG badge and label, so the two are easy to tell apart.
         debug {
             applicationIdSuffix = ".debug"
+            // Until Play, "Get latest version" downloads the newest debug APK directly.
+            buildConfigField("String", "LATEST_DOWNLOAD_URL", "\"$latestDebugApkUrl\"")
             manifestPlaceholders["launcherIcon"] = "@mipmap/ic_launcher_debug"
             manifestPlaceholders["appLabel"] = "Steadmo Debug"
         }
         release {
+            buildConfigField("String", "LATEST_DOWNLOAD_URL", "\"https://github.com/mikelward/steadmo/releases\"")
             manifestPlaceholders["launcherIcon"] = "@mipmap/ic_launcher"
             manifestPlaceholders["appLabel"] = "@string/app_name"
             isMinifyEnabled = true
