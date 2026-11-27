@@ -25,6 +25,7 @@ class HomeScreenTest {
     private var notificationsAsked = 0
 
     private var minimizeAsked = 0
+    private var bugReports = 0
 
     private fun show(state: GlucoseState, listener: Boolean = true, notifications: Boolean = true, now: Long = Samples.NOW) {
         compose.setContent {
@@ -38,6 +39,7 @@ class HomeScreenTest {
                     onOpenCamaps = { opened++ },
                     onMeal = { meals += it },
                     onMinimizeCamaps = { minimizeAsked++ },
+                    onReportBug = { bugReports++ },
                     clock = { now },
                     ticking = false,
                 )
@@ -96,6 +98,12 @@ class HomeScreenTest {
     @Test fun `no suggestion once CamAPS FX is minimized`() {
         show(Samples.rising().copy(camapsChannelId = "info", camapsChannelImportance = NotificationManager.IMPORTANCE_MIN))
         compose.onNodeWithText("Open settings").assertDoesNotExist()
+    }
+
+    @Test fun `Report a bug asks for a report`() {
+        show(Samples.rising())
+        compose.onNodeWithText("Report a bug").performScrollTo().performClick()
+        assertEquals(1, bugReports)
     }
 
     @Test fun `a bound shows its sign`() {

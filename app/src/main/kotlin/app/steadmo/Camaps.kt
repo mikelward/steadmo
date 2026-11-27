@@ -1,12 +1,12 @@
 package app.steadmo
 
+import app.steadmo.core.SteadmoLog
 import android.content.ActivityNotFoundException
 import android.content.ClipData
 import android.content.ClipboardManager
 import android.content.Context
 import android.content.Intent
 import android.provider.Settings
-import android.util.Log
 import android.widget.Toast
 
 /**
@@ -25,11 +25,12 @@ object Camaps {
         val candidates = listOfNotNull(seenPackage) + packages
         val intent = candidates.firstNotNullOfOrNull { context.packageManager.getLaunchIntentForPackage(it) }
         if (intent == null) {
-            Log.w(SteadmoApp.TAG, "CamAPS FX isn't installed, or isn't visible to Steadmo")
+            SteadmoLog.warning("camaps: not installed, or not visible to Steadmo")
             Toast.makeText(context, "CamAPS FX isn't installed", Toast.LENGTH_SHORT).show()
             return false
         }
         context.startActivity(intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
+        SteadmoLog.event("camaps: opened %s", intent.`package`)
         return true
     }
 
@@ -39,6 +40,7 @@ object Camaps {
      */
     fun openChannelSettings(context: Context, pkg: String?, channelId: String?) {
         val target = pkg ?: packages.first()
+        SteadmoLog.event("camaps: opening channel settings for %s channel %s", target, channelId)
         val channel = Intent(Settings.ACTION_CHANNEL_NOTIFICATION_SETTINGS)
             .putExtra(Settings.EXTRA_APP_PACKAGE, target)
             .putExtra(Settings.EXTRA_CHANNEL_ID, channelId)
@@ -46,7 +48,7 @@ object Camaps {
         try {
             context.startActivity(channel)
         } catch (e: ActivityNotFoundException) {
-            Log.w(SteadmoApp.TAG, "No channel settings page; opening CamAPS FX's notification settings", e)
+            SteadmoLog.failure(e, "camaps: no channel settings page; opening app notification settings")
             context.startActivity(
                 Intent(Settings.ACTION_APP_NOTIFICATION_SETTINGS)
                     .putExtra(Settings.EXTRA_APP_PACKAGE, target)
@@ -59,6 +61,7 @@ object Camaps {
     fun openForMeal(context: Context, seenPackage: String?, grams: Int) {
         val clipboard = context.getSystemService(ClipboardManager::class.java)
         clipboard.setPrimaryClip(ClipData.newPlainText("Carbs", grams.toString()))
+        SteadmoLog.event("camaps: meal %s g copied", grams)
         if (open(context, seenPackage)) {
             Toast.makeText(context, "$grams g copied. Enter it in CamAPS FX.", Toast.LENGTH_SHORT).show()
         }

@@ -60,6 +60,7 @@ fun HomeScreen(
     onOpenCamaps: () -> Unit,
     onMeal: (Int) -> Unit,
     onMinimizeCamaps: () -> Unit = {},
+    onReportBug: () -> Unit = {},
     clock: () -> Long = System::currentTimeMillis,
     ticking: Boolean = true,
 ) {
@@ -145,6 +146,7 @@ fun HomeScreen(
             )
 
             state.lastDump?.let { NotificationDetails(it) }
+            TextButton(onClick = onReportBug) { Text("Report a bug") }
         }
     }
 }

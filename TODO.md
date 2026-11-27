@@ -35,6 +35,14 @@
       Ease-off, 20/40/45/Other.
 - [ ] Launcher shortcuts and Quick Settings tiles for the meal presets.
 
+## Diagnostics
+
+- [x] Debug log on the shared `mikelward/androidlog`: logcat, a persisted file with earlier
+      runs and crashes, and process exit reasons.
+- [x] "Report a bug": app state, last CamAPS FX notification, log and screenshot, through
+      the share sheet (clipboard fallback).
+- [ ] Add androidlog to the weekly Gradle update batch, as the sibling apps do.
+
 ## Phase 2b: Steadmo as the alerting app (to consider)
 
 Goal: alerts come from Steadmo's own logic, without double alarms, and never weaker than

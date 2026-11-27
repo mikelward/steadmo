@@ -19,6 +19,13 @@ dependencyResolutionManagement {
     repositories {
         google()
         mavenCentral()
+        // mikelward/androidlog, the shared debug log and bug report, publishes
+        // a Maven repository into its `maven` branch. Scoped to its one group.
+        maven {
+            name = "androidlog"
+            url = uri("https://raw.githubusercontent.com/mikelward/androidlog/maven")
+            content { includeGroup("com.mikelward.androidlog") }
+        }
     }
 }
 

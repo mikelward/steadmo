@@ -1,7 +1,7 @@
 package app.steadmo
 
+import app.steadmo.core.SteadmoLog
 import android.content.Context
-import android.util.Log
 import app.steadmo.core.AlertKind
 import app.steadmo.core.AlertPolicy
 import app.steadmo.core.RangeSide
@@ -64,6 +64,10 @@ class GlucoseRepository(
         val added = mmol != null && log.add(Reading(dump.postTime, mmol, status.bound))
         val readings = log.all
         val trend = TrendCalculator.trend(readings)
+        SteadmoLog.event(
+            "readings: %s at %s (%s readings), trend %s %s/min",
+            if (added) "added" else "unchanged", dump.postTime, readings.size, trend?.arrow, trend?.mmolPerMinute,
+        )
         _state.update {
             it.copy(
                 readings = readings,
@@ -81,13 +85,19 @@ class GlucoseRepository(
             val latest = log.latest
             // A newer reading that no longer calls for the shown alert clears it.
             if (shownAlert != null && latest != null && alerts.applying(latest, trend)?.kind != shownAlert) {
+                SteadmoLog.event("alerts: %s no longer applies; cleared", shownAlert)
                 notifier.cancelAlert()
                 shownAlert = null
             }
             // Only a reading posted just now alerts. A replay (e.g. on reconnect)
             // is history: its projection was about a moment that has passed.
+            val age = latest?.let { clock() - it.timeMillis }
+            if (age != null && age >= ALERT_MAX_AGE_MILLIS) {
+                SteadmoLog.event("alerts: reading is %s ms old; a replay doesn't alert", age)
+            }
             latest?.takeIf { clock() - it.timeMillis < ALERT_MAX_AGE_MILLIS }?.let {
                 alerts.evaluate(it, trend)?.let { alert ->
+                    SteadmoLog.event("alerts: %s (%s)", alert.kind, alert.title)
                     notifier.showAlert(alert, it.timeMillis)
                     shownAlert = alert.kind
                 }
@@ -96,6 +106,7 @@ class GlucoseRepository(
         // A Live Update while out of range, or while a low is on the way.
         val current = _state.value.latest
         val promote = current != null && (current.side() != RangeSide.IN_RANGE || shownAlert == AlertKind.LOW_SOON)
+
         notifier.showStatus(_state.value, promote)
     }
 
@@ -107,7 +118,7 @@ class GlucoseRepository(
     private fun load(): ReadingLog = try {
         if (file.exists()) ReadingLog.decode(file.readText()) else ReadingLog()
     } catch (e: IOException) {
-        Log.e(SteadmoApp.TAG, "Couldn't read the saved readings; starting empty", e)
+        SteadmoLog.failure(e, "readings: couldn't read the saved readings; starting empty")
         ReadingLog()
     }
 
@@ -115,9 +126,9 @@ class GlucoseRepository(
         try {
             val tmp = File(file.path + ".tmp")
             tmp.writeText(text)
-            if (!tmp.renameTo(file)) Log.e(SteadmoApp.TAG, "Couldn't replace the saved readings")
+            if (!tmp.renameTo(file)) SteadmoLog.error("readings: couldn't replace the saved readings")
         } catch (e: IOException) {
-            Log.e(SteadmoApp.TAG, "Couldn't save the readings", e)
+            SteadmoLog.failure(e, "readings: couldn't save the readings")
         }
     }
 }

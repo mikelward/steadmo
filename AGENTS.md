@@ -152,5 +152,8 @@ Shared by every mikelward repo and the user-level agent config; canonical in mik
   on any difference. Light and dark for every screen.
 - **UI**. 4dp grid, short copy, standard Material icons. Trend arrows use the seven
   standard CGM arrows (`SPEC.md` §4).
+- **Logging**. Through `SteadmoLog` (mikelward/androidlog), never `android.util.Log`:
+  a format string plus arguments, one line per decision, with the reason. Every catch logs
+  with `failure(e, ...)`.
 - **Units**. mmol/L first; mg/dL is converted on the way in.
 - **Translations**. Wait until the maintainer approves the English.
