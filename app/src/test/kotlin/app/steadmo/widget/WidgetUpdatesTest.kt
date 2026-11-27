@@ -33,6 +33,20 @@ class WidgetUpdatesTest {
         assertEquals(1, work.size)
     }
 
+    @Test fun `the next redraw is whichever of reading and mode expires first`() {
+        val stale = 10 * 60_000L + 5_000
+        val reading = Samples.rising()
+        // Mode reported 2 min after the reading: the reading expires first, then the mode.
+        val withLaterMode = reading.copy(statusTime = Samples.NOW + 2 * 60_000)
+        assertEquals(Samples.NOW + stale, WidgetUpdates.nextStaleRedraw(withLaterMode, Samples.NOW))
+        assertEquals(
+            Samples.NOW + 2 * 60_000 + stale,
+            WidgetUpdates.nextStaleRedraw(withLaterMode, Samples.NOW + stale),
+        )
+        assertEquals(null, WidgetUpdates.nextStaleRedraw(withLaterMode, Samples.NOW + 2 * 60_000 + stale))
+        assertEquals(null, WidgetUpdates.nextStaleRedraw(app.steadmo.GlucoseState(), Samples.NOW))
+    }
+
     @Test fun `the stale redraw succeeds`() = runBlocking {
         val worker = TestListenableWorkerBuilder<WidgetUpdates.StaleWorker>(context).build()
         assertEquals(ListenableWorker.Result.success(), worker.doWork())

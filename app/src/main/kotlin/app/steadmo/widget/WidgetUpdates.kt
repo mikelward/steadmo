@@ -10,6 +10,7 @@ import androidx.work.OneTimeWorkRequestBuilder
 import androidx.work.WorkManager
 import androidx.work.WorkerParameters
 import app.steadmo.GlucoseState
+import app.steadmo.repository
 import app.steadmo.core.SteadmoLog
 import java.util.concurrent.TimeUnit
 
@@ -38,11 +39,21 @@ object WidgetUpdates {
         SteadmoLog.verbose("widget: %s updated", ids.size)
     }
 
-    /** Redraws once the latest reading goes stale, so it greys out on time. */
+    /**
+     * When the widget next needs redrawing because something on it went
+     * stale: the reading or the Auto mode report, whichever expires first
+     * after [now]. The redraw re-arms for the other ([StaleWorker]).
+     */
+    fun nextStaleRedraw(state: GlucoseState, now: Long): Long? =
+        listOfNotNull(state.latest?.timeMillis, state.statusTime)
+            .map { it + WidgetModel.STALE_MILLIS + 5_000 }
+            .filter { it > now }
+            .minOrNull()
+
+    /** Redraws once the next thing on the widget goes stale, so it greys out on time. */
     fun scheduleStale(context: Context, state: GlucoseState, now: Long = System.currentTimeMillis()) {
-        val latest = state.latest ?: return
-        val delay = latest.timeMillis + WidgetModel.STALE_MILLIS + 5_000 - now
-        if (delay <= 0) return
+        val at = nextStaleRedraw(state, now) ?: return
+        val delay = at - now
         try {
             WorkManager.getInstance(context).enqueueUniqueWork(
                 STALE_WORK,
@@ -57,8 +68,10 @@ object WidgetUpdates {
 
     class StaleWorker(context: Context, params: WorkerParameters) : CoroutineWorker(context, params) {
         override suspend fun doWork(): Result {
-            SteadmoLog.event("widget: reading went stale; redrawing")
+            SteadmoLog.event("widget: something went stale; redrawing")
             SteadmoWidget().updateAll(applicationContext)
+            // Re-arm for whatever expires next (the reading or the mode report).
+            scheduleStale(applicationContext, applicationContext.repository.state.value)
             return Result.success()
         }
     }
