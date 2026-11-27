@@ -84,7 +84,7 @@ data class NotificationDump(
                 try {
                     view.resources.getResourceEntryName(view.id)
                 } catch (e: android.content.res.Resources.NotFoundException) {
-                    SteadmoLog.verbose("listener: image view id %s has no resource name: %s", view.id, e.javaClass.simpleName)
+                    SteadmoLog.failure(e, "listener: image view id %s has no resource name", view.id)
                     "id-${view.id}"
                 }
             }

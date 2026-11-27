@@ -35,7 +35,8 @@ open class SteadmoApp : Application() {
         try {
             diagnosticSink = installDiagnosticSinks(SteadmoLog, this)
         } catch (e: Exception) {
-            Log.w(TAG, "diagnostic log setup failed: ${e::class.simpleName}")
+            // The debug log is what failed, so logcat is the only place left to say so.
+            Log.w(TAG, "diagnostic log setup failed", e)
         }
     }
 
