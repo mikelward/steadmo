@@ -12,7 +12,9 @@ import app.steadmo.core.Trend
 import app.steadmo.core.TrendAlert
 import app.steadmo.core.TrendArrow
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNull
+import org.junit.Assert.assertTrue
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
@@ -39,6 +41,49 @@ class StatusNotifierTest {
         // Fresh for 15 minutes from the reading, not from the post.
         assertEquals(StatusNotifier.STALE_MILLIS - 2 * MINUTE, n.timeoutAfter)
         assertEquals(StatusNotifier.CHANNEL_GLUCOSE, n.channelId)
+    }
+
+    private val low = state.copy(
+        readings = listOf(Reading(0, 4.4), Reading(MINUTE, 3.8), Reading(6 * MINUTE, 3.6)),
+        trend = Trend(-0.07, TrendArrow.DOWN_SLIGHT),
+    )
+
+    @Test
+    fun `out of range is a Live Update with a chip and range bar`() {
+        app.allowNotifications()
+        notifier.showStatus(low, promote = true)
+        val n = app.posted(1)!!
+        assertTrue(n.extras.getBoolean(Notification.EXTRA_REQUEST_PROMOTED_ONGOING))
+        assertEquals("3.6", n.shortCriticalText)
+        assertEquals(StatusNotifier.scale(3.6), n.extras.getInt(Notification.EXTRA_PROGRESS))
+        assertEquals("Low: 3.6 mmol/L", n.extras.getString(Notification.EXTRA_TITLE))
+        assertEquals(
+            "Falling slowly · −0.07/min · Auto mode on. Below 3.9 for 5 min",
+            n.extras.getCharSequence(Notification.EXTRA_TEXT).toString(),
+        )
+    }
+
+    @Test
+    fun `not promoted unless asked`() {
+        app.allowNotifications()
+        notifier.showStatus(low)
+        assertFalse(app.posted(1)!!.extras.getBoolean(Notification.EXTRA_REQUEST_PROMOTED_ONGOING))
+    }
+
+    @Test
+    fun `high says so, and a just-started run has no duration`() {
+        app.allowNotifications()
+        notifier.showStatus(state.copy(readings = listOf(Reading(7 * MINUTE, 12.0)), trend = null), promote = true)
+        val n = app.posted(1)!!
+        assertEquals("High: 12.0 mmol/L", n.extras.getString(Notification.EXTRA_TITLE))
+        assertEquals("Auto mode on. Above 10.0", n.extras.getCharSequence(Notification.EXTRA_TEXT).toString())
+    }
+
+    @Test
+    fun `the bar's scale is clamped to 2 to 14`() {
+        assertEquals(0, StatusNotifier.scale(1.0))
+        assertEquals(19, StatusNotifier.scale(3.9))
+        assertEquals(StatusNotifier.SCALE_MAX, StatusNotifier.scale(25.0))
     }
 
     @Test
@@ -71,7 +116,7 @@ class StatusNotifierTest {
     fun `a bound shows its sign`() {
         app.allowNotifications()
         notifier.showStatus(state.copy(readings = listOf(Reading(5 * MINUTE, 2.2, Bound.BELOW)), trend = null))
-        assertEquals("<2.2 mmol/L", app.posted(1)!!.extras.getString(Notification.EXTRA_TITLE))
+        assertEquals("Low: <2.2 mmol/L", app.posted(1)!!.extras.getString(Notification.EXTRA_TITLE))
     }
 
     @Test
