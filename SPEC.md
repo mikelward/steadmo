@@ -245,6 +245,16 @@ after 45 minutes. It is for a pre-bolus only: Steadmo doesn't try to detect unan
 meals from a rise. What the delivery app says is never stored or logged; the last one is
 kept in memory for a bug report the user sends.
 
+### 4.13 Meal reminder
+
+Each day at a set time (on by default at 18:00; ⋮ → Meal reminder turns it off or changes
+the time), "Time to bolus for dinner?" on the Reminders channel, with Bolus (CamAPS FX's
+carbs box, like Other), In 30 min and In 60 min. Its alarms are inexact but allowed while
+idle, so Doze can't hold them until the phone wakes; they usually land within a minute or
+two, and Android may delay them up to about 10 minutes. App start re-arms the daily alarm,
+each day's reminder sets the next, and a time zone or clock change sets it again, so it
+stays at 18:00 local. Turning it off cancels any snooze and clears a shown reminder.
+
 ### 4.4 CamAPS FX's notification
 
 Steadmo reads CamAPS FX's "My diabetes info" notification, so the user keeps it on but can

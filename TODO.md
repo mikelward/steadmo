@@ -88,7 +88,8 @@ CamAPS FX's. Each step needs the maintainer's sign-off: these are safety decisio
       nearby (SPEC.md §4.12). Pre-bolus only: no detection of unannounced meals afterwards.
 - [ ] Check the delivery apps' real wording and package names from bug reports (the last
       delivery notification is in the report), and tune the matching.
-- [ ] Daily meal reminder (default 18:00, adjustable) with Bolus, In 30 min and In 60 min.
+- [x] Daily meal reminder (default on at 18:00, adjustable in ⋮ → Meal reminder) with
+      Bolus, In 30 min and In 60 min (SPEC.md §4.13).
 - [ ] Pre-bolus prompt on arriving at a restaurant (needs location; a privacy and permission
       decision for the maintainer).
 - [ ] Pre-bolus prompt at calendar events named for a meal ("Dinner", "Lunch with ...";
@@ -129,3 +130,5 @@ CamAPS FX's. Each step needs the maintainer's sign-off: these are safety decisio
 - The urgent low alarm takes over the screen after 5 minutes without OK or Treated.
 - Delivery prompts go on a new Reminders channel (default importance), at most one per app
   per hour, expire after 45 minutes, and don't fire once the order says it has arrived.
+- The meal reminder is on by default at 18:00 (the maintainer asked for a 6 pm reminder);
+  it's an inexact alarm allowed while idle, so it can land up to about 10 minutes late.

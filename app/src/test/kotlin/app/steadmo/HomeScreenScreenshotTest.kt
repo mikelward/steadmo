@@ -54,6 +54,12 @@ class HomeScreenScreenshotTest {
     @Test fun suggestShortcuts() = both("home-suggest-shortcuts") {
         { HomeScreen(Samples.rising(), true, true, {}, {}, {}, {}, suggestShortcuts = true, clock = { Samples.NOW }, ticking = false) }
     }
+    @Test fun mealReminderLight() = dialog("meal-reminder", dark = false) {
+        MealReminderDialog(on = true, time = "18:00", onToggle = {}, onPickTime = {}, onDismiss = {})
+    }
+    @Test fun mealReminderDark() = dialog("meal-reminder", dark = true) {
+        MealReminderDialog(on = true, time = "18:00", onToggle = {}, onPickTime = {}, onDismiss = {})
+    }
     @Test fun unitsLight() = dialog("units", dark = false) {
         UnitsDialog(GlucoseUnit.MMOL, onPick = {}, onDismiss = {})
     }

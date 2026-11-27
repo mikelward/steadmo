@@ -218,6 +218,37 @@ class StatusNotifier(private val context: Context, private val clock: () -> Long
 
     fun cancelUrgentLow() = manager.cancel(ID_URGENT)
 
+    /** The daily meal reminder: Bolus, or remind again in 30 or 60 minutes (SPEC.md §4.13). */
+    fun showMealReminder() {
+        val bolus = PendingIntent.getActivity(
+            context, 5,
+            Intent(context, app.steadmo.widget.WidgetActionActivity::class.java)
+                .setData(android.net.Uri.parse("${app.steadmo.widget.WidgetActionActivity.SCHEME}://widget/camaps/meal")),
+            PendingIntent.FLAG_IMMUTABLE,
+        )
+        fun later(minutes: Int) = Notification.Action.Builder(
+            null, "In $minutes min",
+            PendingIntent.getBroadcast(
+                context, 10 + minutes,
+                Intent(context, MealReminderReceiver::class.java).putExtra(MealReminders.EXTRA_SNOOZE, minutes),
+                PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT,
+            ),
+        ).build()
+        val notification = Notification.Builder(context, CHANNEL_REMINDERS)
+            .setSmallIcon(R.drawable.ic_shortcut_meal)
+            .setContentTitle("Time to bolus for dinner?")
+            .setContentText("Bolus before you eat, so insulin is working by the time you do.")
+            .setCategory(Notification.CATEGORY_REMINDER)
+            .setAutoCancel(true)
+            .setContentIntent(bolus)
+            .addAction(Notification.Action.Builder(null, "Bolus", bolus).build())
+            .apply { app.steadmo.core.MealReminder.SNOOZES_MINUTES.forEach { addAction(later(it)) } }
+            .build()
+        post(ID_MEAL_REMINDER, notification)
+    }
+
+    fun cancelMealReminder() = manager.cancel(ID_MEAL_REMINDER)
+
     /** A delivery app says the rider is nearby: bolus now, so insulin is working by the time it's here. */
     fun showPreBolus(appLabel: String) {
         val bolus = PendingIntent.getActivity(
@@ -343,6 +374,7 @@ class StatusNotifier(private val context: Context, private val clock: () -> Long
         private const val ID_URGENT = 4
         private const val ID_RECHECK = 5
         private const val ID_PRE_BOLUS = 6
+        private const val ID_MEAL_REMINDER = 7
         const val CHANNEL_REMINDERS = "reminders"
 
         /** A pre-bolus suggestion is no use once the food has long arrived. */
