@@ -25,11 +25,11 @@ class TilesTest {
         assertEquals("169 mg/dL", GlucoseTileContent.of(Samples.rising().copy(unit = GlucoseUnit.MGDL), Samples.NOW).label)
     }
 
-    @Test fun `no value once stale, nor before the first reading`() {
+    @Test fun `no value once stale, nor before the first reading, but still tappable`() {
         val stale = GlucoseTileContent.of(Samples.rising(), Samples.NOW + 11 * MINUTE)
         assertEquals("Glucose", stale.label)
         assertEquals("No reading for 11 min", stale.subtitle)
-        assertEquals(Tile.STATE_UNAVAILABLE, stale.state)
+        assertEquals(Tile.STATE_INACTIVE, stale.state)
         assertEquals("No reading yet", GlucoseTileContent.of(GlucoseState(), Samples.NOW).subtitle)
     }
 
@@ -37,7 +37,7 @@ class TilesTest {
         val glucose = Robolectric.setupService(GlucoseTileService::class.java)
         glucose.onStartListening()
         assertEquals("Glucose", glucose.qsTile.label)
-        assertEquals(Tile.STATE_UNAVAILABLE, glucose.qsTile.state)
+        assertEquals(Tile.STATE_INACTIVE, glucose.qsTile.state)
         val glucoseIntent = shadowOf(glucose.target()).savedIntent
         assertEquals(MainActivity::class.java.name, glucoseIntent.component!!.className)
         assertEquals(android.content.Intent.FLAG_ACTIVITY_NEW_TASK, glucoseIntent.flags and android.content.Intent.FLAG_ACTIVITY_NEW_TASK)

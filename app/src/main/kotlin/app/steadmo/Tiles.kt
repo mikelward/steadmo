@@ -19,10 +19,10 @@ internal data class GlucoseTileContent(val label: String, val subtitle: String, 
 
         fun of(state: GlucoseState, now: Long): GlucoseTileContent {
             val latest = state.latest
-                ?: return GlucoseTileContent("Glucose", "No reading yet", (null as app.steadmo.core.TrendArrow?).drawable(), Tile.STATE_UNAVAILABLE)
+                ?: return GlucoseTileContent("Glucose", "No reading yet", (null as app.steadmo.core.TrendArrow?).drawable(), Tile.STATE_INACTIVE)
             val minutes = (now - latest.timeMillis) / 60_000
             if (now - latest.timeMillis > STALE_MILLIS) {
-                return GlucoseTileContent("Glucose", "No reading for $minutes min", (null as app.steadmo.core.TrendArrow?).drawable(), Tile.STATE_UNAVAILABLE)
+                return GlucoseTileContent("Glucose", "No reading for $minutes min", (null as app.steadmo.core.TrendArrow?).drawable(), Tile.STATE_INACTIVE)
             }
             val age = if (minutes < 1) "just now" else "$minutes min ago"
             return GlucoseTileContent(
