@@ -67,6 +67,7 @@ class CamapsTaskTest {
             "Deliver bolus", "Confirm bolus", "Start bolus", "OK", "Boost", "Ease-off", "Stop insulin",
             "Bolus settings", "Meal: save", "Next", "Bolus 2 units", "Auto mode",
             "Bolus 2U", "Bolus 2.5", "2 U bolus", "Give bolus", "Bolus now", "Inject", "Insulin",
+            "Small meal size", "Very large meal size",
         )
         dangerous.forEach { text ->
             assertEquals(text, emptyList<Pair<List<Int>, String>>(), CamapsTask.buttons(screen(button(text))))
@@ -136,6 +137,58 @@ class CamapsTaskTest {
         row(field(hint = "Value")), label("g CHO"), button("Cancel"), button("Confirm"),
     )
 
+    // CamAPS FX v1.4 (1.4(195).101) as the maintainer's phone reported it in a bug report:
+    // labeled tabs, the current one not clickable, and a flat meal screen.
+    private fun desc(d: String, clickable: Boolean = true) = ScreenNode(className = "LinearLayout", description = d, clickable = clickable)
+    private fun realTabs(current: Int) = ScreenNode(
+        className = "HorizontalScrollView",
+        children = listOf("Home", "Bolus calculator", "Calibration").mapIndexed { i, d -> desc(d, clickable = i != current) },
+    )
+    private val realHome = screen(
+        ScreenNode(className = "ImageButton", description = "Open options", clickable = true), label("CamAPS FX"),
+        ScreenNode(className = "DrawerLayout", children = listOf(ScreenNode(children = listOf(
+            realTabs(0),
+            ScreenNode(className = "FrameLayout", children = listOf(
+                label("8.3"), label("mmol/L"), label("Boost"), label("01:23:45"),
+                ScreenNode(className = "ImageButton", description = "Cancel", clickable = true),
+                ScreenNode(className = "android.widget.Switch", clickable = true), label("Auto mode"), label("On"),
+            )),
+        )))),
+    )
+    private fun realMeal(carbs: String) = screen(
+        ScreenNode(className = "ImageButton", description = "Open options", clickable = true), label("CamAPS FX"),
+        ScreenNode(className = "DrawerLayout", children = listOf(ScreenNode(children = listOf(
+            realTabs(1),
+            ScreenNode(className = "ImageButton", description = "Help", clickable = true),
+            label("Meal size"),
+            ScreenNode(className = "LinearLayout", clickable = true, viewId = "pkg:id/2131297020", children = listOf(ScreenNode(description = "Small meal size"))),
+            ScreenNode(className = "LinearLayout", clickable = true, viewId = "pkg:id/2131297017", children = listOf(ScreenNode(description = "Medium meal size"))),
+            ScreenNode(className = "LinearLayout", clickable = true, viewId = "pkg:id/2131297016", children = listOf(ScreenNode(description = "Large meal size"))),
+            ScreenNode(className = "LinearLayout", clickable = true, viewId = "pkg:id/2131297021", children = listOf(ScreenNode(description = "Very large meal size"))),
+            ScreenNode(className = "android.widget.SeekBar"),
+            label("Glucose"), label("mmol/L"), ScreenNode(hint = "8.3", clickable = true, viewId = "pkg:id/2131296433"),
+            label("="), label("0.0"), label("("), label("-0.4"), label(")"),
+            label("Carbs"), label("g CHO"), ScreenNode(text = carbs, clickable = true, viewId = "pkg:id/2131296421"),
+            label("="), label("0.0"), label("0.0"), label("Total Units"),
+            ScreenNode(className = "RelativeLayout", clickable = true, children = listOf(ScreenNode(description = "Back"), label("Cancel"))),
+            ScreenNode(className = "RelativeLayout", clickable = true, children = listOf(label("Next"), ScreenNode(description = "Next"))),
+        )))),
+    )
+
+    @Test fun `CamAPS FX v1_4 as reported - Bolus calculator tab, then the Carbs cell, never a meal size`() {
+        for (carbs in listOf("---", "40")) {
+            val fill = CamapsTask(CamapsGoal.Meal(45), startedAt = 0)
+            assertEquals(CamapsStep.Tap(listOf(2, 0, 0, 1), "Bolus calculator"), fill.next(realHome, 0))
+            assertEquals(carbs, CamapsStep.Tap(listOf(2, 0, 18), "Carbs g CHO $carbs 2131296421"), fill.next(realMeal(carbs), 100))
+        }
+        val labels = CamapsTask.buttons(realMeal("---")).map { it.second }
+        assertTrue(labels.toString(), labels.none { "size" in it })
+        // Other gets to the same cell.
+        val entry = CamapsTask(CamapsGoal.MealEntry, startedAt = 0)
+        entry.next(realHome, 0)
+        assertEquals(CamapsStep.Tap(listOf(2, 0, 18), "Carbs g CHO --- 2131296421"), entry.next(realMeal("---"), 100))
+    }
+
     @Test fun `CamAPS FX v1_4 - meal tab, Carbs cell, then types and leaves Confirm`() {
         val fill = CamapsTask(CamapsGoal.Meal(45), startedAt = 0)
         assertEquals(CamapsStep.Tap(listOf(2, 1), "tab 2 of 3"), fill.next(camapsHome, 0))
@@ -157,6 +210,22 @@ class CamapsTaskTest {
             assertEquals(CamapsStep.Wait, fill.next(typed("$grams"), 10))
             assertEquals(CamapsStep.Wait, fill.next(camapsDialog, 20))
         }
+    }
+
+    @Test fun `finds the Carbs cell by its label, whatever value it shows`() {
+        for (value in listOf("---", "40", "40 g", "40g", "12.5 g")) {
+            val meal = camapsMeal.copy(
+                children = camapsMeal.children.toMutableList().also { children ->
+                    val cells = children[4]
+                    children[4] = cells.copy(children = cells.children.toMutableList().also { it[5] = button(value) })
+                },
+            )
+            val fill = CamapsTask(CamapsGoal.Meal(45), startedAt = 0)
+            assertEquals(value, CamapsStep.Tap(listOf(4, 5), "Carbs g CHO $value"), fill.next(meal, 0))
+        }
+        // A dose cell is never one, whatever label is beside it.
+        val dose = screen(row(label("Carbs"), button("2.5 U")))
+        assertEquals(emptyList<Pair<List<Int>, String>>(), CamapsTask.buttons(dose))
     }
 
     @Test fun `never taps a slider or switch, or a tab once labeled`() {
