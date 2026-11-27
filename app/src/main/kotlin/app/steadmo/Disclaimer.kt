@@ -87,6 +87,8 @@ const val AGREEMENT = "I have read this and accept the risk"
  */
 @Composable
 fun DisclaimerScreen(onAccept: (() -> Unit)?, onLeave: () -> Unit) {
+    // Read again from ⋮, back returns home. On first run, back leaves the app, as Leave does.
+    if (onAccept == null) androidx.activity.compose.BackHandler(onBack = onLeave)
     Surface(modifier = Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background) {
         Column(
             modifier = Modifier

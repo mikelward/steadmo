@@ -47,6 +47,7 @@ class HomeScreenScreenshotTest {
     @Test fun fullScreenCard() = both("home-full-screen") {
         { HomeScreen(Samples.rising(), true, true, {}, {}, {}, {}, fullScreenAllowed = false, clock = { Samples.NOW }, ticking = false) }
     }
+    @Test fun settings() = both("settings") { { SettingsScreen(GlucoseUnit.MMOL, onSetUnit = {}, onBack = {}) } }
     @Test fun setup() = both("home-setup") { home(GlucoseState(), listener = false, notifications = false) }
 
     @Test fun aboutLight() = dialog("about", dark = false) { AboutDialog("48+abc1234", onSourceCode = {}, onDismiss = {}) }

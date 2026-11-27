@@ -263,22 +263,34 @@ class HomeScreenTest {
         compose.onNodeWithText("Remind me").assertDoesNotExist()
     }
 
-    @Test fun `Units picks mmol per L or mg per dL`() {
+    @Test fun `Settings picks mmol per L or mg per dL, and Back returns`() {
         val picked = mutableListOf<GlucoseUnit>()
+        var back = 0
         compose.setContent {
-            SteadmoTheme(dark = false) {
-                HomeScreen(Samples.rising(), true, true, {}, {}, {}, {}, onSetUnit = { picked += it }, ticking = false)
-            }
+            SteadmoTheme(dark = false) { SettingsScreen(GlucoseUnit.MMOL, onSetUnit = { picked += it }, onBack = { back++ }) }
         }
-        compose.onNodeWithContentDescription("More options").performClick()
         compose.onNodeWithText("Units").performClick()
         compose.onNodeWithText("mg/dL").performClick()
         assertEquals(listOf(GlucoseUnit.MGDL), picked)
         compose.onNodeWithText("mg/dL").assertDoesNotExist()
-        compose.onNodeWithContentDescription("More options").performClick()
         compose.onNodeWithText("Units").performClick()
         compose.onNodeWithText("Close").performClick()
         assertEquals(listOf(GlucoseUnit.MGDL), picked)
+        compose.onNodeWithContentDescription("Back").performClick()
+        assertEquals(1, back)
+    }
+
+    @Test fun `the menu opens Settings`() {
+        var settings = 0
+        compose.setContent {
+            SteadmoTheme(dark = false) {
+                HomeScreen(Samples.rising(), true, true, {}, {}, {}, {}, onSettings = { settings++ }, ticking = false)
+            }
+        }
+        compose.onNodeWithContentDescription("More options").performClick()
+        compose.onNodeWithText("Units").assertDoesNotExist()
+        compose.onNodeWithText("Settings").performClick()
+        assertEquals(1, settings)
     }
 
     @Test fun `mg per dL shows on the home screen`() {

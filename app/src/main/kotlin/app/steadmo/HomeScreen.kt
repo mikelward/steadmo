@@ -37,6 +37,7 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableLongStateOf
@@ -88,7 +89,7 @@ fun HomeScreen(
     onKnownIssues: () -> Unit = {},
     shortcutsOn: Boolean = false,
     onOpenShortcutsSettings: () -> Unit = {},
-    onSetUnit: (GlucoseUnit) -> Unit = {},
+    onSettings: () -> Unit = {},
     alertsSilenced: Boolean = false,
     mealReminderOn: Boolean = true,
     mealReminderTime: String = "18:00",
@@ -120,17 +121,17 @@ fun HomeScreen(
                 .padding(horizontal = 16.dp, vertical = 12.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp),
         ) {
-            var showingShortcuts by remember { mutableStateOf(false) }
-            var showingUnits by remember { mutableStateOf(false) }
-            var showingAbout by remember { mutableStateOf(false) }
-            var showingReminder by remember { mutableStateOf(false) }
+            // Saved, so a dialog stays open across rotation; back closes it.
+            var showingShortcuts by rememberSaveable { mutableStateOf(false) }
+            var showingAbout by rememberSaveable { mutableStateOf(false) }
+            var showingReminder by rememberSaveable { mutableStateOf(false) }
             TopBar(
                 onGetLatest = onGetLatest,
                 onKnownIssues = onKnownIssues,
                 onReportBug = onReportBug,
                 onShowDisclaimer = onShowDisclaimer,
                 onCamapsShortcuts = { showingShortcuts = true },
-                onUnits = { showingUnits = true },
+                onSettings = onSettings,
                 onAbout = { showingAbout = true },
                 onMealReminder = { showingReminder = true },
             )
@@ -157,13 +158,6 @@ fun HomeScreen(
                     { showingShortcuts = true },
                     secondaryAction = "Not now",
                     onSecondary = onDismissShortcuts,
-                )
-            }
-            if (showingUnits) {
-                UnitsDialog(
-                    unit = state.unit,
-                    onPick = { showingUnits = false; onSetUnit(it) },
-                    onDismiss = { showingUnits = false },
                 )
             }
             if (showingShortcuts) {
@@ -327,7 +321,7 @@ private fun TopBar(
     onReportBug: () -> Unit,
     onShowDisclaimer: () -> Unit,
     onCamapsShortcuts: () -> Unit,
-    onUnits: () -> Unit,
+    onSettings: () -> Unit,
     onAbout: () -> Unit,
     onMealReminder: () -> Unit,
 ) {
@@ -340,11 +334,11 @@ private fun TopBar(
             }
             DropdownMenu(expanded = open, onDismissRequest = { open = false }) {
                 DropdownMenuItem(text = { Text("Meal reminder") }, onClick = { open = false; onMealReminder() })
-                DropdownMenuItem(text = { Text("Units") }, onClick = { open = false; onUnits() })
                 DropdownMenuItem(text = { Text("CamAPS FX shortcuts") }, onClick = { open = false; onCamapsShortcuts() })
                 DropdownMenuItem(text = { Text("Get latest version") }, onClick = { open = false; onGetLatest() })
                 DropdownMenuItem(text = { Text("Known issues") }, onClick = { open = false; onKnownIssues() })
                 DropdownMenuItem(text = { Text("Report a bug") }, onClick = { open = false; onReportBug() })
+                DropdownMenuItem(text = { Text("Settings") }, onClick = { open = false; onSettings() })
                 DropdownMenuItem(text = { Text("Disclaimer") }, onClick = { open = false; onShowDisclaimer() })
                 DropdownMenuItem(text = { Text("About") }, onClick = { open = false; onAbout() })
             }
@@ -398,7 +392,7 @@ internal fun ShortcutsDialog(on: Boolean, onOpenSettings: () -> Unit, onOpenAppI
  */
 @Composable
 internal fun AboutDialog(version: String, onSourceCode: () -> Unit, onDismiss: () -> Unit) {
-    var showingLicence by remember { mutableStateOf(false) }
+    var showingLicence by rememberSaveable { mutableStateOf(false) }
     if (showingLicence) {
         val context = LocalContext.current
         val text = remember { context.resources.openRawResource(R.raw.license).bufferedReader().use { it.readText() } }
