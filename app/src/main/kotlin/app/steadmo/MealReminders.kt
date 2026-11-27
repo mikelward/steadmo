@@ -40,11 +40,7 @@ object MealReminders {
         if (!enabled(context)) {
             alarms.cancel(daily)
             prefs(context).edit().remove(KEY_PENDING).apply()
-            // A calendar meal's snooze shares this alarm; keep it while that's on (the receiver drops a daily one).
-            if (!CalendarMealReminders.enabled(context)) {
-                alarms.cancel(again(context))
-                snoozeDone(context)
-            }
+            cancelSnooze(context, calendar = false)
             StatusNotifier(context).cancelMealReminder(calendar = false)
             return
         }
@@ -79,13 +75,31 @@ object MealReminders {
      */
     fun restoreSnooze(context: Context, now: Long = System.currentTimeMillis()) {
         val at = prefs(context).getLong(KEY_SNOOZE_AT, -1).takeIf { it >= 0 } ?: return
-        if (now - at > MealReminder.LATE_MILLIS) {
-            SteadmoLog.event("meal reminder: a snooze for %s is too old; dropping it", at)
+        val event = prefs(context).getString(KEY_SNOOZE_EVENT, null)
+        val on = if (event != null) CalendarMealReminders.enabled(context) else enabled(context)
+        if (!on || now - at > MealReminder.LATE_MILLIS) {
+            SteadmoLog.event("meal reminder: dropping saved snooze for %s (on=%s)", at, on)
             snoozeDone(context)
             return
         }
         SteadmoLog.event("meal reminder: restoring the snooze for %s", at)
-        Alarms.set(context, at, again(context, prefs(context).getString(KEY_SNOOZE_EVENT, null)))
+        Alarms.set(context, at, again(context, event))
+    }
+
+    /** Cancels a pending snooze if it belongs to a calendar meal ([calendar]) or the daily reminder, leaving the other. */
+    fun cancelSnooze(context: Context, calendar: Boolean) {
+        val hasSnooze = prefs(context).getLong(KEY_SNOOZE_AT, -1) >= 0
+        val isCalendar = prefs(context).getString(KEY_SNOOZE_EVENT, null) != null
+        if (!hasSnooze || isCalendar != calendar) return
+        PendingIntent.getBroadcast(
+            context, 1,
+            Intent(context, MealReminderReceiver::class.java).setAction(ACTION_FIRE + ".AGAIN"),
+            PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_NO_CREATE,
+        )?.let {
+            context.getSystemService(AlarmManager::class.java).cancel(it)
+            it.cancel()
+        }
+        snoozeDone(context)
     }
 
     /** The snooze went off, or was dropped: nothing to restore. */
