@@ -68,4 +68,10 @@ class AlertPolicyTest {
         assertNull(policy.evaluate(Reading(5 * min, 13.0), trend(0.2)))
         assertEquals(AlertKind.RISING_FAST, policy.evaluate(Reading(30 * min, 14.0), trend(0.2))!!.kind)
     }
+
+    @Test fun clockSetBackAllowsAlert() {
+        val policy = AlertPolicy()
+        policy.evaluate(Reading(100 * min, 12.0), trend(0.2))!!
+        assertEquals(AlertKind.RISING_FAST, policy.evaluate(Reading(90 * min, 13.0), trend(0.2))!!.kind)
+    }
 }
