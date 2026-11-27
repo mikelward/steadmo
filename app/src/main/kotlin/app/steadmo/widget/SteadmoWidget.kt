@@ -83,6 +83,9 @@ fun WidgetRoot(states: StateFlow<GlucoseState>, context: Context, clock: () -> L
 
 private val StaleColor = Color(0xFF8A8A8A)
 
+/** The narrowest widget that fits all four meal buttons in one row. */
+internal val WIDE_MEAL_ROW = 280.dp
+
 private fun color(side: RangeSide, stale: Boolean) = when {
     stale -> StaleColor
     side == RangeSide.LOW -> LowColor
@@ -182,12 +185,17 @@ private fun ColumnScope.Showing(model: WidgetModel.Showing, now: Long, size: DpS
             Button("Ease-off", widgetAction(context, "camaps/ease-off"), modifier = GlanceModifier.defaultWeight())
         }
         Spacer(GlanceModifier.height(8.dp))
-        Row(modifier = GlanceModifier.fillMaxWidth()) {
-            listOf(20, 40, 45).forEach { grams ->
-                Button("$grams g", widgetAction(context, "meal/$grams"), modifier = GlanceModifier.defaultWeight())
-                Spacer(GlanceModifier.width(6.dp))
+        val meals = listOf("20 g" to "meal/20", "40 g" to "meal/40", "45 g" to "meal/45", "Other" to "camaps/meal")
+        // Four across needs room for each label; narrower widgets get two rows of two.
+        val rows = if (size.width >= WIDE_MEAL_ROW) listOf(meals) else meals.chunked(2)
+        rows.forEachIndexed { i, row ->
+            if (i > 0) Spacer(GlanceModifier.height(6.dp))
+            Row(modifier = GlanceModifier.fillMaxWidth()) {
+                row.forEachIndexed { j, (label, path) ->
+                    if (j > 0) Spacer(GlanceModifier.width(6.dp))
+                    Button(label, widgetAction(context, path), modifier = GlanceModifier.defaultWeight())
+                }
             }
-            Button("Other", widgetAction(context, "camaps/meal"), modifier = GlanceModifier.defaultWeight())
         }
     }
 }
