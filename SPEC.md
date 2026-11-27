@@ -220,6 +220,15 @@ hypo treatment in Steadmo only (CamAPS FX doesn't hear of it), kept for a day:
   explains the rise;
 - 15 minutes later, "Recheck your glucose" with the current value.
 
+### 4.11 Quick Settings tiles
+
+- **Glucose**: the value and unit as its label, the trend and age ("Rising · 3 min ago") as
+  its subtitle, and the trend arrow as its icon. It redraws each time the shade opens, so
+  the age is current. Over 10 minutes old, or before the first reading, it shows no value
+  and is unavailable (greyed). Tapping opens Steadmo.
+- **Meal**: like the Other button, opens CamAPS FX's carbs box (with CamAPS FX shortcuts on)
+  through the widget's UI-less activity, so the disclaimer gate applies.
+
 ### 4.4 CamAPS FX's notification
 
 Steadmo reads CamAPS FX's "My diabetes info" notification, so the user keeps it on but can

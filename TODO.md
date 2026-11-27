@@ -37,7 +37,8 @@
 - [ ] Bolus progress: if CamAPS FX shows a notification while a bolus is delivering,
       mirror its progress as a Live Update (check on a real phone first).
 - [x] Launcher shortcuts: 20 g, 40 g, 45 g and Boost on a long press of Steadmo's icon.
-- [ ] Quick Settings tiles for the meal presets.
+- [x] Quick Settings tiles: Glucose (value, unit, trend, age; opens Steadmo) and Meal (opens
+      CamAPS FX's carbs box, like Other) (SPEC.md §4.11).
 - [x] CamAPS FX shortcuts: an accessibility service, limited to CamAPS FX, that takes the
       meal, Boost and Ease-off buttons (app and widget) to their CamAPS FX screens and types
       a meal's carbs, never delivering (SPEC.md §4.6). Mapped from v1.4 screenshots.

@@ -69,6 +69,28 @@
             android:name=".RecheckReceiver"
             android:exported="false" />
 
+        <!-- Quick Settings tiles (SPEC.md §4.11). Each redraws whenever the shade opens. -->
+        <service
+            android:name=".GlucoseTileService"
+            android:exported="true"
+            android:icon="@drawable/ic_trend_flat"
+            android:label="@string/tile_glucose"
+            android:permission="android.permission.BIND_QUICK_SETTINGS_TILE">
+            <intent-filter>
+                <action android:name="android.service.quicksettings.action.QS_TILE" />
+            </intent-filter>
+        </service>
+        <service
+            android:name=".MealTileService"
+            android:exported="true"
+            android:icon="@drawable/ic_shortcut_meal"
+            android:label="@string/tile_meal"
+            android:permission="android.permission.BIND_QUICK_SETTINGS_TILE">
+            <intent-filter>
+                <action android:name="android.service.quicksettings.action.QS_TILE" />
+            </intent-filter>
+        </service>
+
         <!-- Shares bug report screenshots with the app the user picks. -->
         <provider
             android:name="androidx.core.content.FileProvider"
