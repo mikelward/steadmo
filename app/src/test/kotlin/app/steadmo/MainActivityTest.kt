@@ -3,6 +3,7 @@ package app.steadmo
 import android.app.Application
 import android.provider.Settings
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
+import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.test.core.app.ApplicationProvider
@@ -39,6 +40,14 @@ class MainActivityTest {
         val intent = shadowOf(app).nextStartedActivity
         assertEquals(Settings.ACTION_APPLICATION_DETAILS_SETTINGS, intent.action)
         assertEquals("package:${app.packageName}", intent.dataString)
+    }
+
+    @Test fun `Get latest version opens the GitHub release`() {
+        compose.onNodeWithContentDescription("More options").performClick()
+        compose.onNodeWithText("Get latest version").performClick()
+        val intent = shadowOf(app).nextStartedActivity
+        assertEquals(android.content.Intent.ACTION_VIEW, intent.action)
+        assertEquals(MainActivity.LATEST_RELEASE_URL, intent.dataString)
     }
 
     @Test fun `Other with no CamAPS FX installed starts nothing`() {

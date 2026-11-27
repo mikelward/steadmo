@@ -26,6 +26,8 @@ class HomeScreenTest {
 
     private var minimizeAsked = 0
     private var bugReports = 0
+    private var latestAsked = 0
+    private var disclaimerShown = 0
 
     private fun show(state: GlucoseState, listener: Boolean = true, notifications: Boolean = true, now: Long = Samples.NOW) {
         compose.setContent {
@@ -40,6 +42,8 @@ class HomeScreenTest {
                     onMeal = { meals += it },
                     onMinimizeCamaps = { minimizeAsked++ },
                     onReportBug = { bugReports++ },
+                    onGetLatest = { latestAsked++ },
+                    onShowDisclaimer = { disclaimerShown++ },
                     clock = { now },
                     ticking = false,
                 )
@@ -76,7 +80,7 @@ class HomeScreenTest {
         compose.onNodeWithText("Allow notification access").assertIsDisplayed()
         compose.onNodeWithText("Allow notifications").assertIsDisplayed()
         compose.onNodeWithText("Waiting for CamAPS FX. In CamAPS FX's notification settings, turn on My diabetes info.")
-            .assertIsDisplayed()
+            .performScrollTo().assertIsDisplayed()
     }
 
     @Test fun `old readings say so`() {
@@ -100,9 +104,20 @@ class HomeScreenTest {
         compose.onNodeWithText("Open settings").assertDoesNotExist()
     }
 
+    @Test fun `the menu offers the latest version and the disclaimer`() {
+        show(Samples.rising())
+        compose.onNodeWithContentDescription("More options").performClick()
+        compose.onNodeWithText("Get latest version").performClick()
+        assertEquals(1, latestAsked)
+        compose.onNodeWithContentDescription("More options").performClick()
+        compose.onNodeWithText("Disclaimer").performClick()
+        assertEquals(1, disclaimerShown)
+    }
+
     @Test fun `Report a bug asks for a report`() {
         show(Samples.rising())
-        compose.onNodeWithText("Report a bug").performScrollTo().performClick()
+        compose.onNodeWithContentDescription("More options").performClick()
+        compose.onNodeWithText("Report a bug").performClick()
         assertEquals(1, bugReports)
     }
 

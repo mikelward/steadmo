@@ -9,7 +9,8 @@ Steadmo never doses.
 - **Integration research and mocks**: [docs/EXPLORATION.md](docs/EXPLORATION.md),
   [docs/mocks.html](docs/mocks.html)
 - **Engineering conventions**: [AGENTS.md](AGENTS.md)
-- **Installing a release APK**: [docs/RELEASES.md](docs/RELEASES.md)
+- **Installing a release APK**: [docs/RELEASES.md](docs/RELEASES.md), or ⋮ → Get latest version
+  in the app
 
 **Status: MVP.** Reads CamAPS FX's "My diabetes info" notification. Not yet tried on a
 real phone.
