@@ -117,6 +117,19 @@ class GlucoseRepositoryTest {
         assertNull(app.posted(2))
     }
 
+    @Test fun `an alert isn't repeated early after a restart`() {
+        repository().apply {
+            post("15.0", 0)
+            post("14.0", 5 * MINUTE)
+        }
+        app.getSystemService(android.app.NotificationManager::class.java).cancel(2)
+        repository().apply {
+            post("13.0", 10 * MINUTE)
+            post("12.0", 15 * MINUTE)
+        }
+        assertNull(app.posted(2))
+    }
+
     @Test fun `old posts replayed on reconnect neither alert nor show`() {
         now = 3 * 60 * MINUTE
         val repo = repository()
