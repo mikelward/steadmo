@@ -28,10 +28,25 @@ class CamapsListener : NotificationListenerService() {
 
     override fun onNotificationPosted(sbn: StatusBarNotification) = handle(sbn)
 
+    /**
+     * The user changed a channel's settings (minimized CamAPS FX's, say): pick
+     * up its new importance now, rather than at CamAPS FX's next post.
+     */
+    override fun onNotificationRankingUpdate(rankingMap: RankingMap) {
+        val camaps = try {
+            activeNotifications?.firstOrNull { it.packageName.startsWith(CamapsParser.PACKAGE_PREFIX) }
+        } catch (e: SecurityException) {
+            SteadmoLog.failure(e, "listener: couldn't read active notifications on a ranking update")
+            null
+        } ?: return
+        val importance = channelImportance(camaps, rankingMap) ?: return
+        repository.onCamapsChannel(camaps.notification.channelId, importance)
+    }
+
     /** How the user has set the posting channel, so Steadmo can suggest minimizing it. */
-    private fun channelImportance(sbn: StatusBarNotification): Int? {
+    private fun channelImportance(sbn: StatusBarNotification, rankings: RankingMap? = currentRanking): Int? {
         val ranking = Ranking()
-        return if (currentRanking?.getRanking(sbn.key, ranking) == true) ranking.channel?.importance else null
+        return if (rankings?.getRanking(sbn.key, ranking) == true) ranking.channel?.importance else null
     }
 
     private fun handle(sbn: StatusBarNotification) {

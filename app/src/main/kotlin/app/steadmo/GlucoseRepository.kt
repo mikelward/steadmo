@@ -158,10 +158,23 @@ class GlucoseRepository(
 
     fun setListenerConnected(connected: Boolean) = _state.update { it.copy(listenerConnected = connected) }
 
+    /** CamAPS FX's channel settings changed: the minimize card follows at once. */
+    fun onCamapsChannel(channelId: String?, importance: Int) {
+        val now = _state.value
+        if (now.camapsChannelId == channelId && now.camapsChannelImportance == importance) return
+        SteadmoLog.event("listener: CamAPS FX channel %s importance now %s", channelId, importance)
+        _state.update { it.copy(camapsChannelId = channelId, camapsChannelImportance = importance) }
+    }
+
     @Synchronized
     fun onCamapsNotification(dump: NotificationDump, status: CamapsStatus?) {
         if (status == null) {
-            _state.update { it.copy(lastDump = dump, camapsPackage = dump.packageName) }
+            _state.update {
+                it.copy(
+                    lastDump = dump, camapsPackage = dump.packageName,
+                    camapsChannelId = dump.channelId, camapsChannelImportance = dump.channelImportance,
+                )
+            }
             return
         }
         val mmol = status.mmol
