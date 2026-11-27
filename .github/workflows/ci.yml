@@ -38,6 +38,15 @@ jobs:
         with:
           cache-read-only: ${{ github.event_name != 'push' }}
 
+      # Robolectric downloads its Android jars from Maven Central at test time,
+      # which rate-limits CI (HTTP 429); keep them between runs.
+      - name: Cache Robolectric's Android jars
+        uses: actions/cache@v4
+        with:
+          path: ~/.m2/repository/org/robolectric
+          key: robolectric-${{ hashFiles('gradle/libs.versions.toml') }}
+          restore-keys: robolectric-
+
       - name: Core tests, without Android
         run: ./gradlew :core:test
 
