@@ -27,10 +27,16 @@ class CamapsListener : NotificationListenerService() {
 
     override fun onNotificationPosted(sbn: StatusBarNotification) = handle(sbn)
 
+    /** How the user has set the posting channel, so Steadmo can suggest minimizing it. */
+    private fun channelImportance(sbn: StatusBarNotification): Int? {
+        val ranking = Ranking()
+        return if (currentRanking?.getRanking(sbn.key, ranking) == true) ranking.channel?.importance else null
+    }
+
     private fun handle(sbn: StatusBarNotification) {
         if (!sbn.packageName.startsWith(CamapsParser.PACKAGE_PREFIX)) return
         try {
-            val dump = NotificationDump.of(this, sbn)
+            val dump = NotificationDump.of(this, sbn, channelImportance(sbn))
             val status = CamapsParser.parse(dump.viewTexts) ?: CamapsParser.parse(dump.extrasTexts)
             repository.onCamapsNotification(dump, status)
         } catch (e: RuntimeException) {

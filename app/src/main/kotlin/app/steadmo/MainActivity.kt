@@ -37,6 +37,7 @@ class MainActivity : ComponentActivity() {
                     onAllowNotifications = { requestNotifications.launch(Manifest.permission.POST_NOTIFICATIONS) },
                     onOpenCamaps = { Camaps.open(this, state.camapsPackage) },
                     onMeal = { grams -> Camaps.openForMeal(this, state.camapsPackage, grams) },
+                    onMinimizeCamaps = { Camaps.openChannelSettings(this, state.camapsPackage, state.camapsChannelId) },
                 )
             }
         }

@@ -125,6 +125,14 @@ class GlucoseRepositoryTest {
         assertTrue(promoted())
     }
 
+    @Test fun `the channel CamAPS posts on is kept for the minimize prompt`() {
+        val repo = repository()
+        val dump = NotificationDump.of(app, camapsPost(app, "6.0", 0), channelImportance = 2).copy(channelId = "info")
+        repo.onCamapsNotification(dump, CamapsParser.parse(dump.viewTexts))
+        assertEquals("info", repo.state.value.camapsChannelId)
+        assertEquals(2, repo.state.value.camapsChannelImportance)
+    }
+
     @Test fun `a bound is kept, shown, and left out of the trend`() {
         val repo = repository()
         repo.post("4.0", 0)

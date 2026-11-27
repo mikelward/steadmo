@@ -1,9 +1,11 @@
 package app.steadmo
 
+import android.content.ActivityNotFoundException
 import android.content.ClipData
 import android.content.ClipboardManager
 import android.content.Context
 import android.content.Intent
+import android.provider.Settings
 import android.util.Log
 import android.widget.Toast
 
@@ -29,6 +31,28 @@ object Camaps {
         }
         context.startActivity(intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
         return true
+    }
+
+    /**
+     * Opens the settings for CamAPS FX's notification channel [channelId], or
+     * its app notification settings if the channel page won't open.
+     */
+    fun openChannelSettings(context: Context, pkg: String?, channelId: String?) {
+        val target = pkg ?: packages.first()
+        val channel = Intent(Settings.ACTION_CHANNEL_NOTIFICATION_SETTINGS)
+            .putExtra(Settings.EXTRA_APP_PACKAGE, target)
+            .putExtra(Settings.EXTRA_CHANNEL_ID, channelId)
+            .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+        try {
+            context.startActivity(channel)
+        } catch (e: ActivityNotFoundException) {
+            Log.w(SteadmoApp.TAG, "No channel settings page; opening CamAPS FX's notification settings", e)
+            context.startActivity(
+                Intent(Settings.ACTION_APP_NOTIFICATION_SETTINGS)
+                    .putExtra(Settings.EXTRA_APP_PACKAGE, target)
+                    .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK),
+            )
+        }
     }
 
     /** Copies [grams] so it can be pasted into CamAPS FX's meal entry, then opens it. */

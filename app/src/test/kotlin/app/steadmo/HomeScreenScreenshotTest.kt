@@ -30,6 +30,9 @@ class HomeScreenScreenshotTest {
     @Test fun fallingFast() = both("home-falling-fast") { home(Samples.fallingFast()) }
     @Test fun stale() = both("home-stale") { home(Samples.rising(), now = Samples.NOW + 20 * MINUTE) }
     @Test fun belowSensor() = both("home-below-sensor") { home(Samples.belowSensor()) }
+    @Test fun minimizeCamaps() = both("home-minimize-camaps") {
+        home(Samples.rising().copy(camapsChannelId = "info", camapsChannelImportance = android.app.NotificationManager.IMPORTANCE_LOW))
+    }
     @Test fun setup() = both("home-setup") { home(GlucoseState(), listener = false, notifications = false) }
 
     private fun both(name: String, content: () -> @Composable () -> Unit) {

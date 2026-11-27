@@ -24,20 +24,22 @@ data class NotificationDump(
     val postTime: Long,
     val packageName: String,
     val channelId: String?,
+    /** The channel's importance as the user set it, from the listener's ranking; null if unknown. */
+    val channelImportance: Int? = null,
     val viewTexts: List<String>,
     val extrasTexts: List<String>,
     val images: List<String>,
 ) {
     fun describe(): String = buildString {
         appendLine("package: $packageName")
-        appendLine("channel: $channelId")
+        appendLine("channel: $channelId (importance $channelImportance)")
         appendLine("views: ${viewTexts.joinToString(" | ")}")
         appendLine("extras: ${extrasTexts.joinToString(" | ")}")
         images.forEach { appendLine("image: $it") }
     }.trimEnd()
 
     companion object {
-        fun of(context: Context, sbn: StatusBarNotification): NotificationDump {
+        fun of(context: Context, sbn: StatusBarNotification, channelImportance: Int? = null): NotificationDump {
             val notification = sbn.notification
             val texts = mutableListOf<String>()
             val images = mutableListOf<String>()
@@ -48,6 +50,7 @@ data class NotificationDump(
                 postTime = sbn.postTime,
                 packageName = sbn.packageName,
                 channelId = notification.channelId,
+                channelImportance = channelImportance,
                 viewTexts = texts,
                 extrasTexts = extrasTexts(notification),
                 images = images,
