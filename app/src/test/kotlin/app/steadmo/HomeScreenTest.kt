@@ -247,30 +247,44 @@ class HomeScreenTest {
         assertEquals(1, asked)
     }
 
-    @Test fun `Meal reminder turns on and off and picks a time`() {
+    @Test fun `Meal reminder edits rules, days of week, adds and deletes`() {
+        val rule = app.steadmo.core.MealReminder.defaultRule()
         val toggles = mutableListOf<Boolean>()
+        val daysToggled = mutableListOf<java.time.DayOfWeek>()
+        val deleted = mutableListOf<Long>()
         val calendar = mutableListOf<Boolean>()
         var picks = 0
+        var added = 0
         compose.setContent {
             SteadmoTheme(dark = false) {
                 SettingsScreen(
                     GlucoseUnit.MMOL, onSetUnit = {}, onBack = {},
-                    mealReminderOn = true, mealReminderTime = "18:00",
-                    onMealReminderOn = { toggles += it }, onPickMealReminderTime = { picks++ },
+                    mealReminderRules = listOf(rule),
+                    onToggleMealRule = { _, on -> toggles += on },
+                    onPickMealRuleTime = { picks++ },
+                    onToggleMealRuleDay = { _, day -> daysToggled += day },
+                    onDeleteMealRule = { deleted += it.id },
+                    onAddMealRule = { added++ },
                     onCalendarMealsOn = { calendar += it },
                 )
             }
         }
         compose.onNodeWithText("At 18:00").assertIsDisplayed()
         compose.onNodeWithText("Meal reminder").performClick()
-        compose.onNodeWithText("Remind me").performClick()
+        compose.onNodeWithContentDescription("Remind at 18:00").performClick()
         assertEquals(listOf(false), toggles)
-        compose.onAllNodesWithText("At 18:00").onLast().performClick()
+        compose.onNodeWithText("18:00").performClick()
         assertEquals(1, picks)
-        compose.onNodeWithText("Calendar meals").performClick()
-        assertEquals(listOf(false, true), toggles + calendar)
+        compose.onNodeWithContentDescription("Monday").performClick()
+        assertEquals(listOf(java.time.DayOfWeek.MONDAY), daysToggled)
+        compose.onNodeWithContentDescription("Remove reminder 18:00").performClick()
+        assertEquals(listOf(rule.id), deleted)
+        compose.onNodeWithText("Add reminder").performScrollTo().performClick()
+        assertEquals(1, added)
+        compose.onNodeWithText("Calendar meals").performScrollTo().performClick()
+        assertEquals(listOf(true), calendar)
         compose.onNodeWithText("Close").performClick()
-        compose.onNodeWithText("Remind me").assertDoesNotExist()
+        compose.onNodeWithText("Add reminder").assertDoesNotExist()
     }
 
     @Test fun `Meal reminder offers on-time reminders until they're allowed`() {
@@ -279,7 +293,9 @@ class HomeScreenTest {
         compose.setContent {
             SteadmoTheme(dark = false) {
                 MealReminderDialog(
-                    on = true, time = "18:00", onToggle = {}, onPickTime = {}, onDismiss = {},
+                    rules = listOf(app.steadmo.core.MealReminder.defaultRule()),
+                    onToggleRule = { _, _ -> }, onPickRuleTime = {}, onToggleRuleDay = { _, _ -> },
+                    onDeleteRule = {}, onAddRule = {}, onDismiss = {},
                     onTime = onTime.value, onAllowOnTime = { allowed++ },
                 )
             }
@@ -291,16 +307,35 @@ class HomeScreenTest {
         compose.onNodeWithText("On time").assertDoesNotExist()
     }
 
-    @Test fun `Settings shows Calendar meals in the Meal reminder summary`() {
+    @Test fun `Settings summarizes meal reminder rules and calendar meals`() {
+        val rules = androidx.compose.runtime.mutableStateOf<List<app.steadmo.core.MealReminderRule>>(emptyList())
+        val calendar = androidx.compose.runtime.mutableStateOf(true)
         compose.setContent {
             SteadmoTheme(dark = false) {
                 SettingsScreen(
                     GlucoseUnit.MMOL, onSetUnit = {}, onBack = {},
-                    mealReminderOn = false, calendarMealsOn = true,
+                    mealReminderRules = rules.value, calendarMealsOn = calendar.value,
                 )
             }
         }
         compose.onNodeWithText("Calendar meals").assertIsDisplayed()
+
+        rules.value = listOf(
+            app.steadmo.core.MealReminderRule(
+                1L,
+                java.time.LocalTime.of(12, 30),
+                setOf(java.time.DayOfWeek.MONDAY, java.time.DayOfWeek.WEDNESDAY),
+            ),
+        )
+        calendar.value = false
+        compose.onNodeWithText("At 12:30, Mon, Wed").assertIsDisplayed()
+
+        rules.value = listOf(
+            app.steadmo.core.MealReminder.defaultRule(),
+            app.steadmo.core.MealReminderRule(2L, java.time.LocalTime.of(12, 30)),
+        )
+        calendar.value = true
+        compose.onNodeWithText("2 scheduled · Calendar meals").assertIsDisplayed()
     }
 
     @Test fun `Settings picks mmol per L or mg per dL, and Back returns`() {

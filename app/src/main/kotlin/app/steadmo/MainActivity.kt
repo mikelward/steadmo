@@ -25,7 +25,7 @@ class MainActivity : ComponentActivity() {
     private var notificationsAllowed by mutableStateOf(false)
     private var alertsSilenced by mutableStateOf(false)
     private var fullScreenAllowed by mutableStateOf(true)
-    private var mealReminderOn by mutableStateOf(true)
+    private var mealReminderRules by mutableStateOf(listOf(app.steadmo.core.MealReminder.defaultRule()))
     private var calendarMealsOn by mutableStateOf(false)
     private val requestCalendar =
         registerForActivityResult(ActivityResultContracts.RequestPermission()) { granted ->
@@ -34,7 +34,6 @@ class MainActivity : ComponentActivity() {
             calendarMealsOn = granted
         }
     private var remindersOnTime by mutableStateOf(true)
-    private var mealReminderTime by mutableStateOf(app.steadmo.core.MealReminder.DEFAULT_TIME)
     private var suggestShortcuts by mutableStateOf(false)
     private var shortcutsOn by mutableStateOf(false)
     private var disclaimerAccepted by mutableStateOf(false)
@@ -74,13 +73,20 @@ class MainActivity : ComponentActivity() {
                         unit = state.unit,
                         onSetUnit = repository::setUnit,
                         onBack = { screen = Screen.HOME },
-                        mealReminderOn = mealReminderOn,
-                        mealReminderTime = formattedMealReminderTime(),
-                        onMealReminderOn = { on ->
-                            MealReminders.set(this, on, mealReminderTime)
-                            mealReminderOn = on
+                        mealReminderRules = mealReminderRules,
+                        formatTime = ::formatTime,
+                        onToggleMealRule = { rule, on ->
+                            mealReminderRules = MealReminders.updateRule(this, rule.copy(enabled = on))
                         },
-                        onPickMealReminderTime = ::pickMealReminderTime,
+                        onPickMealRuleTime = ::pickMealRuleTime,
+                        onToggleMealRuleDay = { rule, day ->
+                            val days = if (day in rule.days) rule.days - day else rule.days + day
+                            mealReminderRules = MealReminders.updateRule(this, rule.copy(days = days))
+                        },
+                        onDeleteMealRule = { rule ->
+                            mealReminderRules = MealReminders.deleteRule(this, rule.id)
+                        },
+                        onAddMealRule = ::addMealRule,
                         calendarMealsOn = calendarMealsOn,
                         onCalendarMealsOn = ::setCalendarMeals,
                         remindersOnTime = remindersOnTime,
@@ -130,9 +136,8 @@ class MainActivity : ComponentActivity() {
             checkSelfPermission(Manifest.permission.POST_NOTIFICATIONS) == PackageManager.PERMISSION_GRANTED
         shortcutsOn = CamapsShortcuts.enabled(this)
         alertsSilenced = StatusNotifier.alertsSilenced(this)
-        mealReminderOn = MealReminders.enabled(this)
+        mealReminderRules = MealReminders.rules(this)
         calendarMealsOn = CalendarMealReminders.enabled(this) && CalendarMealReminders.permitted(this)
-        mealReminderTime = MealReminders.time(this)
         remindersOnTime = Alarms.exactAllowed(this)
         fullScreenAllowed = getSystemService(android.app.NotificationManager::class.java).canUseFullScreenIntent()
         suggestShortcuts = !shortcutsOn && !getSharedPreferences(PREFS_UI, MODE_PRIVATE).getBoolean(KEY_SHORTCUTS_DISMISSED, false)
@@ -187,20 +192,36 @@ class MainActivity : ComponentActivity() {
         calendarMealsOn = on
     }
 
-    /** The reminder's time in the phone's 12- or 24-hour format. */
-    private fun formattedMealReminderTime(): String = android.text.format.DateFormat.getTimeFormat(this).format(
-        java.util.Date.from(mealReminderTime.atDate(java.time.LocalDate.now()).atZone(java.time.ZoneId.systemDefault()).toInstant()),
+    /** A reminder's time in the phone's 12- or 24-hour format. */
+    private fun formatTime(time: java.time.LocalTime): String = android.text.format.DateFormat.getTimeFormat(this).format(
+        java.util.Date.from(time.atDate(java.time.LocalDate.now()).atZone(java.time.ZoneId.systemDefault()).toInstant()),
     )
 
-    private fun pickMealReminderTime() {
+    private fun pickMealRuleTime(rule: app.steadmo.core.MealReminderRule) {
         android.app.TimePickerDialog(
             this,
             { _, hour, minute ->
-                mealReminderTime = java.time.LocalTime.of(hour, minute)
-                MealReminders.set(this, mealReminderOn, mealReminderTime)
+                mealReminderRules = MealReminders.updateRule(this, rule.copy(time = java.time.LocalTime.of(hour, minute)))
             },
-            mealReminderTime.hour,
-            mealReminderTime.minute,
+            rule.time.hour,
+            rule.time.minute,
+            android.text.format.DateFormat.is24HourFormat(this),
+        ).show()
+    }
+
+    private fun addMealRule() {
+        val suggested = if (mealReminderRules.any { it.time == app.steadmo.core.MealReminder.DEFAULT_TIME }) {
+            java.time.LocalTime.of(12, 0)
+        } else {
+            app.steadmo.core.MealReminder.DEFAULT_TIME
+        }
+        android.app.TimePickerDialog(
+            this,
+            { _, hour, minute ->
+                mealReminderRules = MealReminders.addRule(this, java.time.LocalTime.of(hour, minute))
+            },
+            suggested.hour,
+            suggested.minute,
             android.text.format.DateFormat.is24HourFormat(this),
         ).show()
     }

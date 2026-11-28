@@ -247,7 +247,7 @@ class StatusNotifier(private val context: Context, private val clock: () -> Long
         ).build()
         val notification = Notification.Builder(context, CHANNEL_REMINDERS)
             .setSmallIcon(R.drawable.ic_shortcut_meal)
-            .setContentTitle(if (event == null) "Time to bolus for dinner?" else "$event. Bolus before you eat?")
+            .setContentTitle(if (event == null) "Time to bolus for your meal?" else "$event. Bolus before you eat?")
             .apply { if (event != null) extras.putBoolean(EXTRA_CALENDAR, true) }
             .setContentText("Bolus before you eat, so insulin is working by the time you do.")
             .setCategory(Notification.CATEGORY_REMINDER)

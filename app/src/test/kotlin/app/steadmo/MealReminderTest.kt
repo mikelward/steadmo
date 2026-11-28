@@ -5,7 +5,10 @@ import android.app.Application
 import android.app.Notification
 import android.content.Intent
 import androidx.test.core.app.ApplicationProvider
+import app.steadmo.core.MealReminder
+import app.steadmo.core.MealReminderRule
 import app.steadmo.widget.WidgetActionActivity
+import java.time.DayOfWeek
 import java.time.LocalTime
 import java.time.ZoneId
 import java.time.ZonedDateTime
@@ -35,6 +38,7 @@ class MealReminderTest {
     @Test fun `on by default at 18_00, scheduled from app start`() {
         assertTrue(MealReminders.enabled(app))
         assertEquals(LocalTime.of(18, 0), MealReminders.time(app))
+        assertEquals(listOf(MealReminder.defaultRule()), MealReminders.rules(app))
         assertEquals(1, reminderAlarms().size)
     }
 
@@ -46,6 +50,48 @@ class MealReminderTest {
         MealReminders.set(app, false)
         assertFalse(MealReminders.enabled(app))
         assertTrue(reminderAlarms().isEmpty())
+    }
+
+    @Test fun `adding, updating and deleting rules schedules the soonest active rule`() {
+        val mondayMorning = ZonedDateTime.of(2026, 11, 23, 8, 0, 0, 0, zone).toInstant().toEpochMilli()
+        val added = MealReminders.addRule(
+            app,
+            time = LocalTime.of(12, 30),
+            days = setOf(DayOfWeek.MONDAY, DayOfWeek.WEDNESDAY),
+            now = mondayMorning,
+        )
+        assertEquals(2, added.size)
+        val mondayLunch = ZonedDateTime.of(2026, 11, 23, 12, 30, 0, 0, zone).toInstant().toEpochMilli()
+        assertEquals(mondayLunch, reminderAlarms().single().triggerAtTime)
+
+        // Move the lunch rule to Tuesday only; Monday 18:00 is now soonest.
+        val lunch = added.last()
+        MealReminders.updateRule(app, lunch.copy(days = setOf(DayOfWeek.TUESDAY)), now = mondayMorning)
+        val mondayDinner = ZonedDateTime.of(2026, 11, 23, 18, 0, 0, 0, zone).toInstant().toEpochMilli()
+        assertEquals(mondayDinner, reminderAlarms().single().triggerAtTime)
+
+        // Delete the dinner rule; Tuesday 12:30 is now soonest.
+        MealReminders.deleteRule(app, added.first().id, now = mondayMorning)
+        val tuesdayLunch = ZonedDateTime.of(2026, 11, 24, 12, 30, 0, 0, zone).toInstant().toEpochMilli()
+        assertEquals(tuesdayLunch, reminderAlarms().single().triggerAtTime)
+
+        // Delete the last rule; no alarms remain.
+        MealReminders.deleteRule(app, lunch.id, now = mondayMorning)
+        assertTrue(MealReminders.rules(app).isEmpty())
+        assertFalse(MealReminders.enabled(app))
+        assertTrue(reminderAlarms().isEmpty())
+    }
+
+    @Test fun `migrates legacy single-reminder prefs into a rule`() {
+        app.getSharedPreferences("meal_reminder", android.content.Context.MODE_PRIVATE).edit()
+            .clear()
+            .putBoolean("on", false)
+            .putInt("minute_of_day", 19 * 60 + 15)
+            .commit()
+        assertEquals(
+            listOf(MealReminderRule(id = 1L, time = LocalTime.of(19, 15), enabled = false)),
+            MealReminders.rules(app),
+        )
     }
 
     @Test fun `turning it off cancels a pending snooze and the shown reminder`() {
@@ -101,7 +147,7 @@ class MealReminderTest {
     @Test fun `the reminder offers Bolus and two snoozes`() {
         MealReminderReceiver().onReceive(app, Intent(app, MealReminderReceiver::class.java).setAction(MealReminders.ACTION_FIRE))
         val n = app.posted(7)!!
-        assertEquals("Time to bolus for dinner?", n.extras.getString(Notification.EXTRA_TITLE))
+        assertEquals("Time to bolus for your meal?", n.extras.getString(Notification.EXTRA_TITLE))
         assertEquals(listOf("Bolus", "In 30 min", "In 60 min"), n.actions.map { it.title.toString() })
         val bolusIntent = shadowOf(n.actions[0].actionIntent).savedIntent
         assertEquals("steadmo://widget/camaps/meal", bolusIntent.dataString)
@@ -121,6 +167,6 @@ class MealReminderTest {
         assertTrue(again.triggerAtTime >= before + 30 * MINUTE)
 
         MealReminderReceiver().onReceive(app, shadowOf(again.operation).savedIntent)
-        assertEquals("Time to bolus for dinner?", app.posted(7)!!.extras.getString(Notification.EXTRA_TITLE))
+        assertEquals("Time to bolus for your meal?", app.posted(7)!!.extras.getString(Notification.EXTRA_TITLE))
     }
 }

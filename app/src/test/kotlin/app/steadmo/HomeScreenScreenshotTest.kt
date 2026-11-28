@@ -55,11 +55,34 @@ class HomeScreenScreenshotTest {
     @Test fun suggestShortcuts() = both("home-suggest-shortcuts") {
         { HomeScreen(Samples.rising(), true, true, {}, {}, {}, {}, suggestShortcuts = true, clock = { Samples.NOW }, ticking = false) }
     }
+    private val sampleMealRules = listOf(
+        app.steadmo.core.MealReminder.defaultRule(),
+        app.steadmo.core.MealReminderRule(
+            id = 2L,
+            time = java.time.LocalTime.of(12, 30),
+            days = setOf(
+                java.time.DayOfWeek.MONDAY,
+                java.time.DayOfWeek.TUESDAY,
+                java.time.DayOfWeek.WEDNESDAY,
+                java.time.DayOfWeek.THURSDAY,
+                java.time.DayOfWeek.FRIDAY,
+            ),
+        ),
+    )
+
     @Test fun mealReminderLight() = dialog("meal-reminder", dark = false) {
-        MealReminderDialog(on = true, time = "18:00", onToggle = {}, onPickTime = {}, onDismiss = {})
+        MealReminderDialog(
+            rules = sampleMealRules,
+            onToggleRule = { _, _ -> }, onPickRuleTime = {}, onToggleRuleDay = { _, _ -> },
+            onDeleteRule = {}, onAddRule = {}, onDismiss = {},
+        )
     }
     @Test fun mealReminderDark() = dialog("meal-reminder", dark = true) {
-        MealReminderDialog(on = true, time = "18:00", onToggle = {}, onPickTime = {}, onDismiss = {})
+        MealReminderDialog(
+            rules = sampleMealRules,
+            onToggleRule = { _, _ -> }, onPickRuleTime = {}, onToggleRuleDay = { _, _ -> },
+            onDeleteRule = {}, onAddRule = {}, onDismiss = {},
+        )
     }
     @Test fun unitsLight() = dialog("units", dark = false) {
         UnitsDialog(GlucoseUnit.MMOL, onPick = {}, onDismiss = {})
