@@ -79,6 +79,7 @@ class MainActivity : ComponentActivity() {
                             Disclaimer.accept(this)
                             disclaimerAccepted = true
                             (application as? SteadmoApp)?.refreshWidgets()
+                            updateChecker.check()
                         },
                         onLeave = {
                             SteadmoLog.event("ui: disclaimer declined")
@@ -92,6 +93,7 @@ class MainActivity : ComponentActivity() {
                     return@SteadmoTheme
                 }
                 val state by repository.state.collectAsStateWithLifecycle()
+                val updateAvailable by updateChecker.updateAvailable.collectAsStateWithLifecycle()
                 if (screen == Screen.WEEKLY_REPORT) {
                     val zone = java.time.ZoneId.systemDefault()
                     val summary = androidx.compose.runtime.remember(state.readings, state.treatments, state.unit) {
@@ -175,6 +177,7 @@ class MainActivity : ComponentActivity() {
                     onShowDisclaimer = { screen = Screen.DISCLAIMER },
                     onOpenAppInfo = ::openAppInfo,
                     onGetLatest = ::openLatestRelease,
+                    updateAvailable = updateAvailable,
                     onKnownIssues = ::openKnownIssues,
                     shortcutsOn = shortcutsOn,
                     onOpenShortcutsSettings = ::openAccessibilitySettings,
@@ -205,6 +208,20 @@ class MainActivity : ComponentActivity() {
                     onTreated = { repository.recordTreatment(System.currentTimeMillis()) },
                 )
             }
+        }
+    }
+
+    override fun onStart() {
+        super.onStart()
+        if (disclaimerAccepted) {
+            updateChecker.onAppOpen()
+        }
+    }
+
+    override fun onStop() {
+        super.onStop()
+        if (disclaimerAccepted && isChangingConfigurations) {
+            updateChecker.skipNextOpen()
         }
     }
 

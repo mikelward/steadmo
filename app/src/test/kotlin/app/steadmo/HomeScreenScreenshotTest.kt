@@ -73,6 +73,9 @@ class HomeScreenScreenshotTest {
     @Test fun suggestShortcuts() = both("home-suggest-shortcuts") {
         { HomeScreen(Samples.rising(), true, true, {}, {}, {}, {}, suggestShortcuts = true, clock = { Samples.NOW }, ticking = false) }
     }
+    @Test fun updateAvailable() = both("home-update-available") {
+        { HomeScreen(Samples.rising(), true, true, {}, {}, {}, {}, updateAvailable = true, clock = { Samples.NOW }, ticking = false) }
+    }
     private val sampleMealRules = listOf(
         app.steadmo.core.MealReminder.defaultRule(),
         app.steadmo.core.MealReminderRule(
