@@ -43,11 +43,6 @@ class ExactAlarmPermissionReceiver : BroadcastReceiver() {
             return
         }
         SteadmoLog.event("alarms: exact alarms now %s; rescheduling reminders", if (Alarms.exactAllowed(context)) "allowed" else "not allowed")
-        MealReminders.schedule(context)
-        MealReminders.restoreSnooze(context)
-        CalendarMealReminders.scan(context)
-        WeeklyReports.schedule(context)
-        Recheck.restore(context, context.repository.state.value.treatments)
-        SignalWatch.run(context)
+        Reliability.restoreAlarms(context)
     }
 }

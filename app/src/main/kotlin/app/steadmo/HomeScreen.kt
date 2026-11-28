@@ -99,9 +99,19 @@ fun HomeScreen(
     onWeeklyReport: () -> Unit = {},
     onSettings: () -> Unit = {},
     alertsSilenced: Boolean = false,
+    urgentLowSilenced: Boolean = false,
+    alarmVolumeMuted: Boolean = false,
     fullScreenAllowed: Boolean = true,
+    exactAlarmsAllowed: Boolean = true,
+    batteryUnrestricted: Boolean = true,
+    unusedAppRestrictionsDisabled: Boolean = true,
     onAllowFullScreen: () -> Unit = {},
     onOpenAlertSettings: () -> Unit = {},
+    onOpenUrgentLowSettings: () -> Unit = {},
+    onOpenSoundSettings: () -> Unit = {},
+    onAllowExactAlarms: () -> Unit = {},
+    onOpenBatterySettings: () -> Unit = {},
+    onOpenUnusedAppSettings: () -> Unit = {},
     clock: () -> Long = System::currentTimeMillis,
     ticking: Boolean = true,
 ) {
@@ -184,12 +194,52 @@ fun HomeScreen(
                     onOpenAlertSettings,
                 )
             }
+            if (notificationsAllowed && urgentLowSilenced) {
+                SetupCard(
+                    "Urgent low alarm is silenced",
+                    "Steadmo's urgent low alarm won't sound. Set Urgent low to High.",
+                    "Urgent low settings",
+                    onOpenUrgentLowSettings,
+                )
+            }
+            if (notificationsAllowed && alarmVolumeMuted) {
+                SetupCard(
+                    "Alarm volume is muted",
+                    "Urgent low alarms use the alarm volume and won't be heard while it's at zero.",
+                    "Sound settings",
+                    onOpenSoundSettings,
+                )
+            }
             if (notificationsAllowed && !fullScreenAllowed) {
                 SetupCard(
                     "Let urgent lows fill the screen",
                     "If an urgent low alarm goes unanswered for 5 minutes, Steadmo shows it full screen, even on the lock screen.",
                     "Allow",
                     onAllowFullScreen,
+                )
+            }
+            if (!exactAlarmsAllowed) {
+                SetupCard(
+                    "Allow exact alarms",
+                    "Without Alarms & reminders, signal-loss alerts, hypo rechecks and meal reminders can be up to an hour late.",
+                    "Allow alarms",
+                    onAllowExactAlarms,
+                )
+            }
+            if (!batteryUnrestricted) {
+                SetupCard(
+                    "Keep Steadmo running",
+                    "Battery optimization can delay alerts and reminders. Set Battery to Unrestricted.",
+                    "Battery settings",
+                    onOpenBatterySettings,
+                )
+            }
+            if (!unusedAppRestrictionsDisabled) {
+                SetupCard(
+                    "Keep Steadmo active when unused",
+                    "Android pauses apps you rarely open and revokes their permissions. Turn off Pause app activity if unused.",
+                    "App settings",
+                    onOpenUnusedAppSettings,
                 )
             }
 

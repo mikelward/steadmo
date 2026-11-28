@@ -32,6 +32,10 @@ object SignalWatch {
                 val access = context.getSystemService(android.app.NotificationManager::class.java)
                     .isNotificationListenerAccessGranted(android.content.ComponentName(context, CamapsListener::class.java))
                 SteadmoLog.warning("signal: nothing for %s min; notification access %s", decision.quietMinutes, access)
+                if (access && !context.repository.state.value.listenerConnected) {
+                    SteadmoLog.warning("signal: notification access is on but listener is disconnected; requesting rebind")
+                    Reliability.requestListenerRebind(context)
+                }
                 notifier.showSignalLoss(decision.quietMinutes, latest!!, access)
                 prefs.edit().putLong(KEY_WARNED, now).apply()
                 schedule(context, decision.nextCheck)

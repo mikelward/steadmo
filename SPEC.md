@@ -264,6 +264,30 @@ a time-in-range shift of 5 percentage points or more from last week, and signal 
 button exports the report as plain text through the Android share sheet (clipboard fallback).
 If there are no readings in the last 7 days, no notification is posted.
 
+### 4.17 Reliability
+
+To keep readings, alerts and reminders running across Doze, reboots, app updates and long
+stretches without opening Steadmo:
+
+- **Reboot and update recovery**: `BootReceiver` listens for `BOOT_COMPLETED` and
+  `MY_PACKAGE_REPLACED` (`RECEIVE_BOOT_COMPLETED`) and immediately re-arms all alarms
+  (signal loss, meal reminders, pending snoozes, calendar meals, weekly report, and
+  post-treatment recheck), restarts the calendar watch, and requests a rebind of
+  `CamapsListener` when notification access is granted but it is not yet connected.
+- **Listener auto-rebind**: when the 15-minute signal-loss check fires and notification
+  access is still granted but `CamapsListener` is disconnected, Steadmo requests a rebind
+  before posting the warning.
+- **Home screen checks**: Steadmo surfaces cards when something could silence or delay
+  alerts, each linking straight to the relevant Android settings page:
+  - Urgent low channel set below Default (opens its channel settings).
+  - Alarm volume at zero (opens sound settings).
+  - Exact alarms (`SCHEDULE_EXACT_ALARM`) not allowed (opens Alarms & reminders).
+  - Battery optimization active (checked via `PowerManager.isIgnoringBatteryOptimizations`,
+    without declaring the Play-restricted `REQUEST_IGNORE_BATTERY_OPTIMIZATIONS`
+    permission; opens battery optimization settings, falling back to App info).
+  - "Pause app activity if unused" enabled (`PackageManager.isAutoRevokeWhitelisted`;
+    opens unused-app restrictions / App info).
+
 ### 4.13 Meal reminder
 
 Scheduled meal reminder rules, each with a time of day, days of the week, and on/off switch

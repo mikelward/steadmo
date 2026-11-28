@@ -39,6 +39,13 @@ object BugReport {
         /** When the disclaimer was accepted, or null. */
         val disclaimerAcceptedAt: Long? = null,
         val shortcutsOn: Boolean = false,
+        val batteryUnrestricted: Boolean = true,
+        val exactAlarmsAllowed: Boolean = true,
+        val fullScreenAllowed: Boolean = true,
+        val alertsSilenced: Boolean = false,
+        val urgentLowSilenced: Boolean = false,
+        val alarmVolumeMuted: Boolean = false,
+        val unusedAppRestrictionsDisabled: Boolean = true,
     )
 
     fun facts(context: Context, state: GlucoseState, now: Long = System.currentTimeMillis()) = Facts(
@@ -53,6 +60,13 @@ object BugReport {
         camapsEntryPoints = CamapsEntryPoints.describe(context, state.camapsPackage),
         disclaimerAcceptedAt = Disclaimer.acceptedAt(context),
         shortcutsOn = CamapsShortcuts.enabled(context),
+        batteryUnrestricted = Reliability.batteryUnrestricted(context),
+        exactAlarmsAllowed = Alarms.exactAllowed(context),
+        fullScreenAllowed = context.getSystemService(NotificationManager::class.java).canUseFullScreenIntent(),
+        alertsSilenced = StatusNotifier.alertsSilenced(context),
+        urgentLowSilenced = StatusNotifier.urgentLowSilenced(context),
+        alarmVolumeMuted = Reliability.alarmVolumeMuted(context),
+        unusedAppRestrictionsDisabled = Reliability.unusedAppRestrictionsDisabled(context),
     )
 
     /** The app's section of the report: facts, then the newest log lines that fit. */
@@ -61,6 +75,15 @@ object BugReport {
         appendLine("Steadmo ${facts.version} on ${facts.device}, Android SDK ${facts.sdk}")
         appendLine("Disclaimer: version ${Disclaimer.VERSION}, ${facts.disclaimerAcceptedAt?.let { "accepted at $it" } ?: "not accepted"}")
         appendLine("Notification access: ${yesNo(facts.listenerAllowed)}; notifications: ${yesNo(facts.notificationsAllowed)}; listener connected: ${yesNo(s.listenerConnected)}; CamAPS FX shortcuts: ${yesNo(facts.shortcutsOn)}")
+        appendLine(
+            "Reliability: battery unrestricted ${yesNo(facts.batteryUnrestricted)}; " +
+                "exact alarms ${yesNo(facts.exactAlarmsAllowed)}; " +
+                "full-screen ${yesNo(facts.fullScreenAllowed)}; " +
+                "alerts silenced ${yesNo(facts.alertsSilenced)}; " +
+                "urgent low silenced ${yesNo(facts.urgentLowSilenced)}; " +
+                "alarm muted ${yesNo(facts.alarmVolumeMuted)}; " +
+                "unused restrictions off ${yesNo(facts.unusedAppRestrictionsDisabled)}",
+        )
         appendLine("CamAPS FX: ${s.camapsPackage ?: "not seen"}; channel ${s.camapsChannelId ?: "unknown"}, importance ${importance(s.camapsChannelImportance)}")
         val latest = s.latest
         if (latest == null) {
