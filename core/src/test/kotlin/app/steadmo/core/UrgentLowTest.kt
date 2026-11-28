@@ -37,4 +37,31 @@ class UrgentLowTest {
     @Test fun `clears once glucose is out of the urgent range`() {
         assertEquals(Decision.CLEAR, UrgentLow.decide(Reading(0, 3.4), acknowledgedAt = null))
     }
+
+    @Test fun `escalates when at or below 3_9 and projected below 3_0 within 20 minutes`() {
+        val fallingSlow = Trend(-0.06, TrendArrow.DOWN_SLIGHT)
+        assertEquals(8, UrgentLow.minutesUntil(Reading(0, 3.5), fallingSlow))
+        assertTrue(UrgentLow.isUrgent(Reading(0, 3.5), fallingSlow))
+        assertEquals(15, UrgentLow.minutesUntil(Reading(0, 3.9), fallingSlow))
+        assertTrue(UrgentLow.isUrgent(Reading(0, 3.9), fallingSlow))
+        // 70 mg/dL is on the 3.9 line too.
+        assertEquals(15, UrgentLow.minutesUntil(Reading(0, 70 / MGDL_PER_MMOL), fallingSlow))
+        assertEquals(Decision.ALERT, UrgentLow.decide(Reading(0, 3.5), acknowledgedAt = null, trend = fallingSlow))
+
+        // Above 3.9, flat, rising, or already below 3.0 do not produce a minutes-until prediction.
+        assertEquals(null, UrgentLow.minutesUntil(Reading(0, 4.2), Trend(-0.15, TrendArrow.DOWN)))
+        assertFalse(UrgentLow.isUrgent(Reading(0, 4.2), Trend(-0.15, TrendArrow.DOWN)))
+        assertEquals(null, UrgentLow.minutesUntil(Reading(0, 3.5), Trend(-0.02, TrendArrow.FLAT)))
+        assertEquals(null, UrgentLow.minutesUntil(Reading(0, 3.5), Trend(0.06, TrendArrow.UP_SLIGHT)))
+        assertEquals(null, UrgentLow.minutesUntil(Reading(0, 3.5), null))
+        assertEquals(null, UrgentLow.minutesUntil(Reading(0, 2.8), fallingSlow))
+        assertEquals(null, UrgentLow.minutesUntil(Reading(0, 2.2, Bound.BELOW), fallingSlow))
+    }
+
+    @Test fun `Treated quiets urgent low for 15 minutes even through a lag dip`() {
+        assertEquals(Decision.SNOOZED, UrgentLow.decide(Reading(10 * min, 2.8), acknowledgedAt = null, treatedAt = 0))
+        assertEquals(Decision.ALERT, UrgentLow.decide(Reading(15 * min, 2.8), acknowledgedAt = null, treatedAt = 0))
+        // A treatment timestamp in the future doesn't suppress alerts.
+        assertEquals(Decision.ALERT, UrgentLow.decide(Reading(0, 2.8), acknowledgedAt = null, treatedAt = 5 * min))
+    }
 }

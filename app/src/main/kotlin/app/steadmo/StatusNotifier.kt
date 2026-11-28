@@ -9,7 +9,10 @@ import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.graphics.Bitmap
+import android.media.AudioAttributes
+import android.net.Uri
 import android.os.Build
+import androidx.annotation.RawRes
 import androidx.annotation.RequiresApi
 import androidx.compose.ui.graphics.toArgb
 import androidx.core.graphics.drawable.toBitmap
@@ -20,6 +23,8 @@ import app.steadmo.core.HIGH_MMOL
 import app.steadmo.core.LOW_MMOL
 import app.steadmo.core.RangeSide
 import app.steadmo.core.Reading
+import app.steadmo.core.Trend
+import app.steadmo.core.URGENT_LOW_MMOL
 import app.steadmo.core.outOfRangeSince
 import app.steadmo.core.side
 import app.steadmo.core.TrendAlert
@@ -36,6 +41,12 @@ class StatusNotifier(private val context: Context, private val clock: () -> Long
     private val manager = context.getSystemService(NotificationManager::class.java)
 
     init {
+        val alarmAudio = AudioAttributes.Builder()
+            .setUsage(AudioAttributes.USAGE_ALARM)
+            .setContentType(AudioAttributes.CONTENT_TYPE_SONIFICATION)
+            .build()
+        // Replace the earlier urgent-low channel so existing installs pick up the bundled descending sound.
+        manager.deleteNotificationChannel(LEGACY_CHANNEL_URGENT)
         manager.createNotificationChannel(
             NotificationChannel(CHANNEL_GLUCOSE, context.getString(R.string.channel_glucose), NotificationManager.IMPORTANCE_LOW)
                 .apply { description = context.getString(R.string.channel_glucose_description); setShowBadge(false) },
@@ -45,13 +56,17 @@ class StatusNotifier(private val context: Context, private val clock: () -> Long
             NotificationChannel(CHANNEL_URGENT, context.getString(R.string.channel_urgent), NotificationManager.IMPORTANCE_HIGH)
                 .apply {
                     description = context.getString(R.string.channel_urgent_description)
-                    setSound(
-                        android.media.RingtoneManager.getDefaultUri(android.media.RingtoneManager.TYPE_ALARM),
-                        android.media.AudioAttributes.Builder()
-                            .setUsage(android.media.AudioAttributes.USAGE_ALARM)
-                            .setContentType(android.media.AudioAttributes.CONTENT_TYPE_SONIFICATION)
-                            .build(),
-                    )
+                    setSound(rawSoundUri(R.raw.alert_urgent_low), alarmAudio)
+                    enableVibration(true)
+                    setBypassDnd(true)
+                },
+        )
+        manager.createNotificationChannel(
+            // Separate alarm-stream channel for glucose below 3.9 mmol/L, distinct from Urgent low.
+            NotificationChannel(CHANNEL_LOW, context.getString(R.string.channel_low), NotificationManager.IMPORTANCE_HIGH)
+                .apply {
+                    description = context.getString(R.string.channel_low_description)
+                    setSound(rawSoundUri(R.raw.alert_low), alarmAudio)
                     enableVibration(true)
                     setBypassDnd(true)
                 },
@@ -65,6 +80,9 @@ class StatusNotifier(private val context: Context, private val clock: () -> Long
                 .apply { description = context.getString(R.string.channel_alerts_description) },
         )
     }
+
+    private fun rawSoundUri(@RawRes resId: Int): Uri =
+        Uri.parse("android.resource://${context.packageName}/$resId")
 
     /**
      * Shows the latest reading. With [promote] (out of range, or a low on the
@@ -117,6 +135,7 @@ class StatusNotifier(private val context: Context, private val clock: () -> Long
             // A reading this old is no use; better gone than wrong.
             .setTimeoutAfter(remaining)
             .setContentIntent(openApp())
+            .apply { if (side == RangeSide.LOW) addAction(treatedAction()) }
         val promoted = promote && Build.VERSION.SDK_INT >= Build.VERSION_CODES.BAKLAVA
         if (promoted) promote(builder, unit.reading(latest), latest)
         SteadmoLog.verbose("notify: status %s, arrow %s, live update %s (asked %s)", latest.display, arrow, promoted, promote)
@@ -175,10 +194,17 @@ class StatusNotifier(private val context: Context, private val clock: () -> Long
     }
 
     /**
-     * The urgent low alarm (SPEC.md §4.8): sounds until the user taps OK or
-     * glucose comes back above 3.0, and lasts only while [latest] is fresh.
+     * The urgent low alarm (SPEC.md §4.8): loops until the user taps OK or
+     * Treated, or glucose is no longer urgently low, and lasts only while
+     * [latest] is fresh.
      */
-    fun showUrgentLow(latest: Reading, unit: GlucoseUnit, quiet: Boolean = false, fullScreen: Boolean = false) {
+    fun showUrgentLow(
+        latest: Reading,
+        unit: GlucoseUnit,
+        minutesUntilUrgent: Int? = null,
+        quiet: Boolean = false,
+        fullScreen: Boolean = false,
+    ) {
         val remaining = STALE_MILLIS - (clock() - latest.timeMillis)
         if (remaining <= 0) return
         val ok = PendingIntent.getBroadcast(
@@ -192,11 +218,18 @@ class StatusNotifier(private val context: Context, private val clock: () -> Long
                 .putExtra(UrgentLowAckReceiver.EXTRA_EXPIRES, latest.timeMillis + STALE_MILLIS),
             PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT,
         )
+        val shown = "${unit.reading(latest)} ${unit.label}"
+        val title = if (minutesUntilUrgent == null) "Urgent low: $shown" else "Urgent low soon: $shown"
+        val text = if (minutesUntilUrgent == null) {
+            "Treat it now. This repeats until you tap OK or Treated."
+        } else {
+            "Heading below ${unit.value(URGENT_LOW_MMOL)} in about $minutesUntilUrgent min. Treat it now."
+        }
         val notification = Notification.Builder(context, CHANNEL_URGENT)
             .setSmallIcon(R.drawable.ic_trend_double_down)
             .setColor(LowColor.toArgb())
-            .setContentTitle("Urgent low: ${unit.reading(latest)} ${unit.label}")
-            .setContentText("Treat it now. This repeats until you tap OK.")
+            .setContentTitle(title)
+            .setContentText(text)
             .setCategory(Notification.CATEGORY_ALARM)
             .setTimeoutAfter(remaining)
             .setContentIntent(openApp())
@@ -220,7 +253,12 @@ class StatusNotifier(private val context: Context, private val clock: () -> Long
             .build()
         // Sounds over and over until it's acknowledged or cleared.
         notification.flags = notification.flags or Notification.FLAG_INSISTENT
-        SteadmoLog.warning("notify: urgent low %s%s", unit.reading(latest), if (fullScreen) ", full screen" else "")
+        SteadmoLog.warning(
+            "notify: urgent low %s%s%s",
+            unit.reading(latest),
+            minutesUntilUrgent?.let { " (in ~$it min)" } ?: "",
+            if (fullScreen) ", full screen" else "",
+        )
         post(ID_URGENT, notification)
     }
 
@@ -252,6 +290,49 @@ class StatusNotifier(private val context: Context, private val clock: () -> Long
     }
 
     fun cancelUrgentLowTest() = manager.cancel(ID_URGENT_TEST)
+
+    /**
+     * The low (< 3.9 mmol/L) alarm when not urgent (SPEC.md §4.8): loops on its
+     * own alarm-stream channel until OK or Treated, and lasts only while
+     * [latest] is fresh.
+     */
+    fun showLow(latest: Reading, trend: Trend?, unit: GlucoseUnit, quiet: Boolean = false) {
+        val remaining = STALE_MILLIS - (clock() - latest.timeMillis)
+        if (remaining <= 0) return
+        val ok = PendingIntent.getBroadcast(
+            context, 7, Intent(context, LowAckReceiver::class.java), PendingIntent.FLAG_IMMUTABLE,
+        )
+        val dismissed = PendingIntent.getBroadcast(
+            context, 8,
+            Intent(context, LowAckReceiver::class.java).setAction(LowAckReceiver.ACTION_DISMISSED)
+                .putExtra(LowAckReceiver.EXTRA_EXPIRES, latest.timeMillis + STALE_MILLIS),
+            PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT,
+        )
+        val arrow = trend?.arrow
+        val text = listOfNotNull(
+            arrow?.label,
+            "Below ${unit.value(LOW_MMOL)}. Tap Treated once you've had carbs.",
+        ).joinToString(" · ")
+        val notification = Notification.Builder(context, CHANNEL_LOW)
+            .setSmallIcon(arrow.drawable())
+            .setLargeIcon(arrowBitmap(arrow, LowColor.toArgb()))
+            .setColor(LowColor.toArgb())
+            .setContentTitle("Low: ${unit.reading(latest)} ${unit.label}")
+            .setContentText(text)
+            .setCategory(Notification.CATEGORY_ALARM)
+            .setTimeoutAfter(remaining)
+            .setContentIntent(openApp())
+            .setDeleteIntent(dismissed)
+            .addAction(Notification.Action.Builder(null, "OK", ok).build())
+            .addAction(treatedAction())
+            .setOnlyAlertOnce(quiet)
+            .build()
+        notification.flags = notification.flags or Notification.FLAG_INSISTENT
+        SteadmoLog.warning("notify: low %s", unit.reading(latest))
+        post(ID_LOW, notification)
+    }
+
+    fun cancelLow() = manager.cancel(ID_LOW)
 
     /** The daily meal reminder: Bolus, or remind again in 30 or 60 minutes (SPEC.md §4.13). */
     fun showMealReminder(event: String? = null) {
@@ -368,12 +449,12 @@ class StatusNotifier(private val context: Context, private val clock: () -> Long
             age!! < STALE_MILLIS -> "Latest ${unit.reading(latest)} ${unit.label} at $at."
             else -> "No glucose from CamAPS FX since $at."
         }
-        val notification = Notification.Builder(context, CHANNEL_ALERTS)
+        val notification = Notification.Builder(context, CHANNEL_LOW)
             .setSmallIcon((null as TrendArrow?).drawable())
             .setColor(LowColor.toArgb())
             .setContentTitle("Recheck your glucose")
             .setContentText("You treated a low 15 min ago. $now")
-            .setCategory(Notification.CATEGORY_REMINDER)
+            .setCategory(Notification.CATEGORY_ALARM)
             .apply { if (latest != null) setWhen(latest.timeMillis).setShowWhen(true) }
             .setAutoCancel(true)
             .setContentIntent(openApp())
@@ -381,8 +462,13 @@ class StatusNotifier(private val context: Context, private val clock: () -> Long
         post(ID_RECHECK, notification)
     }
 
+    fun cancelRecheck() = manager.cancel(ID_RECHECK)
+
     /** Whether the urgent low alarm is still on screen (not acknowledged or timed out). */
     fun urgentLowShowing(): Boolean = manager.activeNotifications.any { it.id == ID_URGENT }
+
+    /** Whether the low alarm is still on screen (not acknowledged or timed out). */
+    fun lowShowing(): Boolean = manager.activeNotifications.any { it.id == ID_LOW }
 
     /** Whether a trend alert is still on screen (not dismissed, tapped or timed out). */
     fun alertShowing(): Boolean = manager.activeNotifications.any { it.id == ID_ALERT }
@@ -452,12 +538,15 @@ class StatusNotifier(private val context: Context, private val clock: () -> Long
         private const val ID_MEAL_REMINDER = 7
         const val ID_WEEKLY_REPORT = 8
         const val ID_URGENT_TEST = 9
+        const val ID_LOW = 10
         const val CHANNEL_REMINDERS = "reminders"
 
         /** A pre-bolus suggestion is no use once the food has long arrived. */
         const val PRE_BOLUS_TIMEOUT_MILLIS = 45 * 60_000L
         private const val EXTRA_KIND = "app.steadmo.alert_kind"
-        const val CHANNEL_URGENT = "urgent_low"
+        private const val LEGACY_CHANNEL_URGENT = "urgent_low"
+        const val CHANNEL_URGENT = "urgent_low_v2"
+        const val CHANNEL_LOW = "low"
 
         /** e.g. "15 min", "1 h 15 min". */
         fun duration(minutes: Long): String =
@@ -480,6 +569,15 @@ class StatusNotifier(private val context: Context, private val clock: () -> Long
          */
         fun urgentLowSilenced(context: Context): Boolean {
             val channel = context.getSystemService(NotificationManager::class.java).getNotificationChannel(CHANNEL_URGENT)
+            return channel != null && channel.importance < NotificationManager.IMPORTANCE_DEFAULT
+        }
+
+        /**
+         * Whether the user has turned Steadmo's low channel below Default
+         * (no sound) or off, so low alarms would go unheard.
+         */
+        fun lowSilenced(context: Context): Boolean {
+            val channel = context.getSystemService(NotificationManager::class.java).getNotificationChannel(CHANNEL_LOW)
             return channel != null && channel.importance < NotificationManager.IMPORTANCE_DEFAULT
         }
 

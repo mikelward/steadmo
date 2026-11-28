@@ -78,9 +78,12 @@
             android:taskAffinity=""
             android:turnScreenOn="true" />
 
-        <!-- OK on the urgent low alarm (SPEC.md §4.8). -->
+        <!-- OK on the urgent low and low alarms (SPEC.md §4.8). -->
         <receiver
             android:name=".UrgentLowAckReceiver"
+            android:exported="false" />
+        <receiver
+            android:name=".LowAckReceiver"
             android:exported="false" />
 
         <!-- "Treated" on low alerts, and its recheck reminder (SPEC.md §4.10). -->

@@ -29,6 +29,7 @@ import androidx.compose.foundation.selection.toggleable
 import androidx.compose.ui.semantics.Role
 import androidx.compose.material3.AssistChip
 import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.FilledTonalButton
 import androidx.compose.material3.Icon
@@ -65,9 +66,12 @@ import app.steadmo.core.CamapsGoal
 import app.steadmo.core.GlucoseUnit
 import app.steadmo.core.MealReminder
 import app.steadmo.core.MealReminderRule
+import app.steadmo.core.RangeSide
+import app.steadmo.core.Treatment
 import app.steadmo.core.rate
 import app.steadmo.core.rateLabel
 import app.steadmo.core.reading
+import app.steadmo.core.side
 import kotlinx.coroutines.delay
 import java.time.DayOfWeek
 import java.time.LocalTime
@@ -104,6 +108,7 @@ fun HomeScreen(
     onWeeklyReport: () -> Unit = {},
     onSettings: () -> Unit = {},
     alertsSilenced: Boolean = false,
+    lowSilenced: Boolean = false,
     urgentLowSilenced: Boolean = false,
     alarmVolumeMuted: Boolean = false,
     dndBlocksAlarms: Boolean = false,
@@ -114,6 +119,7 @@ fun HomeScreen(
     liveUpdatesAllowed: Boolean = true,
     onAllowFullScreen: () -> Unit = {},
     onOpenAlertSettings: () -> Unit = {},
+    onOpenLowSettings: () -> Unit = {},
     onOpenUrgentLowSettings: () -> Unit = {},
     onOpenSoundSettings: () -> Unit = {},
     onOpenDndSettings: () -> Unit = {},
@@ -122,6 +128,7 @@ fun HomeScreen(
     onOpenUnusedAppSettings: () -> Unit = {},
     onOpenLiveUpdatesSettings: () -> Unit = {},
     onReconnectListener: () -> Unit = {},
+    onTreated: () -> Unit = {},
     clock: () -> Long = System::currentTimeMillis,
     ticking: Boolean = true,
 ) {
@@ -235,11 +242,22 @@ fun HomeScreen(
                         ),
                     )
                 }
+                if (notificationsAllowed && lowSilenced) {
+                    add(
+                        ReliabilityIssue(
+                            title = "Low alarm is silenced",
+                            body = "Steadmo's low alarm won't sound. Set Low to High.",
+                            action = "Low settings",
+                            onAction = onOpenLowSettings,
+                            urgent = true,
+                        ),
+                    )
+                }
                 if (notificationsAllowed && alarmVolumeMuted) {
                     add(
                         ReliabilityIssue(
                             title = "Alarm volume is muted",
-                            body = "Urgent low alarms use the alarm volume and won't be heard while it's at zero.",
+                            body = "Low and urgent low alarms use the alarm volume and won't be heard while it's at zero.",
                             action = "Sound settings",
                             onAction = onOpenSoundSettings,
                             urgent = true,
@@ -322,6 +340,39 @@ fun HomeScreen(
             } else {
                 val stale = now - latest.timeMillis > STALE_MILLIS
                 Reading(state, now, stale)
+                if (!stale && latest.side() == RangeSide.LOW) {
+                    val recentTreatment = state.treatments.lastOrNull()?.takeIf { now - it in 0 until Treatment.RECHECK_MILLIS }
+                    if (recentTreatment == null) {
+                        Button(
+                            onClick = onTreated,
+                            modifier = Modifier.fillMaxWidth(),
+                            colors = ButtonDefaults.buttonColors(
+                                containerColor = LowColor,
+                                contentColor = androidx.compose.ui.graphics.Color.White,
+                            ),
+                        ) {
+                            Text("Treated", maxLines = 1, softWrap = false)
+                        }
+                    } else {
+                        val minsAgo = ((now - recentTreatment) / 60_000).toInt()
+                        val whenText = if (minsAgo < 1) "just now" else "$minsAgo min ago"
+                        FlowRow(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.spacedBy(8.dp),
+                            verticalArrangement = Arrangement.spacedBy(8.dp),
+                            itemVerticalAlignment = Alignment.CenterVertically,
+                        ) {
+                            Text(
+                                "Treated $whenText · alerts snoozed for 15 min",
+                                style = MaterialTheme.typography.bodyMedium,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            )
+                            OutlinedButton(onClick = onTreated) {
+                                Text("Treated again", maxLines = 1, softWrap = false)
+                            }
+                        }
+                    }
+                }
                 Card(modifier = Modifier.fillMaxWidth()) {
                     GlucoseGraph(
                         readings = state.readings,

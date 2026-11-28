@@ -26,13 +26,23 @@ CamAPS FX. The integration research is in `docs/EXPLORATION.md`; mocks are in
 
 ### Disclaimer
 
-On first open, and again whenever its wording changes (`Disclaimer.VERSION`, now 2),
+On first open, and again whenever its wording changes (`Disclaimer.VERSION`, now 3),
 Steadmo shows a disclaimer: use at your own risk, no warranty, made for the developer's
 family and not tested for anyone else's circumstances, not a medical device and not
 approved by any regulator; it can be wrong or out of date, its alerts can be late or
-missing, and its trends are its own estimates; no treatment decisions from it, and it never
-doses. Continue stays disabled until the user ticks "I have
-read this and accept the risk"; Leave closes the app. The home screen links back to it.
+missing, its alerts aim to be actionable and avoid false alarms (which can be unsafe if
+thresholds don't fit you or if you're inexperienced), and its trends are its own estimates;
+no treatment decisions from it, keep CamAPS FX and sensor alarms on, and it never doses.
+Continue stays disabled until the user ticks "I have read this and accept the risk"; Leave
+closes the app. The home screen links back to it. If Steadmo ever offers a flow to silence
+any CamAPS FX alert, it must show an explicit warning first: that doing so is potentially
+unsafe, not to do it until confirming thresholds fit you, testing CamAPS FX and Steadmo side
+by side, and verifying all low and high alerts work in Steadmo alone; that it is the user's
+responsibility to regularly test and update thresholds and settings as their needs,
+treatment, and/or body change; to report any bugs or issues to the developer; and to turn
+CamAPS FX's alerts back on before disabling or uninstalling Steadmo (Android provides no
+uninstall hook to remind the user). The same screen must make it just as easy to open those
+settings again to re-enable CamAPS FX's alerts.
 
 ### Units
 
@@ -187,19 +197,26 @@ Alerts go on one channel, "Alerts". When the user has set it below Default (no s
 off, the home screen says so with a button to the channel's settings, as it does when
 notifications are off.
 
-### 4.8 Urgent low
+### 4.8 Low and urgent low
 
-Below 3.0 mmol/L (54 mg/dL), or under the sensor's range, each fresh reading sounds
-Steadmo's urgent low alarm on its own "Urgent low" channel: an alarm sound with alarm
-usage and the alarm category, so Do Not Disturb lets it through wherever it lets alarms
-through, and insistent, so it repeats until acknowledged. OK (or swiping it away) quiets it
-for 15 minutes; a reading at or above 3.0 clears it and the acknowledgement. The channel
-asks to bypass Do Not Disturb, which Android honours only with notification policy
-access. If it sounds for 5 minutes without OK or Treated, the next
-reading makes it full screen, over the lock screen and turning the screen on, with
-Treated and OK. That needs `USE_FULL_SCREEN_INTENT`; when Android hasn't granted it, the
-home screen offers its settings page. It adds to CamAPS FX's and the sensor's own urgent
-low alarms and never replaces them.
+- **Urgent low**: below 3.0 mmol/L (54 mg/dL), under the sensor's range, or at or below
+  3.9 mmol/L (70 mg/dL) and projected below 3.0 within 20 minutes (e.g. 3.5 trending down).
+  Each fresh reading sounds Steadmo's urgent low alarm on its "Urgent low" channel: a bundled
+  three-note descending C-major chime (`G5 → E5 → C5`) with alarm usage and the alarm
+  category, so Do Not Disturb lets it through wherever it lets alarms through, and insistent,
+  so it loops until OK or Treated. OK (or swiping it away) quiets it for 15 minutes; recovery
+  clears it and the acknowledgement. The channel asks to bypass Do Not Disturb, which Android
+  honours only with notification policy access. If it sounds for 5 minutes without OK or
+  Treated, the next reading makes it full screen, over the lock screen and turning the screen
+  on, with Treated and OK. That needs `USE_FULL_SCREEN_INTENT`; when Android hasn't granted
+  it, the home screen offers its settings page.
+- **Low**: below 3.9 mmol/L (70 mg/dL) when not urgently low (e.g. steady or no trend yet).
+  Sounds on its own "Low" channel: a bundled three-note same-pitch chime (`C5 · C5 · C5`) on
+  the alarm stream with the alarm category and bypass-DND request, looping until OK or
+  Treated (no full-screen takeover). Ignored, it alerts again every 15 minutes while still
+  low. OK (or swiping it away) quiets Low for 15 minutes without snoozing Urgent low, so a
+  subsequent drop into Urgent low breaks through immediately.
+- Both add to CamAPS FX's and the sensor's own low alarms and never replace them.
 
 ### 4.9 Launcher shortcuts
 
@@ -211,13 +228,18 @@ on start, so they follow the debug build's package.
 
 ### 4.10 Treated
 
-Low alerts (low soon, falling fast) and the urgent low alarm offer "Treated". It records a
+Low alerts (Low, low soon, falling fast), the urgent low alarm, the low status notification
+and the home screen (whenever glucose is fresh and below 3.9) offer "Treated". It records a
 hypo treatment in Steadmo only (CamAPS FX doesn't hear of it), kept for 14 days:
 - a low-coloured mark on the app's and widget's graphs;
-- the low alerts it answers are cleared, and the urgent low alarm quieted as OK does;
+- low trend alerts are cleared, and both Low and Urgent low are cancelled and snoozed for
+  15 minutes so the expected CGM lag while fast-acting carbs absorb does not re-alarm;
 - rise alerts (rising fast, high soon) hold off for 45 minutes, since the treatment
   explains the rise;
-- 15 minutes later, "Recheck your glucose" with the current value.
+- 15 minutes later, Steadmo rechecks: if glucose is still urgently low, Urgent low fires
+  again; if still below 3.9 without visibly rising, Low fires again; if back at or above 3.9
+  or visibly rising (`↗`/`↑`/`⇈`), it stays quiet; if readings are stale or missing, it posts
+  "Recheck your glucose".
 
 ### 4.11 Quick Settings tiles
 
@@ -291,7 +313,7 @@ stretches without opening Steadmo:
   are active, they collapse into a single expandable banner at the top so warnings stay
   first without pushing the glucose reading off screen):
   - Notification access granted but `CamapsListener` disconnected (requests a rebind).
-  - Urgent low channel set below Default (opens its channel settings).
+  - Urgent low or Low channel set below Default (opens its channel settings).
   - Alarm volume at zero (opens sound settings).
   - Do Not Disturb blocking alarms (Total Silence, or Priority mode with Alarms disabled
     via `consolidatedNotificationPolicy` and the Urgent low channel not set to bypass DND;

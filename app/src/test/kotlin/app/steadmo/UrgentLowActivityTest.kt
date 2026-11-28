@@ -68,4 +68,19 @@ class UrgentLowActivityTest {
         assertEquals(before + 1, app.repository.state.value.treatments.size)
         assertTrue(compose.activity.isFinishing)
     }
+
+    @Test fun `UrgentLowScreen shows predictive copy when heading below threshold soon`() {
+        val base = System.currentTimeMillis()
+        compose.runOnUiThread {
+            // Outside the 20-minute trend window of the initial 2.8 reading, so the slope is -0.06 mmol/L/min.
+            val first = NotificationDump.of(app, camapsPost(app, "3.8", base + 25 * MINUTE))
+            app.repository.onCamapsNotification(first, CamapsParser.parse(first.viewTexts))
+            val second = NotificationDump.of(app, camapsPost(app, "3.5", base + 30 * MINUTE))
+            app.repository.onCamapsNotification(second, CamapsParser.parse(second.viewTexts))
+        }
+        compose.waitForIdle()
+        assertTrue(!compose.activity.isFinishing)
+        compose.onNodeWithText("Urgent low soon").assertExists()
+        compose.onNodeWithText("Heading below 3.0 in about", substring = true).assertExists()
+    }
 }

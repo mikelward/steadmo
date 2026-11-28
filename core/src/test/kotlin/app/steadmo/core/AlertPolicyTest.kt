@@ -17,8 +17,11 @@ class AlertPolicyTest {
     }
 
     @Test fun onTheLineAndHeadingOverItWarns() {
-        assertEquals("Low in about 1 min", AlertPolicy().evaluate(Reading(0, 3.9), trend(-0.07))!!.title)
-        assertEquals("Low in about 1 min", AlertPolicy().evaluate(Reading(0, 70 / MGDL_PER_MMOL), trend(-0.07))!!.title)
+        // Slowly drifting below 3.9 (won't hit 3.0 within 20 min): LOW_SOON warns.
+        assertEquals("Low in about 1 min", AlertPolicy().evaluate(Reading(0, 3.9), trend(-0.03))!!.title)
+        assertEquals("Low in about 1 min", AlertPolicy().evaluate(Reading(0, 70 / MGDL_PER_MMOL), trend(-0.03))!!.title)
+        // Faster fall at 3.9 projects below 3.0 within 20 min: UrgentLow handles it without double-alerting.
+        assertNull(AlertPolicy().evaluate(Reading(0, 3.9), trend(-0.07)))
         assertEquals("High in about 1 min", AlertPolicy().evaluate(Reading(0, 10.0), trend(0.12))!!.title)
     }
 

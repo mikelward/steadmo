@@ -63,7 +63,12 @@ CamAPS FX's. Each step needs the maintainer's sign-off: these are safety decisio
 - [ ] Decide which CamAPS FX high and low alerts can be silenced (its own settings, or
       its channels set to Silent) and which must stay on. An urgent low must always reach
       the user, from CamAPS FX or Steadmo, even if Steadmo is killed or loses notification
-      access.
+      access. Any flow that guides silencing CamAPS FX alerts must show the explicit
+      disclaimer first (potentially unsafe; verify thresholds, test side-by-side and verify
+      all low/high alerts in Steadmo alone; user's responsibility to regularly retest and
+      update settings as needs, treatment, and/or body change; report bugs/issues to the
+      developer; and keep a direct path in the same place to re-enable CamAPS FX's alerts;
+      `SPEC.md` §1).
 - [x] Signal loss: warn when no glucose has come from CamAPS FX for 15 minutes (sensor,
       Bluetooth, CamAPS FX, or Steadmo's notification access), repeating every 30 minutes
       for 2 hours (SPEC.md §4.7).
@@ -78,10 +83,12 @@ CamAPS FX's. Each step needs the maintainer's sign-off: these are safety decisio
       permission check, and Settings → Test urgent low alarm (SPEC.md §4.17).
 - [ ] Pump connection: find what CamAPS FX's notifications say when it loses the pump
       (bug report while disconnected), then warn, and say so on the Boost and meal buttons.
-- [x] Urgent low alarm below 3.0 mmol/L: an alarm-sound channel that Do Not Disturb lets
-      through wherever it lets alarms through, repeating until OK (SPEC.md §4.8).
-- [ ] Check on a real phone that the urgent low alarm sounds in Do Not Disturb; if not,
-      ask for notification policy access so its channel can bypass it.
+- [x] Urgent low alarm below 3.0 mmol/L (or at/below 3.9 heading below 3.0 within 20 min)
+      and Low alarm below 3.9 mmol/L: separate alarm-stream channels with bundled looping
+      tones (descending C major for urgent, three C5 pulses for low) that Do Not Disturb lets
+      through wherever it lets alarms through (SPEC.md §4.8).
+- [ ] Check on a real phone that the low and urgent low alarms sound in Do Not Disturb; if
+      not, ask for notification policy access so their channels can bypass it.
 - [x] Full-screen urgent low after 5 ignored minutes, over the lock screen, with Treated
       and OK (maintainer's call; SPEC.md §4.8).
 - [ ] Play policy check for `USE_FULL_SCREEN_INTENT` before a Play release (Play grants it
@@ -129,14 +136,18 @@ CamAPS FX's. Each step needs the maintainer's sign-off: these are safety decisio
 - Signal loss warns after 15 minutes without a reading, repeats every 30 minutes, and stops
   after 2 hours (CamAPS FX is likely off on purpose by then; the app still says so). The
   check is exact once "Alarms & reminders" is allowed, else inexact and possibly late.
-- Urgent low is below 3.0 mmol/L (54 mg/dL) or under the sensor's range. It sounds on every
-  new reading until OK; swiping it away counts as OK. OK quiets it for 15 minutes.
+- Urgent low is below 3.0 mmol/L (54 mg/dL), under the sensor's range, or at or below 3.9
+  and projected below 3.0 within 20 minutes; Low is below 3.9 when not urgent. Both loop
+  bundled alarm-stream tones (descending C major for urgent, three C5 pulses for low) until
+  OK or Treated; OK quiets its tier for 15 minutes (OK on Low does not snooze Urgent low).
 - Launcher shortcuts are 20 g, 40 g, 45 g and Boost: launchers show about four, so Ease-off
   and Other stay on the widget and in the app.
 - About lists the licence once (Apache 2.0 covers Steadmo and all its libraries) rather
   than adding a licence-listing library; add one if a non-Apache dependency arrives.
-- "Treated" holds off rise alerts for 45 minutes and quiets the urgent low alarm as OK does;
-  it is Steadmo's own note, kept for a day, and not sent to CamAPS FX.
+- "Treated" snoozes both Low and Urgent low for 15 minutes, holds off rise alerts for
+  45 minutes, and rechecks at 15 minutes (re-alerting only if still low without visibly
+  rising, or if readings are stale); it is Steadmo's own note, kept for 14 days, and not
+  sent to CamAPS FX.
 - The urgent low alarm takes over the screen after 5 minutes without OK or Treated.
 - Delivery prompts go on a new Reminders channel (default importance), at most one per app
   per hour, expire after 45 minutes, and don't fire once the order says it has arrived.

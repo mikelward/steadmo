@@ -42,7 +42,11 @@ class HomeScreenScreenshotTest {
     @Test fun treated() = both("home-treated") {
         home(Samples.rising().copy(treatments = listOf(Samples.NOW - 60 * MINUTE)))
     }
+    @Test fun low() = both("home-low") { home(Samples.low()) }
     @Test fun urgentLow() = both("urgent-low") { { UrgentLowScreen("2.8 mmol/L", "just now", stale = false, onTreated = {}, onOk = {}) } }
+    @Test fun urgentLowSoon() = both("urgent-low-soon") {
+        { UrgentLowScreen("3.5 mmol/L", "just now", stale = false, onTreated = {}, onOk = {}, minutesUntilUrgent = 8) }
+    }
     @Test fun urgentLowStale() = both("urgent-low-stale") { { UrgentLowScreen("2.8 mmol/L", "12 min ago", stale = true, onTreated = {}, onOk = {}) } }
     @Test fun fullScreenCard() = both("home-full-screen") {
         { HomeScreen(Samples.rising(), true, true, {}, {}, {}, {}, fullScreenAllowed = false, clock = { Samples.NOW }, ticking = false) }

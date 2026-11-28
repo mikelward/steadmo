@@ -61,6 +61,7 @@ class StatusNotifierTest {
             "Falling slowly · −0.07/min · Auto mode on. Below 3.9 for 5 min",
             n.extras.getCharSequence(Notification.EXTRA_TEXT).toString(),
         )
+        assertEquals(listOf("Treated"), n.actions.map { it.title })
     }
 
     @Test

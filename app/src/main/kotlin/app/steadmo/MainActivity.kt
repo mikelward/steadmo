@@ -24,6 +24,7 @@ class MainActivity : ComponentActivity() {
     private var listenerAllowed by mutableStateOf(false)
     private var notificationsAllowed by mutableStateOf(false)
     private var alertsSilenced by mutableStateOf(false)
+    private var lowSilenced by mutableStateOf(false)
     private var urgentLowSilenced by mutableStateOf(false)
     private var alarmVolumeMuted by mutableStateOf(false)
     private var dndBlocksAlarms by mutableStateOf(false)
@@ -180,6 +181,7 @@ class MainActivity : ComponentActivity() {
                     onWeeklyReport = { screen = Screen.WEEKLY_REPORT },
                     onSettings = { screen = Screen.SETTINGS },
                     alertsSilenced = alertsSilenced,
+                    lowSilenced = lowSilenced,
                     urgentLowSilenced = urgentLowSilenced,
                     alarmVolumeMuted = alarmVolumeMuted,
                     dndBlocksAlarms = dndBlocksAlarms,
@@ -190,6 +192,7 @@ class MainActivity : ComponentActivity() {
                     liveUpdatesAllowed = liveUpdatesAllowed,
                     onAllowFullScreen = ::openFullScreenSettings,
                     onOpenAlertSettings = ::openAlertSettings,
+                    onOpenLowSettings = ::openLowSettings,
                     onOpenUrgentLowSettings = ::openUrgentLowSettings,
                     onOpenSoundSettings = ::openSoundSettings,
                     onOpenDndSettings = ::openDndSettings,
@@ -199,6 +202,7 @@ class MainActivity : ComponentActivity() {
                     onOpenLiveUpdatesSettings = ::openLiveUpdatesSettings,
                     onReconnectListener = ::reconnectListener,
                     onMinimizeCamaps = { Camaps.openChannelSettings(this, state.camapsPackage, state.camapsChannelId) },
+                    onTreated = { repository.recordTreatment(System.currentTimeMillis()) },
                 )
             }
         }
@@ -211,6 +215,7 @@ class MainActivity : ComponentActivity() {
             checkSelfPermission(Manifest.permission.POST_NOTIFICATIONS) == PackageManager.PERMISSION_GRANTED
         shortcutsOn = CamapsShortcuts.enabled(this)
         alertsSilenced = StatusNotifier.alertsSilenced(this)
+        lowSilenced = StatusNotifier.lowSilenced(this)
         urgentLowSilenced = StatusNotifier.urgentLowSilenced(this)
         alarmVolumeMuted = Reliability.alarmVolumeMuted(this)
         dndBlocksAlarms = Reliability.dndBlocksAlarms(this)
@@ -227,10 +232,10 @@ class MainActivity : ComponentActivity() {
         suggestShortcuts = !shortcutsOn && !getSharedPreferences(PREFS_UI, MODE_PRIVATE).getBoolean(KEY_SHORTCUTS_DISMISSED, false)
         SteadmoLog.event(
             "ui: resumed; notification access %s, notifications %s, CamAPS FX shortcuts %s, alerts silenced %s, " +
-                "urgent low silenced %s, alarm muted %s, DND blocks alarms %s, exact alarms %s, battery unrestricted %s, " +
+                "low silenced %s, urgent low silenced %s, alarm muted %s, DND blocks alarms %s, exact alarms %s, battery unrestricted %s, " +
                 "unused restrictions off %s, live updates %s",
             listenerAllowed, notificationsAllowed, shortcutsOn, alertsSilenced,
-            urgentLowSilenced, alarmVolumeMuted, dndBlocksAlarms, remindersOnTime, batteryUnrestricted,
+            lowSilenced, urgentLowSilenced, alarmVolumeMuted, dndBlocksAlarms, remindersOnTime, batteryUnrestricted,
             unusedAppRestrictionsDisabled, liveUpdatesAllowed,
         )
     }
@@ -357,6 +362,18 @@ class MainActivity : ComponentActivity() {
             Intent(Settings.ACTION_CHANNEL_NOTIFICATION_SETTINGS)
                 .putExtra(Settings.EXTRA_APP_PACKAGE, packageName)
                 .putExtra(Settings.EXTRA_CHANNEL_ID, StatusNotifier.CHANNEL_ALERTS),
+            Intent(Settings.ACTION_APP_NOTIFICATION_SETTINGS).putExtra(Settings.EXTRA_APP_PACKAGE, packageName),
+        )
+    }
+
+    /** Steadmo's low channel, where the user can raise its importance again. */
+    private fun openLowSettings() {
+        SteadmoLog.event("ui: opening low channel settings")
+        launch(
+            "low settings",
+            Intent(Settings.ACTION_CHANNEL_NOTIFICATION_SETTINGS)
+                .putExtra(Settings.EXTRA_APP_PACKAGE, packageName)
+                .putExtra(Settings.EXTRA_CHANNEL_ID, StatusNotifier.CHANNEL_LOW),
             Intent(Settings.ACTION_APP_NOTIFICATION_SETTINGS).putExtra(Settings.EXTRA_APP_PACKAGE, packageName),
         )
     }

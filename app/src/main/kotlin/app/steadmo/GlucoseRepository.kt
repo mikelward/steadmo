@@ -10,6 +10,7 @@ import app.steadmo.core.CamapsStatus
 import app.steadmo.core.GlucoseUnit
 import app.steadmo.core.Reading
 import app.steadmo.core.ReadingLog
+import app.steadmo.core.LowAlert
 import app.steadmo.core.Trend
 import app.steadmo.core.TrendCalculator
 import app.steadmo.core.UrgentLow
@@ -78,31 +79,38 @@ class GlucoseRepository(
         settings.edit().putString(KEY_UNIT, unit.name).apply()
         _state.update { it.copy(unit = unit) }
         val latest = _state.value.latest ?: return
+        val trend = _state.value.trend
         notifier.showStatus(_state.value, promote())
         // Redraw a shown alert in the new unit, quietly and with its original expiry.
         val time = shownAlertTime
-        val redrawn = alerts.applying(latest, _state.value.trend, unit)
+        val redrawn = alerts.applying(latest, trend, unit)
         // Only one still on screen: a dismissed alert must not come back.
         if (redrawn != null && time != null && redrawn.kind == shownAlert && notifier.alertShowing()) {
             notifier.showAlert(redrawn, time, quiet = true)
         }
-        // Likewise the urgent low alarm, without restarting its sound.
+        // Likewise the low and urgent low alarms, without restarting their sounds.
+        if (notifier.lowShowing()) {
+            notifier.showLow(latest, trend, unit, quiet = true)
+        }
         if (notifier.urgentLowShowing()) {
             // Keeping the full-screen takeover if it had escalated.
             val takeOver = UrgentLow.escalates(UrgentLowAck.alertingSince(appContext), latest.timeMillis)
-            notifier.showUrgentLow(latest, unit, quiet = true, fullScreen = takeOver)
+            val minutes = UrgentLow.minutesUntil(latest, trend)
+            notifier.showUrgentLow(latest, unit, minutesUntilUrgent = minutes, quiet = true, fullScreen = takeOver)
         }
     }
 
     /** The urgent low alarm for a fresh reading (SPEC.md §4.8). */
-    private fun urgentLow(latest: Reading, fresh: Boolean) {
-        when (UrgentLow.decide(latest, UrgentLowAck.get(appContext))) {
+    private fun urgentLow(latest: Reading, trend: Trend?, fresh: Boolean) {
+        val treatedAt = _state.value.treatments.lastOrNull()
+        when (UrgentLow.decide(latest, UrgentLowAck.get(appContext), trend, treatedAt)) {
             // Only a reading posted just now sounds; a replay may still clear one.
             UrgentLow.Decision.ALERT ->
                 if (fresh) {
                     UrgentLowAck.startAlerting(appContext, latest.timeMillis)
                     val takeOver = UrgentLow.escalates(UrgentLowAck.alertingSince(appContext), latest.timeMillis)
-                    notifier.showUrgentLow(latest, _state.value.unit, fullScreen = takeOver)
+                    val minutes = UrgentLow.minutesUntil(latest, trend)
+                    notifier.showUrgentLow(latest, _state.value.unit, minutesUntilUrgent = minutes, fullScreen = takeOver)
                 } else {
                     SteadmoLog.event("urgent low: replayed reading; not sounding")
                 }
@@ -114,14 +122,46 @@ class GlucoseRepository(
         }
     }
 
+    /** The calm low (< 3.9 mmol/L) alarm for a fresh reading when not urgent (SPEC.md §4.8). */
+    private fun low(latest: Reading, trend: Trend?, fresh: Boolean) {
+        val treatedAt = _state.value.treatments.lastOrNull()
+        when (LowAlert.decide(latest, trend, LowAck.get(appContext), LowAck.lastAlerted(appContext), treatedAt)) {
+            LowAlert.Decision.ALERT ->
+                if (fresh) {
+                    LowAck.recordAlert(appContext, latest.timeMillis)
+                    notifier.showLow(latest, trend, _state.value.unit)
+                } else {
+                    SteadmoLog.event("low: replayed reading; not sounding")
+                }
+            LowAlert.Decision.KEEP ->
+                if (fresh && notifier.lowShowing()) {
+                    notifier.showLow(latest, trend, _state.value.unit, quiet = true)
+                }
+            LowAlert.Decision.SNOOZED -> SteadmoLog.event("low: acknowledged recently; not sounding")
+            LowAlert.Decision.RECOVERING -> {
+                SteadmoLog.event("low: rising after treatment; staying quiet")
+                notifier.cancelLow()
+            }
+            LowAlert.Decision.SUPERSEDED -> {
+                SteadmoLog.event("low: superseded by urgent low; hiding notification")
+                notifier.cancelLow()
+            }
+            LowAlert.Decision.CLEAR -> {
+                notifier.cancelLow()
+                LowAck.clear(appContext)
+            }
+        }
+    }
+
     /**
      * Records a hypo treatment at [at]: on the graph, holding off the rise it
-     * explains, quieting the low alerts it answers, and a recheck in 15 minutes.
+     * explains, snoozing both low and urgent low alarms for 15 minutes, and
+     * scheduling the 15-minute recheck (SPEC.md §4.10).
      */
     @Synchronized
     fun recordTreatment(at: Long) {
         val kept = (_state.value.treatments + at).filter { at - it < Treatment.RETENTION_MILLIS }
-        SteadmoLog.event("treated: at %s (%s in the last day)", at, kept.size)
+        SteadmoLog.event("treated: at %s (%s in the last 14 days)", at, kept.size)
         settings.edit().putString(KEY_TREATMENTS, kept.joinToString(",")).apply()
         _state.update { it.copy(treatments = kept) }
         // From the notification too: a restarted process doesn't remember shownAlert.
@@ -130,9 +170,65 @@ class GlucoseRepository(
             shownAlert = null
             shownAlertTime = null
         }
+        notifier.cancelLow()
         notifier.cancelUrgentLow()
+        notifier.cancelRecheck()
+        LowAck.acknowledge(appContext, at)
         UrgentLowAck.acknowledge(appContext, at)
         Recheck.schedule(appContext, at)
+    }
+
+    /**
+     * Runs 15 minutes after "Treated" (SPEC.md §4.10): re-alerts at the right
+     * tier if still low without rising, asks for a manual check if readings are
+     * stale, and stays quiet once recovering or back in range.
+     */
+    @Synchronized
+    fun onTreatmentRecheck(now: Long = clock()) {
+        val current = _state.value
+        val treatedAt = current.treatments.lastOrNull()
+        val effectiveNow = if (treatedAt != null && treatedAt + Treatment.RECHECK_MILLIS - now in 1..RECHECK_EARLY_SLACK_MILLIS) {
+            // Exact alarms can fire a moment before the wall-clock boundary.
+            treatedAt + Treatment.RECHECK_MILLIS
+        } else {
+            now
+        }
+        if (treatedAt != null && effectiveNow - treatedAt in 0 until Treatment.RECHECK_MILLIS) {
+            SteadmoLog.event("treated: recheck superseded by newer treatment; skipping")
+            return
+        }
+        val latest = current.latest
+        val trend = current.trend
+        when (Treatment.recheck(latest, trend, effectiveNow, treatedAt, StatusNotifier.STALE_MILLIS)) {
+            Treatment.RecheckOutcome.STALE -> {
+                SteadmoLog.event("treated: recheck — no fresh reading; prompting manual check")
+                notifier.showRecheck(latest, current.unit)
+            }
+            Treatment.RecheckOutcome.RECOVERED ->
+                SteadmoLog.event("treated: recheck — back in range (%s); staying quiet", latest?.display)
+            Treatment.RecheckOutcome.RECOVERING ->
+                SteadmoLog.event("treated: recheck — rising (%s); staying quiet", latest?.display)
+            Treatment.RecheckOutcome.URGENT_LOW -> {
+                val reading = latest!!
+                if (!notifier.urgentLowShowing() &&
+                    UrgentLow.decide(reading, UrgentLowAck.get(appContext), trend, treatedAt, effectiveNow) == UrgentLow.Decision.ALERT
+                ) {
+                    SteadmoLog.warning("treated: recheck — still urgently low (%s); alerting", reading.display)
+                    UrgentLowAck.startAlerting(appContext, effectiveNow)
+                    val takeOver = UrgentLow.escalates(UrgentLowAck.alertingSince(appContext), effectiveNow)
+                    val minutes = UrgentLow.minutesUntil(reading, trend)
+                    notifier.showUrgentLow(reading, current.unit, minutesUntilUrgent = minutes, fullScreen = takeOver)
+                }
+            }
+            Treatment.RecheckOutcome.LOW -> {
+                val reading = latest!!
+                if (LowAlert.decide(reading, trend, LowAck.get(appContext), LowAck.lastAlerted(appContext), treatedAt, effectiveNow) == LowAlert.Decision.ALERT) {
+                    SteadmoLog.warning("treated: recheck — still low (%s); alerting", reading.display)
+                    LowAck.recordAlert(appContext, effectiveNow)
+                    notifier.showLow(reading, trend, current.unit)
+                }
+            }
+        }
     }
 
     private fun loadTreatments(): List<Long> = settings.getString(KEY_TREATMENTS, null)
@@ -221,8 +317,13 @@ class GlucoseRepository(
             if (age != null && age >= ALERT_MAX_AGE_MILLIS) {
                 SteadmoLog.event("alerts: reading is %s ms old; a replay doesn't alert", age)
             }
-            latest?.let { urgentLow(it, fresh = clock() - it.timeMillis < ALERT_MAX_AGE_MILLIS) }
-            latest?.takeIf { clock() - it.timeMillis < ALERT_MAX_AGE_MILLIS }?.let {
+            val fresh = age != null && age < ALERT_MAX_AGE_MILLIS
+            latest?.let {
+                if (fresh) notifier.cancelRecheck()
+                urgentLow(it, trend, fresh)
+                low(it, trend, fresh)
+            }
+            latest?.takeIf { fresh }?.let {
                 alerts.evaluate(it, trend, _state.value.unit, _state.value.treatments.lastOrNull())?.let { alert ->
                     SteadmoLog.event("alerts: %s (%s)", alert.kind, alert.title)
                     notifier.showAlert(alert, it.timeMillis)
@@ -238,6 +339,8 @@ class GlucoseRepository(
     companion object {
         /** CamAPS posts as a reading arrives; anything older is a replay. */
         const val ALERT_MAX_AGE_MILLIS = 2 * 60_000L
+        /** Exact alarms can fire a moment before the scheduled wall-clock boundary. */
+        private const val RECHECK_EARLY_SLACK_MILLIS = 5_000L
         private const val KEY_UNIT = "unit"
         private const val KEY_TREATMENTS = "treatments"
     }

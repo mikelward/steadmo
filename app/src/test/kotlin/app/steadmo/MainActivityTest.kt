@@ -131,6 +131,10 @@ class MainActivityTest {
         manager.createNotificationChannel(
             android.app.NotificationChannel(StatusNotifier.CHANNEL_URGENT, "Urgent low", android.app.NotificationManager.IMPORTANCE_LOW),
         )
+        manager.deleteNotificationChannel(StatusNotifier.CHANNEL_LOW)
+        manager.createNotificationChannel(
+            android.app.NotificationChannel(StatusNotifier.CHANNEL_LOW, "Low", android.app.NotificationManager.IMPORTANCE_LOW),
+        )
         app.getSystemService(android.media.AudioManager::class.java)
             .setStreamVolume(android.media.AudioManager.STREAM_ALARM, 0, 0)
         shadowOf(app.getSystemService(android.os.PowerManager::class.java))
@@ -160,6 +164,11 @@ class MainActivityTest {
             val urgent = shadowOf(app).nextStartedActivity
             assertEquals(Settings.ACTION_CHANNEL_NOTIFICATION_SETTINGS, urgent.action)
             assertEquals(StatusNotifier.CHANNEL_URGENT, urgent.getStringExtra(Settings.EXTRA_CHANNEL_ID))
+
+            compose.onNodeWithText("Low settings").performScrollTo().performClick()
+            val low = shadowOf(app).nextStartedActivity
+            assertEquals(Settings.ACTION_CHANNEL_NOTIFICATION_SETTINGS, low.action)
+            assertEquals(StatusNotifier.CHANNEL_LOW, low.getStringExtra(Settings.EXTRA_CHANNEL_ID))
 
             compose.onNodeWithText("Sound settings").performScrollTo().performClick()
             assertEquals(Settings.ACTION_SOUND_SETTINGS, shadowOf(app).nextStartedActivity.action)
