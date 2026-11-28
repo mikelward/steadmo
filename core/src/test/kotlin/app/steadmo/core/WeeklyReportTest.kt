@@ -281,6 +281,18 @@ class WeeklyReportTest {
         assertTrue(issue.detail, issue.detail.contains("Nov 21 and Nov 28"))
     }
 
+    @Test fun `overnight lows across a DST fall-back night count as one night`() {
+        val london = ZoneId.of("Europe/London")
+        val end = at(2026, 10, 31, 11, 0, london)
+        val readings = steadyWeek(endMillis = end)
+        // Europe/London falls back on 2026-10-25 at 02:00 BST -> 01:00 GMT (a 25-hour day).
+        // Lows at 00:30 BST and 06:30 GMT are the same night (Sat->Sun) and must not count as 2 nights.
+        readings.replaceAt(at(2026, 10, 25, 0, 30, london), 3.4)
+        readings.replaceAt(at(2026, 10, 25, 6, 30, london), 3.3)
+        val s = WeeklyReport.generate(readings, end, london)
+        assertTrue("Expected no recurring overnight lows issue, got ${s.issues}", s.issues.none { it.title.contains("nights") })
+    }
+
     private fun MutableList<Reading>.replaceAt(time: Long, mmol: Double, bound: Bound? = null) {
         val idx = indexOfFirst { it.timeMillis == time }
         if (idx >= 0) this[idx] = Reading(time, mmol, bound) else add(Reading(time, mmol, bound))

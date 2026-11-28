@@ -328,8 +328,9 @@ object WeeklyReport {
             if (side == RangeSide.IN_RANGE) continue
             val zdt = Instant.ofEpochMilli(r.timeMillis).atZone(zone)
             val period = periodOf(zdt.hour)
-            // Overnight (23:00–06:59) belongs to the evening's date so 23:30 and 01:30 count as one night.
-            val keyDate = if (period == DayPeriod.OVERNIGHT) zdt.minusHours(7).toLocalDate() else zdt.toLocalDate()
+            // Overnight (23:00–06:59) belongs to the evening's date so 23:30 and 01:30 count as one night,
+            // including across DST transitions where subtracting elapsed hours would split a 25-hour night.
+            val keyDate = if (period == DayPeriod.OVERNIGHT && zdt.hour < 7) zdt.toLocalDate().minusDays(1) else zdt.toLocalDate()
             val target = if (side == RangeSide.LOW) lowsByPeriod.getValue(period) else highsByPeriod.getValue(period)
             target.getOrPut(keyDate) { mutableListOf() }.add(r)
         }
