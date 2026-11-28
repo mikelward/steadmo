@@ -16,6 +16,7 @@ import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performScrollTo
 import androidx.compose.ui.text.TextLayoutResult
 import androidx.compose.ui.unit.Density
+import androidx.compose.ui.unit.dp
 import app.steadmo.core.GlucoseUnit
 import app.steadmo.core.MealReminder
 import app.steadmo.core.MealReminderRule
@@ -62,9 +63,10 @@ class LargeFontTest {
         assertTrue("$label has no text layout result", action != null && action(results) && results.isNotEmpty())
         val layout = results.first()
         assertEquals("$label wrapped onto ${layout.lineCount} lines", 1, layout.lineCount)
+        val visibleWidth = minOf(layout.size.width.toFloat(), node.boundsInRoot.width)
         assertTrue(
-            "$label clipped horizontally (${layout.getLineRight(0)} > ${layout.size.width})",
-            layout.getLineRight(0) <= layout.size.width + 1f,
+            "$label clipped horizontally (${layout.getLineRight(0)} > $visibleWidth)",
+            layout.getLineRight(0) <= visibleWidth + 1f,
         )
     }
 
@@ -109,6 +111,35 @@ class LargeFontTest {
         compose.onNodeWithText("Ease-off").performScrollTo().assertSingleLine("Ease-off")
         listOf("20 g", "40 g", "45 g", "Other").forEach { label ->
             compose.onNodeWithText(label).performScrollTo().assertSingleLine(label)
+        }
+    }
+
+    @Test fun homeScreenCompactWidthDefaultFont() {
+        setLargeFontContent(fontScale = 1.0f) {
+            HomeScreen(
+                state = Samples.rising(),
+                listenerAllowed = true,
+                notificationsAllowed = true,
+                onAllowListener = {},
+                onAllowNotifications = {},
+                onOpenCamaps = {},
+                onMeal = {},
+                clock = { Samples.NOW },
+                ticking = false,
+            )
+        }
+        compose.onNodeWithText("Boost", useUnmergedTree = true).performScrollTo().assertSingleLine("Boost")
+        compose.onNodeWithText("Ease-off", useUnmergedTree = true).performScrollTo().assertSingleLine("Ease-off")
+        val horizontalPaddingPx = with(compose.density) { 48.dp.toPx() }
+        listOf("20 g", "40 g", "45 g", "Other").forEach { label ->
+            val textNode = compose.onNodeWithText(label, useUnmergedTree = true).performScrollTo()
+            textNode.assertSingleLine(label)
+            val buttonWidth = compose.onNodeWithText(label).fetchSemanticsNode().boundsInRoot.width
+            val textWidth = textNode.fetchSemanticsNode().boundsInRoot.width
+            assertTrue(
+                "$label button ($buttonWidth px) too narrow for text ($textWidth px) + padding ($horizontalPaddingPx px)",
+                buttonWidth >= textWidth + horizontalPaddingPx - 1f,
+            )
         }
     }
 

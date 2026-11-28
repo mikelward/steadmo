@@ -281,7 +281,8 @@ fun HomeScreen(
 
             val fontScale = LocalDensity.current.fontScale.coerceAtLeast(1f)
             BoxWithConstraints(modifier = Modifier.fillMaxWidth()) {
-                if (maxWidth >= 220.dp * fontScale) {
+                // 2 buttons: 1 gap (8dp) + 2 * 48dp button padding + 2 * 60dp scaled label room.
+                if (maxWidth >= 104.dp + 120.dp * fontScale) {
                     Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                         OutlinedButton(onClick = { onMode(CamapsGoal.BOOST) }, modifier = Modifier.weight(1f)) {
                             Text("Boost", maxLines = 1, softWrap = false)
@@ -303,7 +304,8 @@ fun HomeScreen(
             }
             Text("Meal", style = MaterialTheme.typography.titleSmall)
             BoxWithConstraints(modifier = Modifier.fillMaxWidth()) {
-                val perRow = if (maxWidth >= 320.dp * fontScale) 4 else 2
+                // 4 buttons: 3 gaps (24dp) + 4 * 48dp button padding + 4 * 40dp scaled label room.
+                val perRow = if (maxWidth >= 216.dp + 160.dp * fontScale) 4 else 2
                 val meals: List<Pair<String, () -> Unit>> = listOf(20, 40, 45).map { grams ->
                     "$grams g" to { onMeal(grams) }
                 } + ("Other" to onOtherMeal)
