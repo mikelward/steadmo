@@ -468,4 +468,47 @@ class HomeScreenTest {
         compose.onNodeWithText("2 reliability settings to check").assertIsDisplayed()
         compose.onNodeWithText("Allow exact alarms · Keep Steadmo running").assertIsDisplayed()
     }
+
+    @Test fun `silenced low channel shows in reliability banner and opens settings`() {
+        var opened = 0
+        compose.setContent {
+            SteadmoTheme(dark = false) {
+                HomeScreen(
+                    Samples.rising(), true, true, {}, {}, {}, {},
+                    lowSilenced = true,
+                    onOpenLowSettings = { opened++ },
+                    clock = { Samples.NOW },
+                    ticking = false,
+                )
+            }
+        }
+        compose.onNodeWithText("Low alarm is silenced").assertIsDisplayed()
+        compose.onNodeWithText("Low settings").performClick()
+        assertEquals(1, opened)
+    }
+
+    @Test fun `low reading offers Treated and shows snooze note after tapping`() {
+        var treated = 0
+        val treatments = androidx.compose.runtime.mutableStateOf<List<Long>>(emptyList())
+        compose.setContent {
+            SteadmoTheme(dark = false) {
+                HomeScreen(
+                    Samples.low().copy(treatments = treatments.value), true, true, {}, {}, {}, {},
+                    onTreated = {
+                        treated++
+                        treatments.value = listOf(Samples.NOW)
+                    },
+                    clock = { Samples.NOW },
+                    ticking = false,
+                )
+            }
+        }
+        compose.onNodeWithText("Treated").assertIsDisplayed().performClick()
+        assertEquals(1, treated)
+        compose.onNodeWithText("Treated just now · alerts snoozed for 15 min").assertIsDisplayed()
+        compose.onNodeWithText("Treated again").performClick()
+        assertEquals(2, treated)
+        treatments.value = listOf(Samples.NOW - 3 * MINUTE)
+        compose.onNodeWithText("Treated 3 min ago · alerts snoozed for 15 min").assertIsDisplayed()
+    }
 }

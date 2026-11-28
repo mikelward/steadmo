@@ -43,6 +43,7 @@ object BugReport {
         val exactAlarmsAllowed: Boolean = true,
         val fullScreenAllowed: Boolean = true,
         val alertsSilenced: Boolean = false,
+        val lowSilenced: Boolean = false,
         val urgentLowSilenced: Boolean = false,
         val alarmVolumeMuted: Boolean = false,
         val dndBlocksAlarms: Boolean = false,
@@ -66,6 +67,7 @@ object BugReport {
         exactAlarmsAllowed = Alarms.exactAllowed(context),
         fullScreenAllowed = context.getSystemService(NotificationManager::class.java).canUseFullScreenIntent(),
         alertsSilenced = StatusNotifier.alertsSilenced(context),
+        lowSilenced = StatusNotifier.lowSilenced(context),
         urgentLowSilenced = StatusNotifier.urgentLowSilenced(context),
         alarmVolumeMuted = Reliability.alarmVolumeMuted(context),
         dndBlocksAlarms = Reliability.dndBlocksAlarms(context),
@@ -84,6 +86,7 @@ object BugReport {
                 "exact alarms ${yesNo(facts.exactAlarmsAllowed)}; " +
                 "full-screen ${yesNo(facts.fullScreenAllowed)}; " +
                 "alerts silenced ${yesNo(facts.alertsSilenced)}; " +
+                "low silenced ${yesNo(facts.lowSilenced)}; " +
                 "urgent low silenced ${yesNo(facts.urgentLowSilenced)}; " +
                 "alarm muted ${yesNo(facts.alarmVolumeMuted)}; " +
                 "DND blocks alarms ${yesNo(facts.dndBlocksAlarms)}; " +

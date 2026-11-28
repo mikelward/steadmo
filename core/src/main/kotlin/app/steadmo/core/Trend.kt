@@ -34,6 +34,9 @@ enum class TrendArrow(val label: String) {
     DOUBLE_UP("Rising fast"),
     ;
 
+    /** Whether the arrow shows glucose visibly heading upward. */
+    val isRising: Boolean get() = this == UP_SLIGHT || this == UP || this == DOUBLE_UP
+
     companion object {
         fun forRate(mmolPerMinute: Double): TrendArrow {
             val mgdl = mmolPerMinute * MGDL_PER_MMOL

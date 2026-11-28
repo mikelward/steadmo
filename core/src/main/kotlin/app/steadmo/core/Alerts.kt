@@ -40,6 +40,7 @@ class AlertPolicy(private val lastAlerted: MutableMap<AlertKind, Long> = mutable
     fun applying(latest: Reading, trend: Trend?, unit: GlucoseUnit = GlucoseUnit.MMOL): TrendAlert? {
         trend ?: return null
         if (latest.bound != null) return null
+        if (UrgentLow.isUrgent(latest, trend)) return null
         return candidate(latest, trend, unit)
     }
 

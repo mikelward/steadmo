@@ -23,8 +23,10 @@ real phone.
 Use Steadmo at your own risk. It comes with no warranty of any kind. It's made for the
 developer's family and hasn't been tested for anyone else's circumstances. It isn't a
 medical device and isn't approved by any regulator. It can be wrong or out of date, its
-alerts can be late or missing, and its trend arrows and predictions are its own estimates.
-Don't base treatment decisions on it, and keep CamAPS FX's and your CGM's alarms on.
+alerts can be late or missing, its alerts aim to be actionable and avoid false alarms
+(which can be unsafe if its thresholds don't fit you or if you're inexperienced managing
+lows and highs), and its trend arrows and predictions are its own estimates. Don't base
+treatment decisions on it, and keep CamAPS FX's and your CGM's alarms on.
 
 ## Trying it
 

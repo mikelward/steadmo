@@ -37,12 +37,15 @@ class UrgentLowTest {
         repo.onCamapsNotification(dump, CamapsParser.parse(dump.viewTexts))
     }
 
-    @Test fun `the channel is an alarm that may bypass Do Not Disturb`() {
+    @Test fun `the channel is an alarm with the bundled descending tone that may bypass Do Not Disturb`() {
         StatusNotifier(app)
-        val channel = app.getSystemService(NotificationManager::class.java).getNotificationChannel(StatusNotifier.CHANNEL_URGENT)
+        val manager = app.getSystemService(NotificationManager::class.java)
+        val channel = manager.getNotificationChannel(StatusNotifier.CHANNEL_URGENT)
         assertEquals(NotificationManager.IMPORTANCE_HIGH, channel.importance)
         assertEquals(AudioAttributes.USAGE_ALARM, channel.audioAttributes.usage)
         assertTrue(channel.canBypassDnd())
+        assertEquals("android.resource://${app.packageName}/${R.raw.alert_urgent_low}", channel.sound.toString())
+        assertNull(manager.getNotificationChannel("urgent_low"))
     }
 
     @Test fun `an urgent low sounds until OK, then stays quiet for 15 minutes`() {
@@ -60,6 +63,22 @@ class UrgentLowTest {
         assertNull(app.posted(4))
         post("2.7", 15 * MINUTE)
         assertNotNull(app.posted(4))
+    }
+
+    @Test fun `3_5 trending down escalates immediately to Urgent low soon and redraws in mg per dL`() {
+        post("3.8", 0)
+        post("3.5", 5 * MINUTE)
+        val n = app.posted(4)!!
+        assertEquals("Urgent low soon: 3.5 mmol/L", n.extras.getString(Notification.EXTRA_TITLE))
+        assertTrue(n.extras.getCharSequence(Notification.EXTRA_TEXT)!!.contains("Heading below 3.0 in about"))
+        // No duplicate Low or trend alert alongside Urgent low soon.
+        assertNull(app.posted(StatusNotifier.ID_LOW))
+        assertNull(app.posted(2))
+
+        repo.setUnit(GlucoseUnit.MGDL)
+        val redrawn = app.posted(4)!!
+        assertEquals("Urgent low soon: 63 mg/dL", redrawn.extras.getString(Notification.EXTRA_TITLE))
+        assertTrue(redrawn.extras.getCharSequence(Notification.EXTRA_TEXT)!!.contains("Heading below 54"))
     }
 
     @Test fun `ignored for 5 minutes, it takes over the screen`() {

@@ -41,6 +41,7 @@ object Samples {
 
     fun rising() = state(threeHours)
     fun fallingFast() = state(listOf(10.6, 9.6, 8.6, 7.6, 6.6, 5.6))
+    fun low() = state(listOf(4.1, 3.8, 3.6, 3.5, 3.5, 3.5))
     fun single() = state(listOf(6.4))
     fun belowSensor() = state(listOf(3.4, 2.8, 2.2), lastBound = Bound.BELOW)
 }

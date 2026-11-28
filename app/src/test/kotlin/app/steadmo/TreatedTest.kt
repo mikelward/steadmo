@@ -74,10 +74,14 @@ class TreatedTest {
         assertEquals(1, again.state.value.treatments.size)
     }
 
-    @Test fun `the notification action and the recheck reminder`() {
+    @Test fun `the notification action records a treatment and the recheck prompts when readings are missing`() {
         TreatedReceiver().onReceive(app, Intent())
         assertEquals(1, app.repository.state.value.treatments.size)
+        // Before 15 minutes have passed, an early alarm is skipped.
         RecheckReceiver().onReceive(app, Intent())
+        assertNull(app.posted(5))
+        // At 15 minutes with no reading yet, prompts a manual recheck.
+        app.repository.onTreatmentRecheck(app.repository.state.value.treatments.last() + Treatment.RECHECK_MILLIS)
         val n = app.posted(5)!!
         assertEquals("Recheck your glucose", n.extras.getString(Notification.EXTRA_TITLE))
         assertTrue(n.extras.getCharSequence(Notification.EXTRA_TEXT)!!.startsWith("You treated a low 15 min ago."))

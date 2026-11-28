@@ -27,7 +27,8 @@ import androidx.compose.runtime.mutableLongStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import kotlinx.coroutines.delay
-import app.steadmo.core.urgentLow
+import app.steadmo.core.URGENT_LOW_MMOL
+import app.steadmo.core.UrgentLow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
@@ -36,6 +37,7 @@ import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import app.steadmo.core.SteadmoLog
 import app.steadmo.core.reading
+import app.steadmo.core.value
 
 /**
  * The urgent low alarm, full screen and over the lock screen, once the
@@ -58,9 +60,10 @@ class UrgentLowActivity : ComponentActivity() {
                     }
                 }
                 val latest = state.latest
+                val trend = state.trend
                 // Recovered (or nothing to show): this alarm no longer applies.
-                LaunchedEffect(latest) {
-                    if (latest?.urgentLow() != true) {
+                LaunchedEffect(latest, trend) {
+                    if (latest == null || !UrgentLow.isUrgent(latest, trend)) {
                         SteadmoLog.event("urgent low: full screen closed; no longer urgent")
                         finish()
                     }
@@ -70,6 +73,8 @@ class UrgentLowActivity : ComponentActivity() {
                     value = "${state.unit.reading(latest)} ${state.unit.label}",
                     age = age(now - latest.timeMillis),
                     stale = now - latest.timeMillis > STALE_MILLIS,
+                    minutesUntilUrgent = UrgentLow.minutesUntil(latest, trend),
+                    urgentThreshold = state.unit.value(URGENT_LOW_MMOL),
                     onTreated = {
                         SteadmoLog.event("urgent low: Treated from full screen")
                         repository.recordTreatment(System.currentTimeMillis())
@@ -95,8 +100,22 @@ class UrgentLowActivity : ComponentActivity() {
 }
 
 @Composable
-internal fun UrgentLowScreen(value: String, age: String, stale: Boolean, onTreated: () -> Unit, onOk: () -> Unit) {
+internal fun UrgentLowScreen(
+    value: String,
+    age: String,
+    stale: Boolean,
+    onTreated: () -> Unit,
+    onOk: () -> Unit,
+    minutesUntilUrgent: Int? = null,
+    urgentThreshold: String = "3.0",
+) {
     val valueColor = if (stale) MaterialTheme.colorScheme.outline else LowColor
+    val heading = if (minutesUntilUrgent == null) "Urgent low" else "Urgent low soon"
+    val prompt = if (minutesUntilUrgent == null) {
+        "Treat it now."
+    } else {
+        "Heading below $urgentThreshold in about $minutesUntilUrgent min. Treat it now."
+    }
     Surface(modifier = Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background) {
       // Scrolls on short screens (landscape), so Treated and OK are always reachable.
       BoxWithConstraints(modifier = Modifier.safeDrawingPadding()) {
@@ -108,7 +127,7 @@ internal fun UrgentLowScreen(value: String, age: String, stale: Boolean, onTreat
             verticalArrangement = Arrangement.spacedBy(24.dp, Alignment.CenterVertically),
             horizontalAlignment = Alignment.CenterHorizontally,
         ) {
-            Text("Urgent low", style = MaterialTheme.typography.headlineMedium, color = LowColor)
+            Text(heading, style = MaterialTheme.typography.headlineMedium, color = LowColor)
             Text(
                 value,
                 fontSize = 64.sp,
@@ -124,7 +143,7 @@ internal fun UrgentLowScreen(value: String, age: String, stale: Boolean, onTreat
                 textAlign = androidx.compose.ui.text.style.TextAlign.Center,
                 color = if (stale) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurfaceVariant,
             )
-            Text("Treat it now.", style = MaterialTheme.typography.titleLarge)
+            Text(prompt, style = MaterialTheme.typography.titleLarge, textAlign = androidx.compose.ui.text.style.TextAlign.Center)
             Button(
                 onClick = onTreated,
                 modifier = Modifier.fillMaxWidth(),

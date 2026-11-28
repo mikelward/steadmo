@@ -15,12 +15,11 @@ class TreatedReceiver : BroadcastReceiver() {
     }
 }
 
-/** The recheck reminder 15 minutes after "Treated". */
+/** The recheck 15 minutes after "Treated" (SPEC.md §4.10). */
 class RecheckReceiver : BroadcastReceiver() {
     override fun onReceive(context: Context, intent: Intent) {
-        SteadmoLog.event("treated: recheck reminder")
-        val state = context.repository.state.value
-        StatusNotifier(context).showRecheck(state.latest, state.unit)
+        SteadmoLog.event("treated: recheck alarm")
+        context.repository.onTreatmentRecheck()
     }
 }
 
