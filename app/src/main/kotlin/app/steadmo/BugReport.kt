@@ -45,7 +45,9 @@ object BugReport {
         val alertsSilenced: Boolean = false,
         val urgentLowSilenced: Boolean = false,
         val alarmVolumeMuted: Boolean = false,
+        val dndBlocksAlarms: Boolean = false,
         val unusedAppRestrictionsDisabled: Boolean = true,
+        val liveUpdatesAllowed: Boolean = true,
     )
 
     fun facts(context: Context, state: GlucoseState, now: Long = System.currentTimeMillis()) = Facts(
@@ -66,7 +68,9 @@ object BugReport {
         alertsSilenced = StatusNotifier.alertsSilenced(context),
         urgentLowSilenced = StatusNotifier.urgentLowSilenced(context),
         alarmVolumeMuted = Reliability.alarmVolumeMuted(context),
+        dndBlocksAlarms = Reliability.dndBlocksAlarms(context),
         unusedAppRestrictionsDisabled = Reliability.unusedAppRestrictionsDisabled(context),
+        liveUpdatesAllowed = Reliability.liveUpdatesAllowed(context),
     )
 
     /** The app's section of the report: facts, then the newest log lines that fit. */
@@ -82,7 +86,9 @@ object BugReport {
                 "alerts silenced ${yesNo(facts.alertsSilenced)}; " +
                 "urgent low silenced ${yesNo(facts.urgentLowSilenced)}; " +
                 "alarm muted ${yesNo(facts.alarmVolumeMuted)}; " +
-                "unused restrictions off ${yesNo(facts.unusedAppRestrictionsDisabled)}",
+                "DND blocks alarms ${yesNo(facts.dndBlocksAlarms)}; " +
+                "unused restrictions off ${yesNo(facts.unusedAppRestrictionsDisabled)}; " +
+                "live updates ${yesNo(facts.liveUpdatesAllowed)}",
         )
         appendLine("CamAPS FX: ${s.camapsPackage ?: "not seen"}; channel ${s.camapsChannelId ?: "unknown"}, importance ${importance(s.camapsChannelImportance)}")
         val latest = s.latest

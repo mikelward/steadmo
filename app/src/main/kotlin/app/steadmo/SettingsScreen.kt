@@ -62,6 +62,7 @@ fun SettingsScreen(
     shortcutsOn: Boolean = false,
     onOpenShortcutsSettings: () -> Unit = {},
     onOpenAppInfo: () -> Unit = {},
+    onTestUrgentLow: () -> Unit = {},
 ) {
     BackHandler(onBack = onBack)
     // Saved, so a dialog stays open across rotation; back closes it.
@@ -101,6 +102,7 @@ fun SettingsScreen(
             }
             SettingRow("Weekly report", weeklySummary) { showing = WEEKLY_REPORT }
             SettingRow("CamAPS FX shortcuts", if (shortcutsOn) "On" else "Off") { showing = SHORTCUTS }
+            SettingRow("Test urgent low alarm", "Check sound, vibration and Do Not Disturb") { onTestUrgentLow() }
         }
     }
     val close = { showing = null }

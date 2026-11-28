@@ -26,9 +26,11 @@ class MainActivity : ComponentActivity() {
     private var alertsSilenced by mutableStateOf(false)
     private var urgentLowSilenced by mutableStateOf(false)
     private var alarmVolumeMuted by mutableStateOf(false)
+    private var dndBlocksAlarms by mutableStateOf(false)
     private var fullScreenAllowed by mutableStateOf(true)
     private var batteryUnrestricted by mutableStateOf(true)
     private var unusedAppRestrictionsDisabled by mutableStateOf(true)
+    private var liveUpdatesAllowed by mutableStateOf(true)
     private var mealReminderRules by mutableStateOf(listOf(app.steadmo.core.MealReminder.defaultRule()))
     private var calendarMealsOn by mutableStateOf(false)
     private val requestCalendar =
@@ -150,6 +152,7 @@ class MainActivity : ComponentActivity() {
                         shortcutsOn = shortcutsOn,
                         onOpenShortcutsSettings = ::openAccessibilitySettings,
                         onOpenAppInfo = ::openAppInfo,
+                        onTestUrgentLow = ::testUrgentLow,
                     )
                     return@SteadmoTheme
                 }
@@ -179,17 +182,22 @@ class MainActivity : ComponentActivity() {
                     alertsSilenced = alertsSilenced,
                     urgentLowSilenced = urgentLowSilenced,
                     alarmVolumeMuted = alarmVolumeMuted,
+                    dndBlocksAlarms = dndBlocksAlarms,
                     fullScreenAllowed = fullScreenAllowed,
                     exactAlarmsAllowed = remindersOnTime,
                     batteryUnrestricted = batteryUnrestricted,
                     unusedAppRestrictionsDisabled = unusedAppRestrictionsDisabled,
+                    liveUpdatesAllowed = liveUpdatesAllowed,
                     onAllowFullScreen = ::openFullScreenSettings,
                     onOpenAlertSettings = ::openAlertSettings,
                     onOpenUrgentLowSettings = ::openUrgentLowSettings,
                     onOpenSoundSettings = ::openSoundSettings,
+                    onOpenDndSettings = ::openDndSettings,
                     onAllowExactAlarms = ::openExactAlarmSettings,
                     onOpenBatterySettings = ::openBatterySettings,
                     onOpenUnusedAppSettings = ::openUnusedAppSettings,
+                    onOpenLiveUpdatesSettings = ::openLiveUpdatesSettings,
+                    onReconnectListener = ::reconnectListener,
                     onMinimizeCamaps = { Camaps.openChannelSettings(this, state.camapsPackage, state.camapsChannelId) },
                 )
             }
@@ -205,6 +213,7 @@ class MainActivity : ComponentActivity() {
         alertsSilenced = StatusNotifier.alertsSilenced(this)
         urgentLowSilenced = StatusNotifier.urgentLowSilenced(this)
         alarmVolumeMuted = Reliability.alarmVolumeMuted(this)
+        dndBlocksAlarms = Reliability.dndBlocksAlarms(this)
         mealReminderRules = MealReminders.rules(this)
         calendarMealsOn = CalendarMealReminders.enabled(this) && CalendarMealReminders.permitted(this)
         weeklyReportOn = WeeklyReports.enabled(this)
@@ -214,12 +223,15 @@ class MainActivity : ComponentActivity() {
         fullScreenAllowed = getSystemService(android.app.NotificationManager::class.java).canUseFullScreenIntent()
         batteryUnrestricted = Reliability.batteryUnrestricted(this)
         unusedAppRestrictionsDisabled = Reliability.unusedAppRestrictionsDisabled(this)
+        liveUpdatesAllowed = Reliability.liveUpdatesAllowed(this)
         suggestShortcuts = !shortcutsOn && !getSharedPreferences(PREFS_UI, MODE_PRIVATE).getBoolean(KEY_SHORTCUTS_DISMISSED, false)
         SteadmoLog.event(
             "ui: resumed; notification access %s, notifications %s, CamAPS FX shortcuts %s, alerts silenced %s, " +
-                "urgent low silenced %s, alarm muted %s, exact alarms %s, battery unrestricted %s, unused restrictions off %s",
+                "urgent low silenced %s, alarm muted %s, DND blocks alarms %s, exact alarms %s, battery unrestricted %s, " +
+                "unused restrictions off %s, live updates %s",
             listenerAllowed, notificationsAllowed, shortcutsOn, alertsSilenced,
-            urgentLowSilenced, alarmVolumeMuted, remindersOnTime, batteryUnrestricted, unusedAppRestrictionsDisabled,
+            urgentLowSilenced, alarmVolumeMuted, dndBlocksAlarms, remindersOnTime, batteryUnrestricted,
+            unusedAppRestrictionsDisabled, liveUpdatesAllowed,
         )
     }
 
@@ -385,6 +397,48 @@ class MainActivity : ComponentActivity() {
             Intent(Intent.ACTION_AUTO_REVOKE_PERMISSIONS, android.net.Uri.fromParts("package", packageName, null)),
             Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS, android.net.Uri.fromParts("package", packageName, null)),
         )
+    }
+
+    /** Do Not Disturb settings, so the user can allow alarms through DND. */
+    private fun openDndSettings() {
+        SteadmoLog.event("ui: opening Do Not Disturb settings")
+        launch(
+            "Do Not Disturb settings",
+            Intent(Settings.ACTION_ZEN_MODE_PRIORITY_SETTINGS),
+            Intent(Settings.ACTION_SOUND_SETTINGS),
+        )
+    }
+
+    /** Android 16+ Live Update (promoted notifications) settings, falling back to app notifications. */
+    private fun openLiveUpdatesSettings() {
+        SteadmoLog.event("ui: opening Live Update settings")
+        val fallback = Intent(Settings.ACTION_APP_NOTIFICATION_SETTINGS).putExtra(Settings.EXTRA_APP_PACKAGE, packageName)
+        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.BAKLAVA) {
+            launch(
+                "Live Update settings",
+                Intent(Settings.ACTION_APP_NOTIFICATION_PROMOTION_SETTINGS).putExtra(Settings.EXTRA_APP_PACKAGE, packageName),
+                fallback,
+            )
+        } else {
+            launch("Live Update settings", fallback)
+        }
+    }
+
+    /** Asks Android to rebind the notification listener when access is on but it is disconnected. */
+    private fun reconnectListener() {
+        SteadmoLog.event("ui: requesting notification listener rebind")
+        Reliability.requestListenerRebind(this)
+        android.widget.Toast.makeText(this, "Reconnecting to CamAPS FX…", android.widget.Toast.LENGTH_SHORT).show()
+    }
+
+    /** Fires a test alarm on the urgent low channel from Settings (SPEC.md §4.17). */
+    private fun testUrgentLow() {
+        SteadmoLog.event("ui: testing urgent low alarm")
+        if (!notificationsAllowed) {
+            android.widget.Toast.makeText(this, "Allow notifications first to test the alarm.", android.widget.Toast.LENGTH_LONG).show()
+            return
+        }
+        StatusNotifier(this).showUrgentLowTest()
     }
 
     /** Accessibility settings, where the user turns CamAPS FX shortcuts on or off. */

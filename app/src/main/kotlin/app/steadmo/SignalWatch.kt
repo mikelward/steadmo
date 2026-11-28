@@ -37,6 +37,7 @@ object SignalWatch {
                     Reliability.requestListenerRebind(context)
                 }
                 notifier.showSignalLoss(decision.quietMinutes, latest!!, access)
+                (context.applicationContext as? SteadmoApp)?.refreshWidgets()
                 prefs.edit().putLong(KEY_WARNED, now).apply()
                 schedule(context, decision.nextCheck)
             }

@@ -137,29 +137,67 @@ class MainActivityTest {
             .setIgnoringBatteryOptimizations(app.packageName, false)
         shadowOf(app.packageManager).setAutoRevokeWhitelisted(false)
         org.robolectric.shadows.ShadowAlarmManager.setCanScheduleExactAlarms(false)
-        app.allowNotifications()
+        shadowOf(manager).setNotificationPolicyAccessGranted(true)
+        manager.setInterruptionFilter(android.app.NotificationManager.INTERRUPTION_FILTER_NONE)
+        android.provider.Settings.Secure.putString(
+            app.contentResolver,
+            "enabled_notification_listeners",
+            android.content.ComponentName(app, CamapsListener::class.java).flattenToString(),
+        )
+        try {
+            app.repository.setListenerConnected(false)
+            app.allowNotifications()
 
+            compose.activityRule.scenario.moveToState(androidx.lifecycle.Lifecycle.State.CREATED)
+            compose.activityRule.scenario.moveToState(androidx.lifecycle.Lifecycle.State.RESUMED)
+
+            compose.onNodeWithText("Review").performScrollTo().performClick()
+
+            compose.onNodeWithText("Reconnect").performScrollTo().performClick()
+            assertEquals("Reconnecting to CamAPS FX…", org.robolectric.shadows.ShadowToast.getTextOfLatestToast())
+
+            compose.onNodeWithText("Urgent low settings").performScrollTo().performClick()
+            val urgent = shadowOf(app).nextStartedActivity
+            assertEquals(Settings.ACTION_CHANNEL_NOTIFICATION_SETTINGS, urgent.action)
+            assertEquals(StatusNotifier.CHANNEL_URGENT, urgent.getStringExtra(Settings.EXTRA_CHANNEL_ID))
+
+            compose.onNodeWithText("Sound settings").performScrollTo().performClick()
+            assertEquals(Settings.ACTION_SOUND_SETTINGS, shadowOf(app).nextStartedActivity.action)
+
+            compose.onNodeWithText("Do Not Disturb").performScrollTo().performClick()
+            assertEquals(Settings.ACTION_ZEN_MODE_PRIORITY_SETTINGS, shadowOf(app).nextStartedActivity.action)
+
+            compose.onNodeWithText("Allow alarms").performScrollTo().performClick()
+            assertEquals(Settings.ACTION_REQUEST_SCHEDULE_EXACT_ALARM, shadowOf(app).nextStartedActivity.action)
+
+            compose.onNodeWithText("Battery settings").performScrollTo().performClick()
+            assertEquals(Settings.ACTION_IGNORE_BATTERY_OPTIMIZATION_SETTINGS, shadowOf(app).nextStartedActivity.action)
+
+            compose.onNodeWithText("App settings").performScrollTo().performClick()
+            assertEquals(android.content.Intent.ACTION_AUTO_REVOKE_PERMISSIONS, shadowOf(app).nextStartedActivity.action)
+
+            compose.onNodeWithText("Live Update settings").performScrollTo().performClick()
+            assertEquals(Settings.ACTION_APP_NOTIFICATION_PROMOTION_SETTINGS, shadowOf(app).nextStartedActivity.action)
+        } finally {
+            android.provider.Settings.Secure.putString(app.contentResolver, "enabled_notification_listeners", "")
+            androidx.core.app.NotificationManagerCompat.getEnabledListenerPackages(app)
+        }
+    }
+
+    @Test fun `Test urgent low alarm in Settings posts a test notification or warns when notifications are off`() {
+        compose.onNodeWithContentDescription("More options").performClick()
+        compose.onNodeWithText("Settings").performClick()
+        compose.onNodeWithText("Test urgent low alarm").performClick()
+        assertEquals(
+            "Allow notifications first to test the alarm.",
+            org.robolectric.shadows.ShadowToast.getTextOfLatestToast(),
+        )
+
+        app.allowNotifications()
         compose.activityRule.scenario.moveToState(androidx.lifecycle.Lifecycle.State.CREATED)
         compose.activityRule.scenario.moveToState(androidx.lifecycle.Lifecycle.State.RESUMED)
-
-        compose.onNodeWithText("Review").performScrollTo().performClick()
-
-        compose.onNodeWithText("Urgent low settings").performScrollTo().performClick()
-        val urgent = shadowOf(app).nextStartedActivity
-        assertEquals(Settings.ACTION_CHANNEL_NOTIFICATION_SETTINGS, urgent.action)
-        assertEquals(StatusNotifier.CHANNEL_URGENT, urgent.getStringExtra(Settings.EXTRA_CHANNEL_ID))
-
-        compose.onNodeWithText("Sound settings").performScrollTo().performClick()
-        assertEquals(Settings.ACTION_SOUND_SETTINGS, shadowOf(app).nextStartedActivity.action)
-
-        compose.onNodeWithText("Allow alarms").performScrollTo().performClick()
-        assertEquals(Settings.ACTION_REQUEST_SCHEDULE_EXACT_ALARM, shadowOf(app).nextStartedActivity.action)
-
-        compose.onNodeWithText("Battery settings").performScrollTo().performClick()
-        assertEquals(Settings.ACTION_IGNORE_BATTERY_OPTIMIZATION_SETTINGS, shadowOf(app).nextStartedActivity.action)
-
-        compose.onNodeWithText("App settings").performScrollTo().performClick()
-        assertEquals(android.content.Intent.ACTION_AUTO_REVOKE_PERMISSIONS, shadowOf(app).nextStartedActivity.action)
+        compose.onNodeWithText("Test urgent low alarm").performClick()
+        assertEquals(StatusNotifier.CHANNEL_URGENT, app.posted(StatusNotifier.ID_URGENT_TEST)!!.channelId)
     }
 
     private fun androidx.compose.ui.test.junit4.AndroidComposeTestRule<*, *>.onAllNodesWithTextFirst(text: String) =

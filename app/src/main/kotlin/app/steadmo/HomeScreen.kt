@@ -106,17 +106,22 @@ fun HomeScreen(
     alertsSilenced: Boolean = false,
     urgentLowSilenced: Boolean = false,
     alarmVolumeMuted: Boolean = false,
+    dndBlocksAlarms: Boolean = false,
     fullScreenAllowed: Boolean = true,
     exactAlarmsAllowed: Boolean = true,
     batteryUnrestricted: Boolean = true,
     unusedAppRestrictionsDisabled: Boolean = true,
+    liveUpdatesAllowed: Boolean = true,
     onAllowFullScreen: () -> Unit = {},
     onOpenAlertSettings: () -> Unit = {},
     onOpenUrgentLowSettings: () -> Unit = {},
     onOpenSoundSettings: () -> Unit = {},
+    onOpenDndSettings: () -> Unit = {},
     onAllowExactAlarms: () -> Unit = {},
     onOpenBatterySettings: () -> Unit = {},
     onOpenUnusedAppSettings: () -> Unit = {},
+    onOpenLiveUpdatesSettings: () -> Unit = {},
+    onReconnectListener: () -> Unit = {},
     clock: () -> Long = System::currentTimeMillis,
     ticking: Boolean = true,
 ) {
@@ -208,6 +213,17 @@ fun HomeScreen(
                 )
             }
             val reliabilityIssues = buildList {
+                if (listenerAllowed && !state.listenerConnected) {
+                    add(
+                        ReliabilityIssue(
+                            title = "Disconnected from CamAPS FX",
+                            body = "Notification access is on, but Android isn't connected to CamAPS FX's notification.",
+                            action = "Reconnect",
+                            onAction = onReconnectListener,
+                            urgent = true,
+                        ),
+                    )
+                }
                 if (notificationsAllowed && urgentLowSilenced) {
                     add(
                         ReliabilityIssue(
@@ -226,6 +242,17 @@ fun HomeScreen(
                             body = "Urgent low alarms use the alarm volume and won't be heard while it's at zero.",
                             action = "Sound settings",
                             onAction = onOpenSoundSettings,
+                            urgent = true,
+                        ),
+                    )
+                }
+                if (notificationsAllowed && dndBlocksAlarms) {
+                    add(
+                        ReliabilityIssue(
+                            title = "Do Not Disturb blocks alarms",
+                            body = "Urgent low alarms won't sound while Do Not Disturb blocks alarms. Allow alarms in Do Not Disturb.",
+                            action = "Do Not Disturb",
+                            onAction = onOpenDndSettings,
                             urgent = true,
                         ),
                     )
@@ -257,6 +284,16 @@ fun HomeScreen(
                             body = "Android pauses apps you rarely open and revokes their permissions. Turn off Pause app activity if unused.",
                             action = "App settings",
                             onAction = onOpenUnusedAppSettings,
+                        ),
+                    )
+                }
+                if (notificationsAllowed && !liveUpdatesAllowed) {
+                    add(
+                        ReliabilityIssue(
+                            title = "Allow Live Updates",
+                            body = "Out-of-range glucose won't show in the status bar chip until Live Updates are allowed.",
+                            action = "Live Update settings",
+                            onAction = onOpenLiveUpdatesSettings,
                         ),
                     )
                 }

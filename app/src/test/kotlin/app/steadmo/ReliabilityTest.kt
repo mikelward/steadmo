@@ -10,6 +10,7 @@ import android.media.AudioManager
 import android.os.PowerManager
 import androidx.test.core.app.ApplicationProvider
 import app.steadmo.core.CamapsParser
+import app.steadmo.widget.WidgetStaleReceiver
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
@@ -89,6 +90,7 @@ class ReliabilityTest {
             assertTrue(action, intents.any { it.component?.className == RecheckReceiver::class.java.name })
             assertTrue(action, intents.any { it.component?.className == SignalWatchReceiver::class.java.name })
             assertTrue(action, intents.any { it.component?.className == WeeklyReportReceiver::class.java.name })
+            assertTrue(action, intents.any { it.component?.className == WidgetStaleReceiver::class.java.name })
         }
     }
 
@@ -108,5 +110,51 @@ class ReliabilityTest {
         app.repository.onCamapsNotification(dump, CamapsParser.parse(dump.viewTexts))
         SignalWatch.run(app, now = start + 15 * MINUTE)
         assertTrue(app.posted(3) != null)
+    }
+
+    @Test fun `dndBlocksAlarms detects Total Silence and Priority without alarms`() {
+        val manager = app.getSystemService(NotificationManager::class.java)
+        shadowOf(manager).setNotificationPolicyAccessGranted(true)
+        manager.setInterruptionFilter(NotificationManager.INTERRUPTION_FILTER_ALL)
+        assertFalse(Reliability.dndBlocksAlarms(app))
+
+        manager.setInterruptionFilter(NotificationManager.INTERRUPTION_FILTER_ALARMS)
+        assertFalse(Reliability.dndBlocksAlarms(app))
+
+        manager.setInterruptionFilter(NotificationManager.INTERRUPTION_FILTER_NONE)
+        assertTrue(Reliability.dndBlocksAlarms(app))
+
+        manager.setInterruptionFilter(NotificationManager.INTERRUPTION_FILTER_PRIORITY)
+        manager.deleteNotificationChannel(StatusNotifier.CHANNEL_URGENT)
+        manager.setNotificationPolicy(NotificationManager.Policy(0, 0, 0))
+        assertTrue(Reliability.dndBlocksAlarms(app))
+
+        manager.createNotificationChannel(
+            NotificationChannel(StatusNotifier.CHANNEL_URGENT, "Urgent low", NotificationManager.IMPORTANCE_HIGH).apply {
+                setBypassDnd(true)
+            },
+        )
+        assertFalse(Reliability.dndBlocksAlarms(app))
+
+        manager.deleteNotificationChannel(StatusNotifier.CHANNEL_URGENT)
+        manager.setNotificationPolicy(NotificationManager.Policy(NotificationManager.Policy.PRIORITY_CATEGORY_ALARMS, 0, 0))
+        assertFalse(Reliability.dndBlocksAlarms(app))
+    }
+
+    @Test fun `liveUpdatesAllowed queries NotificationManager on Android 16`() {
+        assertFalse(Reliability.liveUpdatesAllowed(app))
+    }
+
+    @Test fun `test urgent low alarm posts on its own id and OK stops it without acknowledging real lows`() {
+        app.allowNotifications()
+        UrgentLowAck.clear(app)
+        StatusNotifier(app).showUrgentLowTest()
+        val posted = app.posted(StatusNotifier.ID_URGENT_TEST)
+        assertTrue(posted != null)
+        assertEquals(StatusNotifier.CHANNEL_URGENT, posted!!.channelId)
+
+        UrgentLowAckReceiver().onReceive(app, Intent(UrgentLowAckReceiver.ACTION_TEST_OK))
+        assertEquals(null, app.posted(StatusNotifier.ID_URGENT_TEST))
+        assertEquals(null, UrgentLowAck.get(app))
     }
 }

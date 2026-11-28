@@ -226,6 +226,33 @@ class StatusNotifier(private val context: Context, private val clock: () -> Long
 
     fun cancelUrgentLow() = manager.cancel(ID_URGENT)
 
+    /**
+     * Fires a test alarm on the urgent low channel so the user can check sound,
+     * vibration and Do Not Disturb without affecting real alarm state (SPEC.md §4.17).
+     */
+    fun showUrgentLowTest() {
+        val ok = PendingIntent.getBroadcast(
+            context, 9,
+            Intent(context, UrgentLowAckReceiver::class.java).setAction(UrgentLowAckReceiver.ACTION_TEST_OK),
+            PendingIntent.FLAG_IMMUTABLE,
+        )
+        val notification = Notification.Builder(context, CHANNEL_URGENT)
+            .setSmallIcon(R.drawable.ic_trend_double_down)
+            .setColor(LowColor.toArgb())
+            .setContentTitle("Test urgent low alarm")
+            .setContentText("If you heard this, urgent low alarms can reach you. Tap OK or swipe to stop.")
+            .setCategory(Notification.CATEGORY_ALARM)
+            .setAutoCancel(true)
+            .setContentIntent(openApp())
+            .addAction(Notification.Action.Builder(null, "OK", ok).build())
+            .build()
+        notification.flags = notification.flags or Notification.FLAG_INSISTENT
+        SteadmoLog.event("notify: test urgent low alarm")
+        post(ID_URGENT_TEST, notification)
+    }
+
+    fun cancelUrgentLowTest() = manager.cancel(ID_URGENT_TEST)
+
     /** The daily meal reminder: Bolus, or remind again in 30 or 60 minutes (SPEC.md §4.13). */
     fun showMealReminder(event: String? = null) {
         val bolus = PendingIntent.getActivity(
@@ -424,6 +451,7 @@ class StatusNotifier(private val context: Context, private val clock: () -> Long
         private const val ID_PRE_BOLUS = 6
         private const val ID_MEAL_REMINDER = 7
         const val ID_WEEKLY_REPORT = 8
+        const val ID_URGENT_TEST = 9
         const val CHANNEL_REMINDERS = "reminders"
 
         /** A pre-bolus suggestion is no use once the food has long arrived. */
