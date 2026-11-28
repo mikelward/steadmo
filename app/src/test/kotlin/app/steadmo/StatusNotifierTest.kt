@@ -114,6 +114,34 @@ class StatusNotifierTest {
     }
 
     @Test
+    fun `Live Update chip omits units and never exceeds 7 characters`() {
+        app.allowNotifications()
+        val cases = listOf(
+            Reading(6 * MINUTE, 3.6) to GlucoseUnit.MMOL to "3.6",
+            Reading(6 * MINUTE, 12.0) to GlucoseUnit.MMOL to "12.0",
+            Reading(6 * MINUTE, 2.2, Bound.BELOW) to GlucoseUnit.MMOL to "<2.2",
+            Reading(6 * MINUTE, 22.2, Bound.ABOVE) to GlucoseUnit.MMOL to ">22.2",
+            Reading(6 * MINUTE, 35.0, Bound.ABOVE) to GlucoseUnit.MMOL to ">35.0",
+            Reading(6 * MINUTE, 3.6) to GlucoseUnit.MGDL to "65",
+            Reading(6 * MINUTE, 2.2, Bound.BELOW) to GlucoseUnit.MGDL to "<40",
+            Reading(6 * MINUTE, 22.2, Bound.ABOVE) to GlucoseUnit.MGDL to ">400",
+            Reading(6 * MINUTE, 35.0, Bound.ABOVE) to GlucoseUnit.MGDL to ">631",
+            // Even an abnormally large reading is capped at 7 chars with an ellipsis so it can't be misread.
+            Reading(6 * MINUTE, 100_000.0) to GlucoseUnit.MMOL to "100000…",
+            Reading(6 * MINUTE, 10_000.0, Bound.ABOVE) to GlucoseUnit.MMOL to ">10000…",
+            Reading(6 * MINUTE, 1_000_000.0) to GlucoseUnit.MGDL to "180182…",
+        )
+        for ((input, expected) in cases) {
+            val (reading, unit) = input
+            notifier.showStatus(state.copy(readings = listOf(reading), unit = unit), promote = true)
+            val chip = app.posted(1)!!.shortCriticalText!!
+            assertEquals(expected, chip)
+            assertTrue("Chip '$chip' exceeds ${StatusNotifier.MAX_CHIP_LENGTH} chars", chip.length <= StatusNotifier.MAX_CHIP_LENGTH)
+            assertFalse("Chip '$chip' must omit units", chip.contains(unit.label, ignoreCase = true))
+        }
+    }
+
+    @Test
     fun `no trend yet shows the dash icon`() {
         app.allowNotifications()
         notifier.showStatus(state.copy(trend = null, status = null))

@@ -137,19 +137,19 @@ class StatusNotifier(private val context: Context, private val clock: () -> Long
             .setContentIntent(openApp())
             .apply { if (side == RangeSide.LOW) addAction(treatedAction()) }
         val promoted = promote && Build.VERSION.SDK_INT >= Build.VERSION_CODES.BAKLAVA
-        if (promoted) promote(builder, unit.reading(latest), latest)
+        if (promoted) promote(builder, latest, unit)
         SteadmoLog.verbose("notify: status %s, arrow %s, live update %s (asked %s)", latest.display, arrow, promoted, promote)
         post(ID_STATUS, builder.build())
     }
 
     /** A Live Update: chip text, promotion request, and the range bar. */
     @RequiresApi(Build.VERSION_CODES.BAKLAVA)
-    private fun promote(builder: Notification.Builder, chip: String, latest: Reading) {
+    private fun promote(builder: Notification.Builder, latest: Reading, unit: GlucoseUnit) {
         val low = LowColor.toArgb()
         val inRange = InRangeColor.toArgb()
         val high = HighColor.toArgb()
         builder
-            .setShortCriticalText(chip)
+            .setShortCriticalText(chipText(latest, unit))
             .setStyle(
                 Notification.ProgressStyle()
                     .setStyledByProgress(false)
@@ -579,6 +579,19 @@ class StatusNotifier(private val context: Context, private val clock: () -> Long
         fun lowSilenced(context: Context): Boolean {
             val channel = context.getSystemService(NotificationManager::class.java).getNotificationChannel(CHANNEL_LOW)
             return channel != null && channel.importance < NotificationManager.IMPORTANCE_DEFAULT
+        }
+
+        /** Android 16 Live Update status chips show text in full up to 7 characters. */
+        const val MAX_CHIP_LENGTH = 7
+
+        /**
+         * Live Update status bar chip text: the value (with any sensor bound sign)
+         * without units, capped at [MAX_CHIP_LENGTH] characters so Android shows
+         * the full text in the status bar pill (SPEC.md §4.3).
+         */
+        fun chipText(reading: Reading, unit: GlucoseUnit): String {
+            val text = unit.reading(reading)
+            return if (text.length <= MAX_CHIP_LENGTH) text else text.take(MAX_CHIP_LENGTH - 1) + "…"
         }
 
         /** The Live Update bar runs from 2 to 14 mmol/L in tenths. */
