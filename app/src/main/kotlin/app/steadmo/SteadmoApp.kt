@@ -39,6 +39,7 @@ open class SteadmoApp : Application() {
         MealReminders.restoreSnooze(this)
         CalendarMealReminders.scan(this)
         CalendarMealReminders.watch(this)
+        WeeklyReports.schedule(this)
         Recheck.restore(this, repository.state.value.treatments)
     }
 

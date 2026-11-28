@@ -73,7 +73,7 @@ The app follows the system light or dark setting, with Material You colors. Rang
 - The value is the first text that is a number with one decimal (mmol/L) or an integer
   next to `mg/dL`, from 1 to 35 mmol/L. A leading `<` or `>` marks a bound.
 - A post within 4 minutes of the last reading is the same reading: dropped if unchanged,
-  replacing it if changed. A day of readings is kept in `files/readings.csv`.
+  replacing it if changed. 14 days of readings are kept in `files/readings.csv`.
 - The app shows what it read ("Show CamAPS FX notification") so parsing can be checked on
   a new phone or CamAPS FX version.
 
@@ -212,7 +212,7 @@ on start, so they follow the debug build's package.
 ### 4.10 Treated
 
 Low alerts (low soon, falling fast) and the urgent low alarm offer "Treated". It records a
-hypo treatment in Steadmo only (CamAPS FX doesn't hear of it), kept for a day:
+hypo treatment in Steadmo only (CamAPS FX doesn't hear of it), kept for 14 days:
 - a low-coloured mark on the app's and widget's graphs;
 - the low alerts it answers are cleared, and the urgent low alarm quieted as OK does;
 - rise alerts (rising fast, high soon) hold off for 45 minutes, since the treatment
@@ -243,11 +243,26 @@ kept in memory for a bug report the user sends.
 
 ### 4.15 Navigation
 
-⋮ opens About (a dialog) and the Settings and Disclaimer pages. Settings lists Units, Meal
-reminder and CamAPS FX shortcuts, each with its current value, and each opens its dialog.
+⋮ opens Weekly report, About (a dialog) and the Settings and Disclaimer pages. Settings lists Units, Meal
+reminder, Weekly report and CamAPS FX shortcuts, each with its current value, and each opens its dialog.
 Back closes a dialog, and from a page returns home; only home's back leaves the app. On first
 run, back on the disclaimer leaves, as Leave does. The open page and dialog survive rotation.
 Dialog content scrolls when it doesn't fit.
+
+### 4.16 Weekly report
+
+Once a week (on by default, Saturday at 11:00 local time; ⋮ → Settings → Weekly report turns
+it off or changes the day and time), Steadmo computes a 7-day summary on the device from the
+14 days of stored readings and posts a notification on the Reminders channel with the headline
+stats and top issues. Tapping it opens the Weekly report screen (also reachable from ⋮ → Weekly
+report). The report shows time in range, low, very low (< 3.0 mmol/L), high, average glucose,
+variability (CV), coverage, recorded hypo treatments, and week-over-week change when at least
+a day of prior-week readings exists. It flags recurring issues factually without dosing advice:
+urgent lows, lows on 2+ nights (23:00–07:00, counting a night across midnight as one) or 2+
+mornings/afternoons/evenings, highs on 3+ days in a time-of-day period, wide swings (CV > 36%),
+a time-in-range shift of 5 percentage points or more from last week, and signal gaps. A Share
+button exports the report as plain text through the Android share sheet (clipboard fallback).
+If there are no readings in the last 7 days, no notification is posted.
 
 ### 4.13 Meal reminder
 
@@ -297,7 +312,7 @@ notification" card, with a button to that channel's settings, until it is minimi
 Glucose data stays on the device. Delivery apps' notifications are read on the device and
 not stored; so is the calendar, when calendar meals are on. The app has no `INTERNET` permission. CamAPS FX shortcuts
 reads CamAPS FX's screens only while filling a meal, and logs them with digits masked. The only way
-anything leaves is a bug report the user sends themselves (§6).
+anything leaves is a bug report or weekly report the user shares themselves (§6, §4.16).
 
 ## 6. Debug log and bug reports
 
@@ -321,5 +336,5 @@ Steadmo uses the shared `mikelward/androidlog` log, as the sibling apps do:
 ## 6. Modules
 
 `:core` (plain Kotlin JVM): `CamapsParser`, `ReadingLog`, `TrendCalculator`,
-`AlertPolicy`, `SteadmoLog`. `:app`: the listener, repository, notifications, bug report
+`AlertPolicy`, `WeeklyReport`, `SteadmoLog`. `:app`: the listener, repository, notifications, bug report
 and Compose UI.

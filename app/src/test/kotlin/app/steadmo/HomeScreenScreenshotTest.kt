@@ -90,6 +90,80 @@ class HomeScreenScreenshotTest {
     @Test fun unitsDark() = dialog("units", dark = true) {
         UnitsDialog(GlucoseUnit.MMOL, onPick = {}, onDismiss = {})
     }
+    @Test fun weeklyReport() {
+        val zone = java.time.ZoneId.of("UTC")
+        val end = java.time.ZonedDateTime.of(2026, 11, 28, 11, 0, 0, 0, zone).toInstant().toEpochMilli()
+        val summary = app.steadmo.core.WeeklyReport.Summary(
+            periodStart = end - app.steadmo.core.WeeklyReport.WINDOW_MILLIS,
+            periodEnd = end,
+            readingCount = 1940,
+            coveragePercent = 96,
+            averageMmol = 7.4,
+            lowPercent = 6,
+            veryLowPercent = 1,
+            inRangePercent = 74,
+            highPercent = 20,
+            cvPercent = 33,
+            treatmentCount = 2,
+            comparison = app.steadmo.core.WeeklyReport.WeekComparison(
+                priorInRangePercent = 69,
+                inRangeDeltaPercent = 5,
+                averageDeltaMmol = -0.3,
+                lowDeltaPercent = 1,
+                highDeltaPercent = -6,
+            ),
+            issues = listOf(
+                app.steadmo.core.WeeklyReport.ReportIssue(
+                    app.steadmo.core.WeeklyReport.IssueSeverity.HIGH,
+                    "Lows on 3 nights this week",
+                    "Below 3.9 mmol/L between 23:00 and 07:00 on Tue, Thu and Fri (lowest 3.2).",
+                ),
+                app.steadmo.core.WeeklyReport.ReportIssue(
+                    app.steadmo.core.WeeklyReport.IssueSeverity.MODERATE,
+                    "Highs on 4 evenings this week",
+                    "Above 10.0 mmol/L between 17:00 and 23:00 on Mon, Wed, Thu and Fri (highest 13.1).",
+                ),
+                app.steadmo.core.WeeklyReport.ReportIssue(
+                    app.steadmo.core.WeeklyReport.IssueSeverity.INFO,
+                    "Time in range up 5% from last week",
+                    "74% this week, compared with 69% last week.",
+                ),
+            ),
+        )
+        both("weekly-report") {
+            { WeeklyReportScreen(summary = summary, unit = GlucoseUnit.MMOL, zone = zone, onShare = {}, onBack = {}) }
+        }
+    }
+    @Test fun weeklyReportEmpty() {
+        val zone = java.time.ZoneId.of("UTC")
+        val end = java.time.ZonedDateTime.of(2026, 11, 28, 11, 0, 0, 0, zone).toInstant().toEpochMilli()
+        val summary = app.steadmo.core.WeeklyReport.generate(emptyList(), end, zone)
+        both("weekly-report-empty") {
+            { WeeklyReportScreen(summary = summary, unit = GlucoseUnit.MMOL, zone = zone, onShare = {}, onBack = {}) }
+        }
+    }
+    @Test fun weeklyReportDialogLight() = dialog("weekly-report-dialog", dark = false) {
+        WeeklyReportDialog(
+            on = true,
+            day = java.time.DayOfWeek.SATURDAY,
+            time = "11:00",
+            onToggle = {},
+            onPickDay = {},
+            onPickTime = {},
+            onDismiss = {},
+        )
+    }
+    @Test fun weeklyReportDialogDark() = dialog("weekly-report-dialog", dark = true) {
+        WeeklyReportDialog(
+            on = true,
+            day = java.time.DayOfWeek.SATURDAY,
+            time = "11:00",
+            onToggle = {},
+            onPickDay = {},
+            onPickTime = {},
+            onDismiss = {},
+        )
+    }
 
     /** A dialog has its own window, so each theme gets its own activity. */
     private fun dialog(name: String, dark: Boolean, content: @Composable () -> Unit) {

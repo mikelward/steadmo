@@ -18,7 +18,7 @@ import androidx.core.app.NotificationManagerCompat
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 
 /** MainActivity's pages, besides first-run's disclaimer. */
-enum class Screen { HOME, SETTINGS, DISCLAIMER }
+enum class Screen { HOME, SETTINGS, DISCLAIMER, WEEKLY_REPORT }
 
 class MainActivity : ComponentActivity() {
     private var listenerAllowed by mutableStateOf(false)
@@ -34,6 +34,10 @@ class MainActivity : ComponentActivity() {
             calendarMealsOn = granted
         }
     private var remindersOnTime by mutableStateOf(true)
+    private var weeklyReportOn by mutableStateOf(true)
+    private var weeklyReportDay by mutableStateOf(app.steadmo.core.WeeklyReportSchedule.DEFAULT_DAY)
+    private var weeklyReportTime by mutableStateOf(app.steadmo.core.WeeklyReportSchedule.DEFAULT_TIME)
+    private var pendingScreen by mutableStateOf<Screen?>(null)
     private var suggestShortcuts by mutableStateOf(false)
     private var shortcutsOn by mutableStateOf(false)
     private var disclaimerAccepted by mutableStateOf(false)
@@ -41,13 +45,26 @@ class MainActivity : ComponentActivity() {
     private val requestNotifications =
         registerForActivityResult(ActivityResultContracts.RequestPermission()) { notificationsAllowed = it }
 
+    override fun onNewIntent(intent: Intent) {
+        super.onNewIntent(intent)
+        setIntent(intent)
+        requestedScreen(intent)?.let { pendingScreen = it }
+    }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
         disclaimerAccepted = Disclaimer.accepted(this)
+        val initialScreen = requestedScreen(intent) ?: Screen.HOME
         setContent {
             // Which page is showing; saved, so rotation keeps it. Back returns home from each.
-            var screen by androidx.compose.runtime.saveable.rememberSaveable { mutableStateOf(Screen.HOME) }
+            var screen by androidx.compose.runtime.saveable.rememberSaveable { mutableStateOf(initialScreen) }
+            androidx.compose.runtime.LaunchedEffect(pendingScreen) {
+                pendingScreen?.let {
+                    screen = it
+                    pendingScreen = null
+                }
+            }
             SteadmoTheme {
                 if (!disclaimerAccepted) {
                     DisclaimerScreen(
@@ -68,6 +85,29 @@ class MainActivity : ComponentActivity() {
                     return@SteadmoTheme
                 }
                 val state by repository.state.collectAsStateWithLifecycle()
+                if (screen == Screen.WEEKLY_REPORT) {
+                    val zone = java.time.ZoneId.systemDefault()
+                    val summary = androidx.compose.runtime.remember(state.readings, state.treatments, state.unit) {
+                        app.steadmo.core.WeeklyReport.generate(
+                            readings = state.readings,
+                            now = System.currentTimeMillis(),
+                            zone = zone,
+                            unit = state.unit,
+                            treatments = state.treatments,
+                        )
+                    }
+                    WeeklyReportScreen(
+                        summary = summary,
+                        unit = state.unit,
+                        zone = zone,
+                        onShare = {
+                            val text = app.steadmo.core.WeeklyReport.formatText(summary, state.unit, zone)
+                            WeeklyReports.share(this, text)
+                        },
+                        onBack = { screen = Screen.HOME },
+                    )
+                    return@SteadmoTheme
+                }
                 if (screen == Screen.SETTINGS) {
                     SettingsScreen(
                         unit = state.unit,
@@ -91,6 +131,18 @@ class MainActivity : ComponentActivity() {
                         onCalendarMealsOn = ::setCalendarMeals,
                         remindersOnTime = remindersOnTime,
                         onAllowRemindersOnTime = ::openExactAlarmSettings,
+                        weeklyReportOn = weeklyReportOn,
+                        weeklyReportDay = weeklyReportDay,
+                        weeklyReportTime = formatTime(weeklyReportTime),
+                        onWeeklyReportOn = { on ->
+                            WeeklyReports.set(this, on, weeklyReportDay, weeklyReportTime)
+                            weeklyReportOn = on
+                        },
+                        onPickWeeklyReportDay = { day ->
+                            weeklyReportDay = day
+                            WeeklyReports.set(this, weeklyReportOn, day, weeklyReportTime)
+                        },
+                        onPickWeeklyReportTime = ::pickWeeklyReportTime,
                         shortcutsOn = shortcutsOn,
                         onOpenShortcutsSettings = ::openAccessibilitySettings,
                         onOpenAppInfo = ::openAppInfo,
@@ -118,6 +170,7 @@ class MainActivity : ComponentActivity() {
                     onKnownIssues = ::openKnownIssues,
                     shortcutsOn = shortcutsOn,
                     onOpenShortcutsSettings = ::openAccessibilitySettings,
+                    onWeeklyReport = { screen = Screen.WEEKLY_REPORT },
                     onSettings = { screen = Screen.SETTINGS },
                     alertsSilenced = alertsSilenced,
                     fullScreenAllowed = fullScreenAllowed,
@@ -138,6 +191,9 @@ class MainActivity : ComponentActivity() {
         alertsSilenced = StatusNotifier.alertsSilenced(this)
         mealReminderRules = MealReminders.rules(this)
         calendarMealsOn = CalendarMealReminders.enabled(this) && CalendarMealReminders.permitted(this)
+        weeklyReportOn = WeeklyReports.enabled(this)
+        weeklyReportDay = WeeklyReports.day(this)
+        weeklyReportTime = WeeklyReports.time(this)
         remindersOnTime = Alarms.exactAllowed(this)
         fullScreenAllowed = getSystemService(android.app.NotificationManager::class.java).canUseFullScreenIntent()
         suggestShortcuts = !shortcutsOn && !getSharedPreferences(PREFS_UI, MODE_PRIVATE).getBoolean(KEY_SHORTCUTS_DISMISSED, false)
@@ -175,12 +231,16 @@ class MainActivity : ComponentActivity() {
     }
 
     companion object {
+        const val EXTRA_SCREEN = "app.steadmo.screen"
         const val LATEST_RELEASE_URL = BuildConfig.LATEST_DOWNLOAD_URL
         const val KNOWN_ISSUES_URL = "https://github.com/mikelward/steadmo/issues"
         const val SOURCE_URL = "https://github.com/mikelward/steadmo"
         private const val PREFS_UI = "ui"
         private const val KEY_SHORTCUTS_DISMISSED = "shortcuts_suggestion_dismissed"
     }
+
+    private fun requestedScreen(intent: Intent?): Screen? =
+        intent?.getStringExtra(EXTRA_SCREEN)?.let { name -> Screen.entries.firstOrNull { it.name == name } }
 
     /** Turning calendar meals on asks for calendar access first, if needed. */
     private fun setCalendarMeals(on: Boolean) {
@@ -192,7 +252,7 @@ class MainActivity : ComponentActivity() {
         calendarMealsOn = on
     }
 
-    /** A reminder's time in the phone's 12- or 24-hour format. */
+    /** A local time in the phone's 12- or 24-hour format. */
     private fun formatTime(time: java.time.LocalTime): String = android.text.format.DateFormat.getTimeFormat(this).format(
         java.util.Date.from(time.atDate(java.time.LocalDate.now()).atZone(java.time.ZoneId.systemDefault()).toInstant()),
     )
@@ -222,6 +282,19 @@ class MainActivity : ComponentActivity() {
             },
             suggested.hour,
             suggested.minute,
+            android.text.format.DateFormat.is24HourFormat(this),
+        ).show()
+    }
+
+    private fun pickWeeklyReportTime() {
+        android.app.TimePickerDialog(
+            this,
+            { _, hour, minute ->
+                weeklyReportTime = java.time.LocalTime.of(hour, minute)
+                WeeklyReports.set(this, weeklyReportOn, weeklyReportDay, weeklyReportTime)
+            },
+            weeklyReportTime.hour,
+            weeklyReportTime.minute,
             android.text.format.DateFormat.is24HourFormat(this),
         ).show()
     }

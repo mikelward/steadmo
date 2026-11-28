@@ -34,7 +34,7 @@ data class GlucoseState(
     val camapsChannelId: String? = null,
     val camapsChannelImportance: Int? = null,
     val listenerConnected: Boolean = false,
-    /** "Treated" times, oldest first, for the last day (SPEC.md §4.10). */
+    /** "Treated" times, oldest first, for the last 14 days (SPEC.md §4.10). */
     val treatments: List<Long> = emptyList(),
     /** How glucose is shown; readings are kept in mmol/L whatever this is. */
     val unit: GlucoseUnit = GlucoseUnit.MMOL,
@@ -43,7 +43,7 @@ data class GlucoseState(
 }
 
 /**
- * The readings and CamAPS status, on the device only: a day of readings in
+ * The readings and CamAPS status, on the device only: 14 days of readings in
  * `files/readings.csv`, nothing sent anywhere (SPEC.md §5).
  */
 class GlucoseRepository(
@@ -139,7 +139,7 @@ class GlucoseRepository(
         ?.split(',')?.mapNotNull { it.toLongOrNull() }.orEmpty()
         .filter { clock() - it < Treatment.RETENTION_MILLIS }
 
-    /** Drops treatments older than a day, as readings go by. */
+    /** Drops treatments older than 14 days, as readings go by. */
     private fun pruneTreatments() {
         val kept = _state.value.treatments.filter { clock() - it < Treatment.RETENTION_MILLIS }
         if (kept.size == _state.value.treatments.size) return

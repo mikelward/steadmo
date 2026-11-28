@@ -94,6 +94,9 @@ CamAPS FX's. Each step needs the maintainer's sign-off: these are safety decisio
       likely in the background; find an approach that works offline, without saved places).
 - [x] Pre-bolus prompt 15 minutes before calendar meals and restaurant bookings ("Dinner
       with Sam", "Reservation at ..."), opt-in with calendar access (SPEC.md §4.14).
+- [x] Weekly report: 7-day trends and recurring issues (overnight lows, time-of-day highs/lows,
+      urgent lows, variability, signal gaps, week-over-week change), scheduled Saturday at 11:00
+      by default and adjustable in Settings (SPEC.md §4.16).
 - [ ] Glooko history (boluses, carbs) for the timeline.
 - [ ] Deep links into CamAPS FX's Boost and Ease-off screens, if it ever has them (v1.4
       exposes only its launcher).

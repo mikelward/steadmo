@@ -29,7 +29,7 @@ class ReadingLogTest {
         assertEquals(2, log.all.size)
     }
 
-    @Test fun olderThanADayIsDropped() {
+    @Test fun olderThanRetentionIsDropped() {
         val log = ReadingLog()
         log.add(Reading(0, 6.0))
         log.add(Reading(ReadingLog.RETENTION_MILLIS + 5 * min, 7.0))

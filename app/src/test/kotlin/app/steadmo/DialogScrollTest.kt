@@ -43,4 +43,16 @@ class DialogScrollTest {
     @Test fun units() = scrollsTo(GlucoseUnit.entries.last().label) {
         UnitsDialog(unit = GlucoseUnit.MMOL, onPick = {}, onDismiss = {})
     }
+
+    @Test fun weeklyReport() = scrollsTo("Change") {
+        WeeklyReportDialog(
+            on = true,
+            day = java.time.DayOfWeek.SATURDAY,
+            time = "11:00",
+            onToggle = {},
+            onPickDay = {},
+            onPickTime = {},
+            onDismiss = {},
+        )
+    }
 }

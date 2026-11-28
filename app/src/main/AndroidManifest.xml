@@ -111,6 +111,10 @@
         <receiver
             android:name=".MealReminderReceiver"
             android:exported="false" />
+        <!-- The weekly report alarm (SPEC.md §4.16). -->
+        <receiver
+            android:name=".WeeklyReportReceiver"
+            android:exported="false" />
         <!-- Exported only for these system broadcasts, which other apps can't send. -->
         <receiver
             android:name=".ExactAlarmPermissionReceiver"

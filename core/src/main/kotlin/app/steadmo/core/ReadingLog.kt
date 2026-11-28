@@ -40,7 +40,7 @@ class ReadingLog(initial: List<Reading> = emptyList()) {
 
     companion object {
         const val MIN_INTERVAL_MILLIS = 4 * 60_000L
-        const val RETENTION_MILLIS = 24 * 60 * 60_000L
+        const val RETENTION_MILLIS = 14 * 24 * 60 * 60_000L
 
         /** Reads [encode]'s output, skipping lines it can't parse. */
         fun decode(text: String): ReadingLog = ReadingLog(

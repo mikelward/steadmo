@@ -175,6 +175,7 @@ class TimeChangeReceiver : BroadcastReceiver() {
         SteadmoLog.event("meal reminder: %s; rescheduling", intent.action)
         MealReminders.clockChanged(context)
         CalendarMealReminders.scan(context)
+        WeeklyReports.clockChanged(context)
     }
 }
 
