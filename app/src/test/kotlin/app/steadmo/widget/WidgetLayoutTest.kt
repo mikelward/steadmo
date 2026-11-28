@@ -32,4 +32,9 @@ class WidgetLayoutTest {
         assertEquals(1, l.mealRows)
         assertEquals(120.dp, l.graph)
     }
+
+    @Test fun `large font scale splits meal buttons into two rows`() {
+        val l = WidgetLayout.of(DpSize(360.dp, 480.dp), fontScale = 1.5f)
+        assertEquals(2, l.mealRows)
+    }
 }

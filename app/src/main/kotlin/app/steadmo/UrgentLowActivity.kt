@@ -13,6 +13,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeDrawingPadding
+import androidx.compose.foundation.text.TextAutoSize
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.MaterialTheme
@@ -108,7 +109,15 @@ internal fun UrgentLowScreen(value: String, age: String, stale: Boolean, onTreat
             horizontalAlignment = Alignment.CenterHorizontally,
         ) {
             Text("Urgent low", style = MaterialTheme.typography.headlineMedium, color = LowColor)
-            Text(value, fontSize = 64.sp, fontWeight = FontWeight.Bold, color = valueColor)
+            Text(
+                value,
+                fontSize = 64.sp,
+                fontWeight = FontWeight.Bold,
+                color = valueColor,
+                maxLines = 1,
+                softWrap = false,
+                autoSize = TextAutoSize.StepBased(minFontSize = 28.sp, maxFontSize = 64.sp),
+            )
             Text(
                 if (stale) "Taken $age, with nothing since. Check your glucose." else age,
                 style = MaterialTheme.typography.titleMedium,
