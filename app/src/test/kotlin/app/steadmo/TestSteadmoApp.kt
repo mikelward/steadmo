@@ -8,9 +8,18 @@ import app.steadmo.core.SteadmoLog
  * without the binder calls for process exits.
  */
 class TestSteadmoApp : SteadmoApp() {
+    var testUpdateChecker: UpdateChecker? = null
+
+    override val updateChecker: UpdateChecker
+        get() = testUpdateChecker ?: super.updateChecker
+
     override fun installDiagnosticLog() {
         SteadmoLog.clearSinks()
     }
 
     override fun logProcessExits() = Unit
+
+    override fun createUpdateChecker(): UpdateChecker = object : UpdateChecker(appScope) {
+        override fun check() = Unit
+    }
 }

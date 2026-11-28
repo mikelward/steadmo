@@ -22,6 +22,8 @@ open class SteadmoApp : Application() {
 
     val appScope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
 
+    open val updateChecker: UpdateChecker by lazy { createUpdateChecker() }
+
     /** The persisted debug log, for bug reports; null if it couldn't be set up. */
     var diagnosticSink: DebugFileSink? = null
         private set
@@ -42,6 +44,9 @@ open class SteadmoApp : Application() {
         WeeklyReports.schedule(this)
         Recheck.restore(this, repository.state.value.treatments)
     }
+
+    /** Checks GitHub Releases for a newer build on open (debug builds only; SPEC.md §5). */
+    protected open fun createUpdateChecker(): UpdateChecker = UpdateChecker(appScope)
 
     /**
      * Logcat plus the persisted file, before anything else runs, so a crash
@@ -104,3 +109,6 @@ internal fun installDiagnosticSinks(log: DebugLog, context: Context, installCras
 
 val Context.repository: GlucoseRepository
     get() = (applicationContext as SteadmoApp).repository
+
+val Context.updateChecker: UpdateChecker
+    get() = (applicationContext as SteadmoApp).updateChecker

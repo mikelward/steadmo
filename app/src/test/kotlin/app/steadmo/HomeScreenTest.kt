@@ -145,6 +145,24 @@ class HomeScreenTest {
         assertEquals(1, disclaimerShown)
     }
 
+    @Test fun `an available update badges the overflow button and Get latest version`() {
+        compose.setContent {
+            SteadmoTheme(dark = false) {
+                HomeScreen(
+                    Samples.rising(), true, true, {}, {}, {}, {},
+                    onGetLatest = { latestAsked++ },
+                    updateAvailable = true,
+                    clock = { Samples.NOW },
+                    ticking = false,
+                )
+            }
+        }
+        compose.onNodeWithContentDescription("More options, update available").performClick()
+        compose.onNodeWithContentDescription("Update available").assertIsDisplayed()
+        compose.onNodeWithText("Get latest version").performClick()
+        assertEquals(1, latestAsked)
+    }
+
     private fun settings(shortcuts: Boolean = false) = compose.setContent {
         SteadmoTheme(dark = false) {
             SettingsScreen(

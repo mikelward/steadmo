@@ -243,8 +243,9 @@ kept in memory for a bug report the user sends.
 
 ### 4.15 Navigation
 
-⋮ opens Weekly report, About (a dialog) and the Settings and Disclaimer pages. Settings lists Units, Meal
-reminder, Weekly report and CamAPS FX shortcuts, each with its current value, and each opens its dialog.
+⋮ opens Weekly report, Get latest version, Known issues, Report a bug, About (a dialog) and the Settings and Disclaimer pages.
+In debug builds, Steadmo checks GitHub Releases (`HEAD .../releases/latest` → `v<versionCode>`) on every app open after the disclaimer is accepted, and shows a red dot on ⋮ (and beside Get latest version) when a newer build is available.
+Settings lists Units, Meal reminder, Weekly report and CamAPS FX shortcuts, each with its current value, and each opens its dialog.
 Back closes a dialog, and from a page returns home; only home's back leaves the app. On first
 run, back on the disclaimer leaves, as Leave does. The open page and dialog survive rotation.
 Dialog content scrolls when it doesn't fit.
@@ -351,7 +352,9 @@ notification" card, with a button to that channel's settings, until it is minimi
 ## 5. Privacy
 
 Glucose data stays on the device. Delivery apps' notifications are read on the device and
-not stored; so is the calendar, when calendar meals are on. The app has no `INTERNET` permission. CamAPS FX shortcuts
+not stored; so is the calendar, when calendar meals are on. Release builds have no `INTERNET`
+permission; debug builds declare `INTERNET` solely to check GitHub's latest release tag
+(`HEAD .../releases/latest`) on app open, sending no glucose or user data. CamAPS FX shortcuts
 reads CamAPS FX's screens only while filling a meal, and logs them with digits masked. The only way
 anything leaves is a bug report or weekly report the user shares themselves (§6, §4.16).
 
@@ -377,5 +380,5 @@ Steadmo uses the shared `mikelward/androidlog` log, as the sibling apps do:
 ## 6. Modules
 
 `:core` (plain Kotlin JVM): `CamapsParser`, `ReadingLog`, `TrendCalculator`,
-`AlertPolicy`, `WeeklyReport`, `SteadmoLog`. `:app`: the listener, repository, notifications, bug report
+`AlertPolicy`, `WeeklyReport`, `UpdateCheck`, `SteadmoLog`. `:app`: the listener, repository, notifications, bug report
 and Compose UI.

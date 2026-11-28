@@ -10,7 +10,9 @@ Every push to `main` publishes a GitHub release tagged `v<versionCode>`, marked 
 
 ## Installing and updating the debug build
 
-On the phone, tap **⋮ → Get latest version** in Steadmo, or open
+Debug builds check GitHub Releases on every app open and show a red dot on **⋮** (and beside
+**Get latest version**) whenever a newer build is published. Tap **⋮ → Get latest version** in
+Steadmo, or open
 <https://github.com/mikelward/steadmo/releases/latest/download/steadmo-debug.apk>. The
 browser downloads the APK; open it and allow installing from that source when Android asks.
 

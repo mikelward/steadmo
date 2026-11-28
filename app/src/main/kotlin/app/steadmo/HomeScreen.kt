@@ -28,6 +28,8 @@ import androidx.compose.material3.Switch
 import androidx.compose.foundation.selection.toggleable
 import androidx.compose.ui.semantics.Role
 import androidx.compose.material3.AssistChip
+import androidx.compose.material3.Badge
+import androidx.compose.material3.BadgedBox
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.FilledTonalButton
@@ -98,6 +100,7 @@ fun HomeScreen(
     onShowDisclaimer: () -> Unit = {},
     onOpenAppInfo: () -> Unit = {},
     onGetLatest: () -> Unit = {},
+    updateAvailable: Boolean = false,
     onKnownIssues: () -> Unit = {},
     shortcutsOn: Boolean = false,
     onOpenShortcutsSettings: () -> Unit = {},
@@ -149,6 +152,7 @@ fun HomeScreen(
             TopBar(
                 onWeeklyReport = onWeeklyReport,
                 onGetLatest = onGetLatest,
+                updateAvailable = updateAvailable,
                 onKnownIssues = onKnownIssues,
                 onReportBug = onReportBug,
                 onShowDisclaimer = onShowDisclaimer,
@@ -458,17 +462,40 @@ private fun TopBar(
     onShowDisclaimer: () -> Unit,
     onSettings: () -> Unit,
     onAbout: () -> Unit,
+    updateAvailable: Boolean = false,
 ) {
     var open by remember { mutableStateOf(false) }
     Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
         Text("Steadmo", style = MaterialTheme.typography.titleLarge, modifier = Modifier.weight(1f))
         Box {
             IconButton(onClick = { open = true }) {
-                Icon(painterResource(R.drawable.ic_more_vert), contentDescription = "More options")
+                if (updateAvailable) {
+                    BadgedBox(badge = { Badge(containerColor = LowColor) }) {
+                        Icon(
+                            painterResource(R.drawable.ic_more_vert),
+                            contentDescription = "More options, update available",
+                        )
+                    }
+                } else {
+                    Icon(painterResource(R.drawable.ic_more_vert), contentDescription = "More options")
+                }
             }
             DropdownMenu(expanded = open, onDismissRequest = { open = false }) {
                 DropdownMenuItem(text = { Text("Weekly report") }, onClick = { open = false; onWeeklyReport() })
-                DropdownMenuItem(text = { Text("Get latest version") }, onClick = { open = false; onGetLatest() })
+                DropdownMenuItem(
+                    text = { Text("Get latest version") },
+                    trailingIcon = if (updateAvailable) {
+                        {
+                            Badge(
+                                containerColor = LowColor,
+                                modifier = Modifier.semantics { contentDescription = "Update available" },
+                            )
+                        }
+                    } else {
+                        null
+                    },
+                    onClick = { open = false; onGetLatest() },
+                )
                 DropdownMenuItem(text = { Text("Known issues") }, onClick = { open = false; onKnownIssues() })
                 DropdownMenuItem(text = { Text("Report a bug") }, onClick = { open = false; onReportBug() })
                 DropdownMenuItem(text = { Text("Settings") }, onClick = { open = false; onSettings() })
