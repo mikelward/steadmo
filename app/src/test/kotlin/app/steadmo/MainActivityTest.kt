@@ -142,6 +142,8 @@ class MainActivityTest {
         compose.activityRule.scenario.moveToState(androidx.lifecycle.Lifecycle.State.CREATED)
         compose.activityRule.scenario.moveToState(androidx.lifecycle.Lifecycle.State.RESUMED)
 
+        compose.onNodeWithText("Review").performScrollTo().performClick()
+
         compose.onNodeWithText("Urgent low settings").performScrollTo().performClick()
         val urgent = shadowOf(app).nextStartedActivity
         assertEquals(Settings.ACTION_CHANNEL_NOTIFICATION_SETTINGS, urgent.action)

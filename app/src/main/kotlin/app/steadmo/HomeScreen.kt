@@ -199,22 +199,6 @@ fun HomeScreen(
                     onOpenAlertSettings,
                 )
             }
-            if (notificationsAllowed && urgentLowSilenced) {
-                SetupCard(
-                    "Urgent low alarm is silenced",
-                    "Steadmo's urgent low alarm won't sound. Set Urgent low to High.",
-                    "Urgent low settings",
-                    onOpenUrgentLowSettings,
-                )
-            }
-            if (notificationsAllowed && alarmVolumeMuted) {
-                SetupCard(
-                    "Alarm volume is muted",
-                    "Urgent low alarms use the alarm volume and won't be heard while it's at zero.",
-                    "Sound settings",
-                    onOpenSoundSettings,
-                )
-            }
             if (notificationsAllowed && !fullScreenAllowed) {
                 SetupCard(
                     "Let urgent lows fill the screen",
@@ -223,29 +207,62 @@ fun HomeScreen(
                     onAllowFullScreen,
                 )
             }
-            if (!exactAlarmsAllowed) {
-                SetupCard(
-                    "Allow exact alarms",
-                    "Without Alarms & reminders, signal-loss alerts, hypo rechecks and meal reminders can be up to an hour late.",
-                    "Allow alarms",
-                    onAllowExactAlarms,
-                )
+            val reliabilityIssues = buildList {
+                if (notificationsAllowed && urgentLowSilenced) {
+                    add(
+                        ReliabilityIssue(
+                            title = "Urgent low alarm is silenced",
+                            body = "Steadmo's urgent low alarm won't sound. Set Urgent low to High.",
+                            action = "Urgent low settings",
+                            onAction = onOpenUrgentLowSettings,
+                            urgent = true,
+                        ),
+                    )
+                }
+                if (notificationsAllowed && alarmVolumeMuted) {
+                    add(
+                        ReliabilityIssue(
+                            title = "Alarm volume is muted",
+                            body = "Urgent low alarms use the alarm volume and won't be heard while it's at zero.",
+                            action = "Sound settings",
+                            onAction = onOpenSoundSettings,
+                            urgent = true,
+                        ),
+                    )
+                }
+                if (!exactAlarmsAllowed) {
+                    add(
+                        ReliabilityIssue(
+                            title = "Allow exact alarms",
+                            body = "Without Alarms & reminders, signal-loss alerts, hypo rechecks and meal reminders can be up to an hour late.",
+                            action = "Allow alarms",
+                            onAction = onAllowExactAlarms,
+                        ),
+                    )
+                }
+                if (!batteryUnrestricted) {
+                    add(
+                        ReliabilityIssue(
+                            title = "Keep Steadmo running",
+                            body = "Battery optimization can delay alerts and reminders. Set Battery to Unrestricted.",
+                            action = "Battery settings",
+                            onAction = onOpenBatterySettings,
+                        ),
+                    )
+                }
+                if (!unusedAppRestrictionsDisabled) {
+                    add(
+                        ReliabilityIssue(
+                            title = "Keep Steadmo active when unused",
+                            body = "Android pauses apps you rarely open and revokes their permissions. Turn off Pause app activity if unused.",
+                            action = "App settings",
+                            onAction = onOpenUnusedAppSettings,
+                        ),
+                    )
+                }
             }
-            if (!batteryUnrestricted) {
-                SetupCard(
-                    "Keep Steadmo running",
-                    "Battery optimization can delay alerts and reminders. Set Battery to Unrestricted.",
-                    "Battery settings",
-                    onOpenBatterySettings,
-                )
-            }
-            if (!unusedAppRestrictionsDisabled) {
-                SetupCard(
-                    "Keep Steadmo active when unused",
-                    "Android pauses apps you rarely open and revokes their permissions. Turn off Pause app activity if unused.",
-                    "App settings",
-                    onOpenUnusedAppSettings,
-                )
+            if (reliabilityIssues.isNotEmpty()) {
+                ReliabilityBanner(reliabilityIssues)
             }
 
             val importance = state.camapsChannelImportance
@@ -697,6 +714,87 @@ private fun SetupCard(
             ) {
                 Button(onClick = onClick) { Text(action) }
                 secondaryAction?.let { OutlinedButton(onClick = onSecondary) { Text(it) } }
+            }
+        }
+    }
+}
+
+private data class ReliabilityIssue(
+    val title: String,
+    val body: String,
+    val action: String,
+    val onAction: () -> Unit,
+    val urgent: Boolean = false,
+)
+
+/**
+ * Surfaces reliability issues at the top of the home screen with a warning border
+ * and icon. One issue shows directly; two or more collapse into an expandable
+ * banner so warnings stay first without pushing the glucose reading below the fold
+ * (SPEC.md §4.17).
+ */
+@Composable
+private fun ReliabilityBanner(issues: List<ReliabilityIssue>) {
+    var expanded by rememberSaveable { mutableStateOf(false) }
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        border = androidx.compose.foundation.BorderStroke(1.5.dp, HighColor),
+    ) {
+        if (issues.size == 1) {
+            val issue = issues.single()
+            Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Icon(
+                        painterResource(R.drawable.ic_warning),
+                        contentDescription = "Warning",
+                        tint = HighColor,
+                        modifier = Modifier.size(20.dp),
+                    )
+                    Text(issue.title, style = MaterialTheme.typography.titleMedium)
+                }
+                Text(issue.body, style = MaterialTheme.typography.bodyMedium)
+                Button(onClick = issue.onAction) { Text(issue.action) }
+            }
+            return@Card
+        }
+        val heading = if (issues.any { it.urgent }) {
+            "${issues.size} alert & reliability issues"
+        } else {
+            "${issues.size} reliability settings to check"
+        }
+        val preview = issues.take(2).joinToString(" · ") { it.title } +
+            if (issues.size > 2) " +${issues.size - 2} more" else ""
+        Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(12.dp),
+            ) {
+                Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        Icon(
+                            painterResource(R.drawable.ic_warning),
+                            contentDescription = "Warning",
+                            tint = HighColor,
+                            modifier = Modifier.size(20.dp),
+                        )
+                        Text(heading, style = MaterialTheme.typography.titleMedium)
+                    }
+                    Text(preview, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                }
+                Button(onClick = { expanded = !expanded }) { Text(if (expanded) "Hide" else "Review") }
+            }
+            if (expanded) {
+                androidx.compose.material3.HorizontalDivider()
+                Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                    issues.forEach { issue ->
+                        Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                            Text(issue.title, style = MaterialTheme.typography.titleSmall)
+                            Text(issue.body, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                            OutlinedButton(onClick = issue.onAction) { Text(issue.action) }
+                        }
+                    }
+                }
             }
         }
     }

@@ -408,4 +408,64 @@ class HomeScreenTest {
         compose.onNodeWithText("Hide CamAPS FX notification").performScrollTo().performClick()
         compose.onNodeWithText("Show CamAPS FX notification").assertIsDisplayed()
     }
+
+    @Test fun `multiple reliability issues collapse at the top without hiding the reading`() {
+        compose.setContent {
+            SteadmoTheme(dark = false) {
+                HomeScreen(
+                    Samples.rising(), true, true, {}, {}, {}, {},
+                    urgentLowSilenced = true,
+                    alarmVolumeMuted = true,
+                    exactAlarmsAllowed = false,
+                    batteryUnrestricted = false,
+                    unusedAppRestrictionsDisabled = false,
+                    clock = { Samples.NOW },
+                    ticking = false,
+                )
+            }
+        }
+        compose.onNodeWithText("5 alert & reliability issues").assertIsDisplayed()
+        compose.onNodeWithText("9.4").assertIsDisplayed()
+        compose.onNodeWithText("Urgent low settings").assertDoesNotExist()
+        compose.onNodeWithText("Review").performClick()
+        compose.onNodeWithText("Urgent low settings").performScrollTo().assertIsDisplayed()
+        compose.onNodeWithText("App settings").performScrollTo().assertIsDisplayed()
+        compose.onNodeWithText("Hide").performScrollTo().performClick()
+        compose.onNodeWithText("Urgent low settings").assertDoesNotExist()
+    }
+
+    @Test fun `a single reliability issue shows directly at the top`() {
+        var opened = 0
+        compose.setContent {
+            SteadmoTheme(dark = false) {
+                HomeScreen(
+                    Samples.rising(), true, true, {}, {}, {}, {},
+                    batteryUnrestricted = false,
+                    onOpenBatterySettings = { opened++ },
+                    clock = { Samples.NOW },
+                    ticking = false,
+                )
+            }
+        }
+        compose.onNodeWithText("Keep Steadmo running").assertIsDisplayed()
+        compose.onNodeWithText("9.4").assertIsDisplayed()
+        compose.onNodeWithText("Battery settings").performClick()
+        assertEquals(1, opened)
+    }
+
+    @Test fun `two non-urgent reliability issues show their titles without a more suffix`() {
+        compose.setContent {
+            SteadmoTheme(dark = false) {
+                HomeScreen(
+                    Samples.rising(), true, true, {}, {}, {}, {},
+                    exactAlarmsAllowed = false,
+                    batteryUnrestricted = false,
+                    clock = { Samples.NOW },
+                    ticking = false,
+                )
+            }
+        }
+        compose.onNodeWithText("2 reliability settings to check").assertIsDisplayed()
+        compose.onNodeWithText("Allow exact alarms · Keep Steadmo running").assertIsDisplayed()
+    }
 }
