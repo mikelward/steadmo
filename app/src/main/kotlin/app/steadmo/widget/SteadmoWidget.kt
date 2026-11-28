@@ -75,14 +75,22 @@ class SteadmoWidget(private val clock: () -> Long = System::currentTimeMillis) :
  * no lifecycle owner, so the lifecycle-aware collector would throw.
  */
 @Composable
-fun WidgetRoot(states: StateFlow<GlucoseState>, context: Context, clock: () -> Long) {
+fun WidgetRoot(
+    states: StateFlow<GlucoseState>,
+    context: Context,
+    clock: () -> Long,
+    ticks: StateFlow<Long> = WidgetUpdates.ticks,
+) {
     val state by states.collectAsState()
+    // Read so a live Glance session recomposes when the disclaimer is accepted or a reading goes stale.
+    ticks.collectAsState().value
+    val now = clock()
     // The phone's own 12- or 24-hour setting, not just its locale's.
     val model = WidgetModel.of(
-        state, Disclaimer.accepted(context), clock(),
+        state, Disclaimer.accepted(context), now,
         timeFormat = android.text.format.DateFormat.getTimeFormat(context),
     )
-    GlanceTheme { WidgetContent(model, clock()) }
+    GlanceTheme { WidgetContent(model, now) }
 }
 
 private val StaleColor = Color(0xFF8A8A8A)

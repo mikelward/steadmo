@@ -14,6 +14,9 @@ import app.steadmo.core.SteadmoLog
 import app.steadmo.repository
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
 class SteadmoWidgetReceiver : GlanceAppWidgetReceiver() {
@@ -26,7 +29,18 @@ class SteadmoWidgetReceiver : GlanceAppWidgetReceiver() {
  * greys out on time even during Doze (SPEC.md §4.5, §4.17).
  */
 object WidgetUpdates {
+    private val _ticks = MutableStateFlow(0L)
+
+    /** Incremented on every refresh so a live Glance session recomposes even when [GlucoseState] hasn't changed. */
+    internal val ticks: StateFlow<Long> = _ticks
+
+    /** Nudges any live Glance composition to re-read non-flow state (disclaimer acceptance, clock). */
+    internal fun bump() {
+        _ticks.update { it + 1 }
+    }
+
     suspend fun onState(context: Context, state: GlucoseState, now: Long = System.currentTimeMillis()) {
+        bump()
         val ids = try {
             GlanceAppWidgetManager(context).getGlanceIds(SteadmoWidget::class.java)
         } catch (e: Exception) {
@@ -80,6 +94,7 @@ object WidgetUpdates {
     /** Redraws placed widgets and re-arms for whatever expires next (reading or mode). */
     suspend fun redrawStale(context: Context) {
         SteadmoLog.event("widget: something went stale; redrawing")
+        bump()
         SteadmoWidget().updateAll(context)
         scheduleStale(context, context.repository.state.value)
     }

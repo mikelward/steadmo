@@ -78,6 +78,7 @@ object Disclaimer {
             .putInt(KEY, VERSION)
             .putLong(KEY_AT, now)
             .apply()
+        app.steadmo.widget.WidgetUpdates.bump()
         SteadmoLog.event("ui: disclaimer version %s accepted at %s", VERSION, now)
     }
 }

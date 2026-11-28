@@ -9,6 +9,7 @@ import androidx.glance.testing.unit.hasText
 import androidx.test.core.app.ApplicationProvider
 import app.steadmo.Samples
 import java.text.SimpleDateFormat
+import kotlinx.coroutines.launch
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
@@ -41,6 +42,82 @@ class WidgetContentTest {
         val states = kotlinx.coroutines.flow.MutableStateFlow(Samples.rising())
         provideComposable { WidgetRoot(states, ApplicationProvider.getApplicationContext(), { Samples.NOW }) }
         onNode(hasText("9.4")).assertExists()
+    }
+
+    @Test fun `accepting the disclaimer updates an already-rendered widget`() = kotlinx.coroutines.runBlocking {
+        val context = ApplicationProvider.getApplicationContext<android.content.Context>()
+        val states = kotlinx.coroutines.flow.MutableStateFlow(Samples.rising())
+        liveWidget(context, DpSize(320.dp, 420.dp), { WidgetRoot(states, context, { Samples.NOW }) }) { texts, settle ->
+            org.junit.Assert.assertTrue(texts().contains("Open Steadmo to accept the disclaimer."))
+            org.junit.Assert.assertFalse(texts().contains("9.4"))
+            app.steadmo.Disclaimer.accept(context)
+            settle()
+            org.junit.Assert.assertTrue(texts().contains("9.4"))
+            org.junit.Assert.assertFalse(texts().contains("Open Steadmo to accept the disclaimer."))
+        }
+    }
+
+    @Test fun `a stale redraw updates an already-rendered widget without a new reading`() = kotlinx.coroutines.runBlocking {
+        val context = ApplicationProvider.getApplicationContext<android.content.Context>()
+        app.steadmo.Disclaimer.accept(context)
+        var now = Samples.NOW
+        val states = kotlinx.coroutines.flow.MutableStateFlow(Samples.rising())
+        liveWidget(context, DpSize(250.dp, 120.dp), { WidgetRoot(states, context, { now }) }) { texts, settle ->
+            org.junit.Assert.assertTrue(texts().contains("Auto mode on"))
+            now = Samples.NOW + 20 * 60_000
+            WidgetUpdates.redrawStale(context)
+            settle()
+            val at = android.text.format.DateFormat.getTimeFormat(context).format(Samples.NOW)
+            org.junit.Assert.assertTrue(texts().contains("Auto mode on at $at · No new reading for over 10 min"))
+        }
+    }
+
+    private class TestRoot : androidx.glance.EmittableWithChildren() {
+        override var modifier: androidx.glance.GlanceModifier = androidx.glance.GlanceModifier
+        override fun copy(): androidx.glance.Emittable =
+            TestRoot().also { it.children.addAll(children.map(androidx.glance.Emittable::copy)) }
+    }
+
+    private fun collectTexts(node: androidx.glance.Emittable): List<String> = when (node) {
+        is androidx.glance.text.EmittableText -> listOf(node.text)
+        is androidx.glance.EmittableWithChildren -> node.children.flatMap(::collectTexts)
+        else -> emptyList()
+    }
+
+    private suspend fun liveWidget(
+        context: android.content.Context,
+        size: DpSize,
+        content: @androidx.compose.runtime.Composable () -> Unit,
+        block: suspend (texts: () -> List<String>, settle: suspend () -> Unit) -> Unit,
+    ) {
+        kotlinx.coroutines.coroutineScope {
+            val root = TestRoot()
+            val frameClock = androidx.compose.runtime.BroadcastFrameClock()
+            val recomposer = androidx.compose.runtime.Recomposer(coroutineContext + frameClock)
+            val job = launch(frameClock) { recomposer.runRecomposeAndApplyChanges() }
+            val composition = androidx.compose.runtime.Composition(androidx.glance.Applier(root), recomposer)
+            try {
+                composition.setContent {
+                    androidx.compose.runtime.CompositionLocalProvider(
+                        androidx.glance.LocalContext provides context,
+                        androidx.glance.LocalSize provides size,
+                    ) { content() }
+                }
+                val settle: suspend () -> Unit = {
+                    kotlinx.coroutines.yield()
+                    androidx.compose.runtime.snapshots.Snapshot.sendApplyNotifications()
+                    kotlinx.coroutines.yield()
+                    frameClock.sendFrame(0L)
+                    kotlinx.coroutines.yield()
+                }
+                settle()
+                block({ collectTexts(root) }, settle)
+            } finally {
+                composition.dispose()
+                recomposer.cancel()
+                job.cancel()
+            }
+        }
     }
 
     @Test fun `narrow and tall still shows every meal button`() = runGlanceAppWidgetUnitTest {
