@@ -43,7 +43,9 @@ fun GlucoseGraph(
         val left = labelPx * unit.gutter()
         val width = size.width - left
         fun x(t: Long) = left + width * (1f - (now - t).toFloat() / WINDOW_MILLIS)
-        fun y(v: Double) = (size.height * (1 - (v - bottom) / (top - bottom))).toFloat()
+        // Room above the top line for its label, even at large font sizes.
+        val pad = labelPx
+        fun y(v: Double) = (pad + (size.height - pad) * (1 - (v - bottom) / (top - bottom))).toFloat()
 
         drawRect(
             color = InRangeColor.copy(alpha = 0.12f),

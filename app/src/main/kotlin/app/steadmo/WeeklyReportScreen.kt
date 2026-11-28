@@ -5,6 +5,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
@@ -150,10 +151,11 @@ fun WeeklyReportScreen(
 private fun SummaryCard(summary: WeeklyReport.Summary, unit: GlucoseUnit) {
     Card(modifier = Modifier.fillMaxWidth()) {
         Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
-            Row(
+            FlowRow(
                 modifier = Modifier.fillMaxWidth(),
-                verticalAlignment = Alignment.Bottom,
                 horizontalArrangement = Arrangement.SpaceBetween,
+                verticalArrangement = Arrangement.spacedBy(4.dp),
+                itemVerticalAlignment = Alignment.Bottom,
             ) {
                 Text(
                     "${summary.inRangePercent}% in range",
@@ -177,7 +179,11 @@ private fun SummaryCard(summary: WeeklyReport.Summary, unit: GlucoseUnit) {
                 highPercent = summary.highPercent,
             )
 
-            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+            FlowRow(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalArrangement = Arrangement.spacedBy(8.dp),
+            ) {
                 Metric("Low (<${unit.value(LOW_MMOL)})", "${summary.lowPercent}%", LowColor)
                 Metric("In range", "${summary.inRangePercent}%", InRangeColor)
                 Metric("High (>${unit.value(HIGH_MMOL)})", "${summary.highPercent}%", HighColor)
@@ -286,13 +292,24 @@ internal fun WeeklyReportDialog(
                 if (on) {
                     Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
                         Text("Day", style = MaterialTheme.typography.bodyLarge)
-                        DayRow(listOf(DayOfWeek.MONDAY, DayOfWeek.TUESDAY, DayOfWeek.WEDNESDAY, DayOfWeek.THURSDAY), day, onPickDay)
-                        DayRow(listOf(DayOfWeek.FRIDAY, DayOfWeek.SATURDAY, DayOfWeek.SUNDAY), day, onPickDay)
+                        FlowRow(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                            DayOfWeek.entries.forEach { d ->
+                                val short = d.getDisplayName(TextStyle.SHORT, Locale.US)
+                                val full = d.getDisplayName(TextStyle.FULL, Locale.US)
+                                FilterChip(
+                                    selected = d == day,
+                                    onClick = { onPickDay(d) },
+                                    label = { Text(short, maxLines = 1, softWrap = false) },
+                                    modifier = Modifier.semantics { contentDescription = full },
+                                )
+                            }
+                        }
                     }
-                    Row(
+                    FlowRow(
                         modifier = Modifier.fillMaxWidth(),
-                        verticalAlignment = Alignment.CenterVertically,
                         horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalArrangement = Arrangement.spacedBy(4.dp),
+                        itemVerticalAlignment = Alignment.CenterVertically,
                     ) {
                         Column {
                             Text("Time", style = MaterialTheme.typography.bodyLarge)
@@ -305,20 +322,4 @@ internal fun WeeklyReportDialog(
         },
         confirmButton = { TextButton(onClick = onDismiss) { Text("Close") } },
     )
-}
-
-@Composable
-private fun DayRow(days: List<DayOfWeek>, selected: DayOfWeek, onPick: (DayOfWeek) -> Unit) {
-    Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-        days.forEach { d ->
-            val short = d.getDisplayName(TextStyle.SHORT, Locale.US)
-            val full = d.getDisplayName(TextStyle.FULL, Locale.US)
-            FilterChip(
-                selected = d == selected,
-                onClick = { onPick(d) },
-                label = { Text(short) },
-                modifier = Modifier.semantics { contentDescription = full },
-            )
-        }
-    }
 }

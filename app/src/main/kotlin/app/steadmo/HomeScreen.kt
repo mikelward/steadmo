@@ -5,16 +5,20 @@ import android.content.ClipData
 import android.content.ClipboardManager
 import android.text.format.DateUtils
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.defaultMinSize
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeDrawingPadding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.text.TextAutoSize
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.selection.selectable
@@ -47,6 +51,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
@@ -224,16 +229,45 @@ fun HomeScreen(
                 }
             }
 
-            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                OutlinedButton(onClick = { onMode(CamapsGoal.BOOST) }, modifier = Modifier.weight(1f)) { Text("Boost") }
-                OutlinedButton(onClick = { onMode(CamapsGoal.EASE_OFF) }, modifier = Modifier.weight(1f)) { Text("Ease-off") }
+            val fontScale = LocalDensity.current.fontScale.coerceAtLeast(1f)
+            BoxWithConstraints(modifier = Modifier.fillMaxWidth()) {
+                if (maxWidth >= 220.dp * fontScale) {
+                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        OutlinedButton(onClick = { onMode(CamapsGoal.BOOST) }, modifier = Modifier.weight(1f)) {
+                            Text("Boost", maxLines = 1, softWrap = false)
+                        }
+                        OutlinedButton(onClick = { onMode(CamapsGoal.EASE_OFF) }, modifier = Modifier.weight(1f)) {
+                            Text("Ease-off", maxLines = 1, softWrap = false)
+                        }
+                    }
+                } else {
+                    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                        OutlinedButton(onClick = { onMode(CamapsGoal.BOOST) }, modifier = Modifier.fillMaxWidth()) {
+                            Text("Boost", maxLines = 1, softWrap = false)
+                        }
+                        OutlinedButton(onClick = { onMode(CamapsGoal.EASE_OFF) }, modifier = Modifier.fillMaxWidth()) {
+                            Text("Ease-off", maxLines = 1, softWrap = false)
+                        }
+                    }
+                }
             }
             Text("Meal", style = MaterialTheme.typography.titleSmall)
-            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                listOf(20, 40, 45).forEach { grams ->
-                    FilledTonalButton(onClick = { onMeal(grams) }, modifier = Modifier.weight(1f)) { Text("$grams g") }
+            BoxWithConstraints(modifier = Modifier.fillMaxWidth()) {
+                val perRow = if (maxWidth >= 320.dp * fontScale) 4 else 2
+                val meals: List<Pair<String, () -> Unit>> = listOf(20, 40, 45).map { grams ->
+                    "$grams g" to { onMeal(grams) }
+                } + ("Other" to onOtherMeal)
+                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    meals.chunked(perRow).forEach { row ->
+                        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                            row.forEach { (label, action) ->
+                                FilledTonalButton(onClick = action, modifier = Modifier.weight(1f)) {
+                                    Text(label, maxLines = 1, softWrap = false)
+                                }
+                            }
+                        }
+                    }
                 }
-                FilledTonalButton(onClick = onOtherMeal, modifier = Modifier.weight(1f)) { Text("Other") }
             }
             Text(
                 "These open CamAPS FX, where you check and confirm the dose.",
@@ -263,6 +297,10 @@ private fun Reading(state: GlucoseState, now: Long, stale: Boolean) {
             fontWeight = FontWeight.Bold,
             fontFamily = FontFamily.Monospace,
             color = color,
+            maxLines = 1,
+            softWrap = false,
+            autoSize = TextAutoSize.StepBased(minFontSize = 32.sp, maxFontSize = 72.sp),
+            modifier = Modifier.weight(1f, fill = false),
         )
         Icon(
             painter = painterResource(trend?.arrow.drawable()),
@@ -367,7 +405,7 @@ internal fun ShortcutsDialog(on: Boolean, onOpenSettings: () -> Unit, onOpenAppI
         },
         confirmButton = { TextButton(onClick = onOpenSettings) { Text("Open settings") } },
         dismissButton = {
-            Row {
+            FlowRow {
                 if (!on) TextButton(onClick = onOpenAppInfo) { Text("App info") }
                 TextButton(onClick = onDismiss) { Text("Close") }
             }
@@ -408,7 +446,7 @@ internal fun AboutDialog(version: String, onSourceCode: () -> Unit, onDismiss: (
         },
         confirmButton = { TextButton(onClick = onDismiss) { Text("Close") } },
         dismissButton = {
-            Row {
+            FlowRow {
                 TextButton(onClick = { showingLicence = true }) { Text("Licence") }
                 TextButton(onClick = onSourceCode) { Text("Source code") }
             }
@@ -455,33 +493,38 @@ internal fun MealReminderDialog(
                 rules.forEach { rule ->
                     val timeText = formatTime(rule.time)
                     Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                        Row(
+                        FlowRow(
                             modifier = Modifier.fillMaxWidth(),
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.spacedBy(4.dp),
+                            horizontalArrangement = Arrangement.spacedBy(8.dp),
+                            verticalArrangement = Arrangement.spacedBy(4.dp),
+                            itemVerticalAlignment = Alignment.CenterVertically,
                         ) {
-                            OutlinedButton(onClick = { onPickRuleTime(rule) }) { Text(timeText) }
+                            OutlinedButton(onClick = { onPickRuleTime(rule) }) {
+                                Text(timeText, maxLines = 1, softWrap = false)
+                            }
                             Text(
                                 MealReminder.formatDays(rule.days),
                                 style = MaterialTheme.typography.bodySmall,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                modifier = Modifier.weight(1f).padding(horizontal = 4.dp),
                             )
-                            Switch(
-                                checked = rule.enabled,
-                                onCheckedChange = { onToggleRule(rule, it) },
-                                modifier = Modifier.semantics { contentDescription = "Remind at $timeText" },
-                            )
-                            IconButton(onClick = { onDeleteRule(rule) }) {
-                                Icon(
-                                    painterResource(R.drawable.ic_delete),
-                                    contentDescription = "Remove reminder $timeText",
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                Switch(
+                                    checked = rule.enabled,
+                                    onCheckedChange = { onToggleRule(rule, it) },
+                                    modifier = Modifier.semantics { contentDescription = "Remind at $timeText" },
                                 )
+                                IconButton(onClick = { onDeleteRule(rule) }) {
+                                    Icon(
+                                        painterResource(R.drawable.ic_delete),
+                                        contentDescription = "Remove reminder $timeText",
+                                    )
+                                }
                             }
                         }
-                        Row(
+                        FlowRow(
                             modifier = Modifier.fillMaxWidth(),
                             horizontalArrangement = Arrangement.spacedBy(4.dp),
+                            verticalArrangement = Arrangement.spacedBy(4.dp),
                         ) {
                             DayOfWeek.entries.forEach { day ->
                                 val selected = day in rule.days
@@ -490,8 +533,7 @@ internal fun MealReminderDialog(
                                     color = if (selected) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surfaceVariant,
                                     contentColor = if (selected) MaterialTheme.colorScheme.onPrimaryContainer else MaterialTheme.colorScheme.onSurfaceVariant,
                                     modifier = Modifier
-                                        .weight(1f)
-                                        .height(32.dp)
+                                        .defaultMinSize(minWidth = 34.dp, minHeight = 32.dp)
                                         .toggleable(
                                             value = selected,
                                             role = Role.Checkbox,
@@ -501,10 +543,15 @@ internal fun MealReminderDialog(
                                             contentDescription = day.getDisplayName(TextStyle.FULL, Locale.US)
                                         },
                                 ) {
-                                    Box(contentAlignment = Alignment.Center) {
+                                    Box(
+                                        contentAlignment = Alignment.Center,
+                                        modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
+                                    ) {
                                         Text(
                                             day.getDisplayName(TextStyle.NARROW, Locale.US),
                                             style = MaterialTheme.typography.labelMedium,
+                                            maxLines = 1,
+                                            softWrap = false,
                                         )
                                     }
                                 }
@@ -592,7 +639,10 @@ private fun SetupCard(
             note?.let {
                 Text(it, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
             }
-            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            FlowRow(
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                verticalArrangement = Arrangement.spacedBy(8.dp),
+            ) {
                 Button(onClick = onClick) { Text(action) }
                 secondaryAction?.let { OutlinedButton(onClick = onSecondary) { Text(it) } }
             }

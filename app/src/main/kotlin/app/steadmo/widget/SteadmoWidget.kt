@@ -102,9 +102,9 @@ internal data class WidgetLayout(val buttons: Boolean, val mealRows: Int, val gr
         private val BUTTON_ROW = 52.dp
         private val GAP = 8.dp
 
-        fun of(size: DpSize): WidgetLayout {
+        fun of(size: DpSize, fontScale: Float = 1f): WidgetLayout {
             val buttons = size.height >= 320.dp
-            val mealRows = if (size.width >= WIDE_MEAL_ROW) 1 else 2
+            val mealRows = if (size.width >= WIDE_MEAL_ROW * fontScale.coerceAtLeast(1f)) 1 else 2
             val buttonSpace = if (buttons) BUTTON_ROW * (1 + mealRows) + GAP else 0.dp
             val left = size.height - PADDING - HEADER - buttonSpace - GAP
             val graph = minOf(left, 120.dp).takeIf { it >= 48.dp && size.height >= 200.dp }
@@ -184,7 +184,7 @@ private fun ColumnScope.Showing(model: WidgetModel.Showing, now: Long, size: DpS
     if (status.isNotEmpty()) {
         Text(status, style = TextStyle(color = GlanceTheme.colors.onSurfaceVariant, fontSize = 13.sp))
     }
-    val layout = WidgetLayout.of(size)
+    val layout = WidgetLayout.of(size, fontScale = context.resources.configuration.fontScale)
     if (layout.graph != null) {
         Spacer(GlanceModifier.height(8.dp))
         val density = context.resources.displayMetrics.density
