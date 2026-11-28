@@ -121,8 +121,43 @@ class MainActivityTest {
     }
 
     @Test fun `Other with no CamAPS FX installed starts nothing`() {
-        compose.onNodeWithText("Other").performClick()
+        compose.onNodeWithText("Other").performScrollTo().performClick()
         assertEquals(null, shadowOf(app).nextStartedActivity)
+    }
+
+    @Test fun `reliability cards open their Android settings pages`() {
+        val manager = app.getSystemService(android.app.NotificationManager::class.java)
+        manager.deleteNotificationChannel(StatusNotifier.CHANNEL_URGENT)
+        manager.createNotificationChannel(
+            android.app.NotificationChannel(StatusNotifier.CHANNEL_URGENT, "Urgent low", android.app.NotificationManager.IMPORTANCE_LOW),
+        )
+        app.getSystemService(android.media.AudioManager::class.java)
+            .setStreamVolume(android.media.AudioManager.STREAM_ALARM, 0, 0)
+        shadowOf(app.getSystemService(android.os.PowerManager::class.java))
+            .setIgnoringBatteryOptimizations(app.packageName, false)
+        shadowOf(app.packageManager).setAutoRevokeWhitelisted(false)
+        org.robolectric.shadows.ShadowAlarmManager.setCanScheduleExactAlarms(false)
+        app.allowNotifications()
+
+        compose.activityRule.scenario.moveToState(androidx.lifecycle.Lifecycle.State.CREATED)
+        compose.activityRule.scenario.moveToState(androidx.lifecycle.Lifecycle.State.RESUMED)
+
+        compose.onNodeWithText("Urgent low settings").performScrollTo().performClick()
+        val urgent = shadowOf(app).nextStartedActivity
+        assertEquals(Settings.ACTION_CHANNEL_NOTIFICATION_SETTINGS, urgent.action)
+        assertEquals(StatusNotifier.CHANNEL_URGENT, urgent.getStringExtra(Settings.EXTRA_CHANNEL_ID))
+
+        compose.onNodeWithText("Sound settings").performScrollTo().performClick()
+        assertEquals(Settings.ACTION_SOUND_SETTINGS, shadowOf(app).nextStartedActivity.action)
+
+        compose.onNodeWithText("Allow alarms").performScrollTo().performClick()
+        assertEquals(Settings.ACTION_REQUEST_SCHEDULE_EXACT_ALARM, shadowOf(app).nextStartedActivity.action)
+
+        compose.onNodeWithText("Battery settings").performScrollTo().performClick()
+        assertEquals(Settings.ACTION_IGNORE_BATTERY_OPTIMIZATION_SETTINGS, shadowOf(app).nextStartedActivity.action)
+
+        compose.onNodeWithText("App settings").performScrollTo().performClick()
+        assertEquals(android.content.Intent.ACTION_AUTO_REVOKE_PERMISSIONS, shadowOf(app).nextStartedActivity.action)
     }
 
     private fun androidx.compose.ui.test.junit4.AndroidComposeTestRule<*, *>.onAllNodesWithTextFirst(text: String) =

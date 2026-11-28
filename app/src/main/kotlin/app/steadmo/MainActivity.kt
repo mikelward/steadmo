@@ -24,7 +24,11 @@ class MainActivity : ComponentActivity() {
     private var listenerAllowed by mutableStateOf(false)
     private var notificationsAllowed by mutableStateOf(false)
     private var alertsSilenced by mutableStateOf(false)
+    private var urgentLowSilenced by mutableStateOf(false)
+    private var alarmVolumeMuted by mutableStateOf(false)
     private var fullScreenAllowed by mutableStateOf(true)
+    private var batteryUnrestricted by mutableStateOf(true)
+    private var unusedAppRestrictionsDisabled by mutableStateOf(true)
     private var mealReminderRules by mutableStateOf(listOf(app.steadmo.core.MealReminder.defaultRule()))
     private var calendarMealsOn by mutableStateOf(false)
     private val requestCalendar =
@@ -173,9 +177,19 @@ class MainActivity : ComponentActivity() {
                     onWeeklyReport = { screen = Screen.WEEKLY_REPORT },
                     onSettings = { screen = Screen.SETTINGS },
                     alertsSilenced = alertsSilenced,
+                    urgentLowSilenced = urgentLowSilenced,
+                    alarmVolumeMuted = alarmVolumeMuted,
                     fullScreenAllowed = fullScreenAllowed,
+                    exactAlarmsAllowed = remindersOnTime,
+                    batteryUnrestricted = batteryUnrestricted,
+                    unusedAppRestrictionsDisabled = unusedAppRestrictionsDisabled,
                     onAllowFullScreen = ::openFullScreenSettings,
                     onOpenAlertSettings = ::openAlertSettings,
+                    onOpenUrgentLowSettings = ::openUrgentLowSettings,
+                    onOpenSoundSettings = ::openSoundSettings,
+                    onAllowExactAlarms = ::openExactAlarmSettings,
+                    onOpenBatterySettings = ::openBatterySettings,
+                    onOpenUnusedAppSettings = ::openUnusedAppSettings,
                     onMinimizeCamaps = { Camaps.openChannelSettings(this, state.camapsPackage, state.camapsChannelId) },
                 )
             }
@@ -189,6 +203,8 @@ class MainActivity : ComponentActivity() {
             checkSelfPermission(Manifest.permission.POST_NOTIFICATIONS) == PackageManager.PERMISSION_GRANTED
         shortcutsOn = CamapsShortcuts.enabled(this)
         alertsSilenced = StatusNotifier.alertsSilenced(this)
+        urgentLowSilenced = StatusNotifier.urgentLowSilenced(this)
+        alarmVolumeMuted = Reliability.alarmVolumeMuted(this)
         mealReminderRules = MealReminders.rules(this)
         calendarMealsOn = CalendarMealReminders.enabled(this) && CalendarMealReminders.permitted(this)
         weeklyReportOn = WeeklyReports.enabled(this)
@@ -196,10 +212,14 @@ class MainActivity : ComponentActivity() {
         weeklyReportTime = WeeklyReports.time(this)
         remindersOnTime = Alarms.exactAllowed(this)
         fullScreenAllowed = getSystemService(android.app.NotificationManager::class.java).canUseFullScreenIntent()
+        batteryUnrestricted = Reliability.batteryUnrestricted(this)
+        unusedAppRestrictionsDisabled = Reliability.unusedAppRestrictionsDisabled(this)
         suggestShortcuts = !shortcutsOn && !getSharedPreferences(PREFS_UI, MODE_PRIVATE).getBoolean(KEY_SHORTCUTS_DISMISSED, false)
         SteadmoLog.event(
-            "ui: resumed; notification access %s, notifications %s, CamAPS FX shortcuts %s, alerts silenced %s",
+            "ui: resumed; notification access %s, notifications %s, CamAPS FX shortcuts %s, alerts silenced %s, " +
+                "urgent low silenced %s, alarm muted %s, exact alarms %s, battery unrestricted %s, unused restrictions off %s",
             listenerAllowed, notificationsAllowed, shortcutsOn, alertsSilenced,
+            urgentLowSilenced, alarmVolumeMuted, remindersOnTime, batteryUnrestricted, unusedAppRestrictionsDisabled,
         )
     }
 
@@ -326,6 +346,44 @@ class MainActivity : ComponentActivity() {
                 .putExtra(Settings.EXTRA_APP_PACKAGE, packageName)
                 .putExtra(Settings.EXTRA_CHANNEL_ID, StatusNotifier.CHANNEL_ALERTS),
             Intent(Settings.ACTION_APP_NOTIFICATION_SETTINGS).putExtra(Settings.EXTRA_APP_PACKAGE, packageName),
+        )
+    }
+
+    /** Steadmo's urgent low channel, where the user can raise its importance again. */
+    private fun openUrgentLowSettings() {
+        SteadmoLog.event("ui: opening urgent low channel settings")
+        launch(
+            "urgent low settings",
+            Intent(Settings.ACTION_CHANNEL_NOTIFICATION_SETTINGS)
+                .putExtra(Settings.EXTRA_APP_PACKAGE, packageName)
+                .putExtra(Settings.EXTRA_CHANNEL_ID, StatusNotifier.CHANNEL_URGENT),
+            Intent(Settings.ACTION_APP_NOTIFICATION_SETTINGS).putExtra(Settings.EXTRA_APP_PACKAGE, packageName),
+        )
+    }
+
+    /** Sound settings, so the user can turn the alarm volume back up. */
+    private fun openSoundSettings() {
+        SteadmoLog.event("ui: opening sound settings")
+        launch("sound settings", Intent(Settings.ACTION_SOUND_SETTINGS))
+    }
+
+    /** Battery optimization settings (no Play-restricted permission), falling back to App info. */
+    private fun openBatterySettings() {
+        SteadmoLog.event("ui: opening battery settings")
+        launch(
+            "battery settings",
+            Intent(Settings.ACTION_IGNORE_BATTERY_OPTIMIZATION_SETTINGS),
+            Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS, android.net.Uri.fromParts("package", packageName, null)),
+        )
+    }
+
+    /** Unused-app restrictions ("Pause app activity if unused"), falling back to App info. */
+    private fun openUnusedAppSettings() {
+        SteadmoLog.event("ui: opening unused app restrictions settings")
+        launch(
+            "app settings",
+            Intent(Intent.ACTION_AUTO_REVOKE_PERMISSIONS, android.net.Uri.fromParts("package", packageName, null)),
+            Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS, android.net.Uri.fromParts("package", packageName, null)),
         )
     }
 

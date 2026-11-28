@@ -10,6 +10,8 @@
     <uses-permission android:name="android.permission.READ_CALENDAR" />
     <!-- Reminders on time, once the user allows "Alarms & reminders" (SPEC.md §4.13); inexact without it. -->
     <uses-permission android:name="android.permission.SCHEDULE_EXACT_ALARM" />
+    <!-- Re-arm alarms and nudge the notification listener after a reboot (SPEC.md §4.17). -->
+    <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
 
     <!-- Package visibility, to open CamAPS FX from the Boost, Ease-off and bolus buttons. -->
     <queries>
@@ -129,6 +131,14 @@
             <intent-filter>
                 <action android:name="android.intent.action.TIMEZONE_CHANGED" />
                 <action android:name="android.intent.action.TIME_SET" />
+            </intent-filter>
+        </receiver>
+        <receiver
+            android:name=".BootReceiver"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.intent.action.BOOT_COMPLETED" />
+                <action android:name="android.intent.action.MY_PACKAGE_REPLACED" />
             </intent-filter>
         </receiver>
 
