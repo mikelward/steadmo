@@ -1,36 +1,56 @@
 package app.steadmo.widget
 
+import android.app.AlarmManager
 import android.content.Context
+import android.content.Intent
 import android.graphics.Color
 import androidx.test.core.app.ApplicationProvider
-import androidx.work.ListenableWorker
-import androidx.work.testing.TestListenableWorkerBuilder
 import app.steadmo.Samples
 import kotlinx.coroutines.runBlocking
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertTrue
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
+import org.robolectric.Shadows.shadowOf
 
 @RunWith(RobolectricTestRunner::class)
 class WidgetUpdatesTest {
     private val context = ApplicationProvider.getApplicationContext<Context>()
+    private val alarms get() = shadowOf(context.getSystemService(AlarmManager::class.java))
 
     @Test fun `with no widget placed, a new state does nothing`() = runBlocking {
         WidgetUpdates.onState(context, Samples.rising(), Samples.NOW)
     }
 
-    @Test fun `scheduling the stale redraw without WorkManager is logged, not thrown`() {
+    @Test fun `the stale redraw uses a non-idle alarm and cancels once stale`() {
+        org.robolectric.shadows.ShadowAlarmManager.setCanScheduleExactAlarms(false)
         WidgetUpdates.scheduleStale(context, Samples.rising(), Samples.NOW)
-        WidgetUpdates.scheduleStale(context, Samples.rising(), Samples.NOW + 60 * 60_000)
-        WidgetUpdates.scheduleStale(context, app.steadmo.GlucoseState(), Samples.NOW)
-    }
+        val alarm = alarms.scheduledAlarms.single {
+            shadowOf(it.operation).savedIntent.component?.className == WidgetStaleReceiver::class.java.name
+        }
+        assertEquals(Samples.NOW + 10 * 60_000L + 5_000, alarm.triggerAtTime)
+        org.junit.Assert.assertFalse(alarm.isAllowWhileIdle)
 
-    @Test fun `the stale redraw is scheduled when WorkManager is there`() {
-        androidx.work.testing.WorkManagerTestInitHelper.initializeTestWorkManager(context)
-        WidgetUpdates.scheduleStale(context, Samples.rising(), Samples.NOW)
-        val work = androidx.work.WorkManager.getInstance(context).getWorkInfosForUniqueWork("widget-stale").get()
-        assertEquals(1, work.size)
+        org.robolectric.shadows.ShadowAlarmManager.setCanScheduleExactAlarms(true)
+        try {
+            WidgetUpdates.scheduleStale(context, Samples.rising(), Samples.NOW)
+            val exact = alarms.scheduledAlarms.last {
+                shadowOf(it.operation).savedIntent.component?.className == WidgetStaleReceiver::class.java.name
+            }
+            assertEquals(org.robolectric.shadows.ShadowAlarmManager.WINDOW_EXACT, exact.windowLengthMs)
+            org.junit.Assert.assertFalse(exact.isAllowWhileIdle)
+        } finally {
+            org.robolectric.shadows.ShadowAlarmManager.setCanScheduleExactAlarms(false)
+        }
+
+        WidgetUpdates.scheduleStale(context, Samples.rising(), Samples.NOW + 60 * 60_000)
+        assertTrue(
+            alarms.scheduledAlarms.none {
+                shadowOf(it.operation).savedIntent.component?.className == WidgetStaleReceiver::class.java.name
+            },
+        )
+        WidgetUpdates.scheduleStale(context, app.steadmo.GlucoseState(), Samples.NOW)
     }
 
     @Test fun `the next redraw is whichever of reading and mode expires first`() {
@@ -47,9 +67,9 @@ class WidgetUpdatesTest {
         assertEquals(null, WidgetUpdates.nextStaleRedraw(app.steadmo.GlucoseState(), Samples.NOW))
     }
 
-    @Test fun `the stale redraw succeeds`() = runBlocking {
-        val worker = TestListenableWorkerBuilder<WidgetUpdates.StaleWorker>(context).build()
-        assertEquals(ListenableWorker.Result.success(), worker.doWork())
+    @Test fun `the stale redraw receiver and helper succeed`() = runBlocking {
+        WidgetUpdates.redrawStale(context)
+        WidgetStaleReceiver().onReceive(context, Intent())
     }
 
     @Test fun `the graph is drawn at the asked size`() {

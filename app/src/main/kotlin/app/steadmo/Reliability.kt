@@ -6,9 +6,11 @@ import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
 import android.media.AudioManager
+import android.os.Build
 import android.os.PowerManager
 import android.service.notification.NotificationListenerService
 import app.steadmo.core.SteadmoLog
+import app.steadmo.widget.WidgetUpdates
 
 /**
  * Checks and recovery hooks that keep Steadmo's listener, alarms and alerts
@@ -28,6 +30,37 @@ object Reliability {
     fun unusedAppRestrictionsDisabled(context: Context): Boolean =
         context.packageManager.isAutoRevokeWhitelisted
 
+    /**
+     * Whether Do Not Disturb currently blocks alarms (Total Silence, or Priority
+     * mode with Alarms disabled). Uses [NotificationManager.getConsolidatedNotificationPolicy]
+     * so no notification policy access permission is needed.
+     */
+    fun dndBlocksAlarms(context: Context): Boolean {
+        val manager = context.getSystemService(NotificationManager::class.java)
+        return when (manager.currentInterruptionFilter) {
+            NotificationManager.INTERRUPTION_FILTER_NONE -> true
+            NotificationManager.INTERRUPTION_FILTER_PRIORITY -> {
+                if (manager.getNotificationChannel(StatusNotifier.CHANNEL_URGENT)?.canBypassDnd() == true) {
+                    return false
+                }
+                val consolidated: NotificationManager.Policy? = manager.consolidatedNotificationPolicy
+                val policy = consolidated ?: try {
+                    manager.notificationPolicy
+                } catch (e: SecurityException) {
+                    SteadmoLog.failure(e, "reliability: couldn't read notification policy")
+                    null
+                }
+                policy != null && (policy.priorityCategories and NotificationManager.Policy.PRIORITY_CATEGORY_ALARMS) == 0
+            }
+            else -> false
+        }
+    }
+
+    /** Whether Android 16+ Live Updates (promoted notifications) are allowed; always true on Android 15. */
+    fun liveUpdatesAllowed(context: Context): Boolean =
+        Build.VERSION.SDK_INT < Build.VERSION_CODES.BAKLAVA ||
+            context.getSystemService(NotificationManager::class.java).canPostPromotedNotifications()
+
     /** Asks the system to bind [CamapsListener] again when access is granted but it is disconnected. */
     fun requestListenerRebind(context: Context) {
         try {
@@ -45,6 +78,7 @@ object Reliability {
         CalendarMealReminders.watch(context)
         WeeklyReports.schedule(context)
         Recheck.restore(context, context.repository.state.value.treatments)
+        WidgetUpdates.scheduleStale(context, context.repository.state.value)
         SignalWatch.run(context)
     }
 

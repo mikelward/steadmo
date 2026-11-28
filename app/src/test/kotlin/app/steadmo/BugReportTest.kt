@@ -34,7 +34,7 @@ class BugReportTest {
         val text = BugReport.section(facts(state), listOf("line one", "line two"))
         assertTrue(text, text.startsWith("Steadmo 21+abc on Google Pixel 9, Android SDK 36"))
         assertTrue(text, text.contains("Notification access: yes; notifications: no; listener connected: yes"))
-        assertTrue(text, text.contains("Reliability: battery unrestricted yes; exact alarms yes; full-screen yes; alerts silenced no; urgent low silenced no; alarm muted no; unused restrictions off yes"))
+        assertTrue(text, text.contains("Reliability: battery unrestricted yes; exact alarms yes; full-screen yes; alerts silenced no; urgent low silenced no; alarm muted no; DND blocks alarms no; unused restrictions off yes; live updates yes"))
         assertTrue(text, text.contains("Disclaimer: version ${Disclaimer.VERSION}, not accepted"))
         assertTrue(text, text.contains("CamAPS FX: $CAMAPS; channel info, importance silent"))
         assertTrue(text, text.contains("latest 9.4 mmol/L, 30s old"))

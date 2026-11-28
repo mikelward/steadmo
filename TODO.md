@@ -73,6 +73,9 @@ CamAPS FX's. Each step needs the maintainer's sign-off: these are safety decisio
       alarm volume, exact alarms, unrestricted battery (without Play-restricted permission),
       and unused-app hibernation; re-arm alarms on reboot/update (`BOOT_COMPLETED`,
       `MY_PACKAGE_REPLACED`) and auto-rebind the listener on signal loss (SPEC.md §4.17).
+- [x] Doze-proof stale widget redraws (`WidgetStaleReceiver`), disconnected listener
+      reconnect banner, Do Not Disturb alarm-blocking check, Android 16 Live Update
+      permission check, and Settings → Test urgent low alarm (SPEC.md §4.17).
 - [ ] Pump connection: find what CamAPS FX's notifications say when it loses the pump
       (bug report while disconnected), then warn, and say so on the Boost and meal buttons.
 - [x] Urgent low alarm below 3.0 mmol/L: an alarm-sound channel that Do Not Disturb lets

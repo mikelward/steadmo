@@ -58,6 +58,10 @@
                 android:name="android.appwidget.provider"
                 android:resource="@xml/steadmo_widget_info" />
         </receiver>
+        <!-- Redraws widgets when a reading or Auto mode report goes stale, even during Doze (SPEC.md §4.17). -->
+        <receiver
+            android:name=".widget.WidgetStaleReceiver"
+            android:exported="false" />
 
         <!-- The no-glucose check (SPEC.md §4.7), set by Steadmo's own alarm. -->
         <receiver

@@ -271,24 +271,39 @@ stretches without opening Steadmo:
 
 - **Reboot and update recovery**: `BootReceiver` listens for `BOOT_COMPLETED` and
   `MY_PACKAGE_REPLACED` (`RECEIVE_BOOT_COMPLETED`) and immediately re-arms all alarms
-  (signal loss, meal reminders, pending snoozes, calendar meals, weekly report, and
-  post-treatment recheck), restarts the calendar watch, and requests a rebind of
-  `CamapsListener` when notification access is granted but it is not yet connected.
+  (signal loss, meal reminders, pending snoozes, calendar meals, weekly report,
+  post-treatment recheck, and widget stale redraw), restarts the calendar watch, and
+  requests a rebind of `CamapsListener` when notification access is granted but it is not
+  yet connected.
+- **Stale widget redraws**: `WidgetUpdates` schedules the 10-minute stale redraw via a
+  non-AllowWhileIdle `RTC` alarm (`WidgetStaleReceiver`) instead of WorkManager so stale
+  values grey out on time without consuming the Doze allow-while-idle quota needed by
+  `SignalWatch`; `SignalWatch` also refreshes widgets when signal loss fires.
 - **Listener auto-rebind**: when the 15-minute signal-loss check fires and notification
   access is still granted but `CamapsListener` is disconnected, Steadmo requests a rebind
   before posting the warning.
-- **Home screen checks**: Steadmo surfaces cards at the top of the home screen when
-  something could silence or delay alerts, each linking straight to the relevant Android
-  settings page (when two or more are active, they collapse into a single expandable
-  banner at the top so warnings stay first without pushing the glucose reading off screen):
+- **Test urgent low alarm**: ⋮ → Settings → Test urgent low alarm posts a test alarm on the
+  Urgent low channel (its own notification ID, without touching real alarm acknowledgement
+  state) so sound, vibration and Do Not Disturb can be verified on a real phone.
+- **Home screen checks**: Steadmo surfaces cards at the top of the home screen with an
+  amber warning border and exclamation triangle when something could silence or delay
+  alerts, each linking straight to the relevant Android settings page (when two or more
+  are active, they collapse into a single expandable banner at the top so warnings stay
+  first without pushing the glucose reading off screen):
+  - Notification access granted but `CamapsListener` disconnected (requests a rebind).
   - Urgent low channel set below Default (opens its channel settings).
   - Alarm volume at zero (opens sound settings).
+  - Do Not Disturb blocking alarms (Total Silence, or Priority mode with Alarms disabled
+    via `consolidatedNotificationPolicy` and the Urgent low channel not set to bypass DND;
+    opens Do Not Disturb settings).
   - Exact alarms (`SCHEDULE_EXACT_ALARM`) not allowed (opens Alarms & reminders).
   - Battery optimization active (checked via `PowerManager.isIgnoringBatteryOptimizations`,
     without declaring the Play-restricted `REQUEST_IGNORE_BATTERY_OPTIMIZATIONS`
     permission; opens battery optimization settings, falling back to App info).
   - "Pause app activity if unused" enabled (`PackageManager.isAutoRevokeWhitelisted`;
     opens unused-app restrictions / App info).
+  - Android 16+ Live Updates (`canPostPromotedNotifications`) disabled (opens Live Update
+    settings).
 
 ### 4.13 Meal reminder
 
