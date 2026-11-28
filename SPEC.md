@@ -277,8 +277,10 @@ stretches without opening Steadmo:
 - **Listener auto-rebind**: when the 15-minute signal-loss check fires and notification
   access is still granted but `CamapsListener` is disconnected, Steadmo requests a rebind
   before posting the warning.
-- **Home screen checks**: Steadmo surfaces cards when something could silence or delay
-  alerts, each linking straight to the relevant Android settings page:
+- **Home screen checks**: Steadmo surfaces cards at the top of the home screen when
+  something could silence or delay alerts, each linking straight to the relevant Android
+  settings page (when two or more are active, they collapse into a single expandable
+  banner at the top so warnings stay first without pushing the glucose reading off screen):
   - Urgent low channel set below Default (opens its channel settings).
   - Alarm volume at zero (opens sound settings).
   - Exact alarms (`SCHEDULE_EXACT_ALARM`) not allowed (opens Alarms & reminders).
