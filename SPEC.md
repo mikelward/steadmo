@@ -121,7 +121,8 @@ reading, or sooner when a newer reading no longer calls for it. In priority orde
 
 On Android 16 and later, Steadmo's status notification becomes a Live Update while the
 latest reading is out of range (below 3.9 or above 10.0) or a "Low soon" alert is
-showing. The status bar chip shows the value next to the arrow icon. The promoted card
+showing. The status bar chip shows the value (without units, capped at 7 characters so Android
+shows it in full) next to the arrow icon. The promoted card
 reads "Low: 3.6 mmol/L", says how long it has been out of range, and shows a progress bar
 on a 2–14 scale (red, green, amber) with the value marked. The notification is demoted
 once a reading is back in range and no low is on the way. It needs
