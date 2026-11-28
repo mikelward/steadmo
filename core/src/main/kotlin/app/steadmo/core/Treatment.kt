@@ -11,8 +11,8 @@ object Treatment {
     /** Rise alerts after a treatment are expected, so they hold off this long. */
     const val HOLD_MILLIS = 45 * 60_000L
 
-    /** Kept for the graph's 3 hours with room to spare, like the readings. */
-    const val RETENTION_MILLIS = 24 * 60 * 60_000L
+    /** Kept for 14 days, like readings, so the weekly report can count treated lows. */
+    const val RETENTION_MILLIS = 14 * 24 * 60 * 60_000L
 
     /** Whether [kind] is a rise that a treatment at [treatedAt] explains, at [now]. */
     fun explains(kind: AlertKind, treatedAt: Long?, now: Long): Boolean =

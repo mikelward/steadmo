@@ -30,8 +30,10 @@ import androidx.compose.ui.unit.dp
 import app.steadmo.core.GlucoseUnit
 import app.steadmo.core.MealReminder
 import app.steadmo.core.MealReminderRule
+import app.steadmo.core.WeeklyReportSchedule
 import java.time.DayOfWeek
 import java.time.LocalTime
+import java.time.format.TextStyle
 import java.util.Locale
 
 /** ⋮ → Settings: Steadmo's own settings, each opening its dialog. Back, or the arrow, returns home. */
@@ -51,6 +53,12 @@ fun SettingsScreen(
     onCalendarMealsOn: (Boolean) -> Unit = {},
     remindersOnTime: Boolean = true,
     onAllowRemindersOnTime: () -> Unit = {},
+    weeklyReportOn: Boolean = true,
+    weeklyReportDay: DayOfWeek = WeeklyReportSchedule.DEFAULT_DAY,
+    weeklyReportTime: String = "11:00",
+    onWeeklyReportOn: (Boolean) -> Unit = {},
+    onPickWeeklyReportDay: (DayOfWeek) -> Unit = {},
+    onPickWeeklyReportTime: () -> Unit = {},
     shortcutsOn: Boolean = false,
     onOpenShortcutsSettings: () -> Unit = {},
     onOpenAppInfo: () -> Unit = {},
@@ -86,6 +94,12 @@ fun SettingsScreen(
                 if (calendarMealsOn) "Calendar meals" else null,
             ).joinToString(" · ").ifEmpty { "Off" }
             SettingRow("Meal reminder", mealSummary) { showing = MEAL_REMINDER }
+            val weeklySummary = if (weeklyReportOn) {
+                "${weeklyReportDay.getDisplayName(TextStyle.SHORT, Locale.US)} at $weeklyReportTime"
+            } else {
+                "Off"
+            }
+            SettingRow("Weekly report", weeklySummary) { showing = WEEKLY_REPORT }
             SettingRow("CamAPS FX shortcuts", if (shortcutsOn) "On" else "Off") { showing = SHORTCUTS }
         }
     }
@@ -106,6 +120,15 @@ fun SettingsScreen(
             onAllowOnTime = onAllowRemindersOnTime,
             onDismiss = close,
         )
+        WEEKLY_REPORT -> WeeklyReportDialog(
+            on = weeklyReportOn,
+            day = weeklyReportDay,
+            time = weeklyReportTime,
+            onToggle = onWeeklyReportOn,
+            onPickDay = onPickWeeklyReportDay,
+            onPickTime = onPickWeeklyReportTime,
+            onDismiss = close,
+        )
         SHORTCUTS -> ShortcutsDialog(
             on = shortcutsOn,
             onOpenSettings = { close(); onOpenShortcutsSettings() },
@@ -117,6 +140,7 @@ fun SettingsScreen(
 
 private const val UNITS = "units"
 private const val MEAL_REMINDER = "meal_reminder"
+private const val WEEKLY_REPORT = "weekly_report"
 private const val SHORTCUTS = "shortcuts"
 
 /** A setting's name and its current value; tapping opens its dialog. */

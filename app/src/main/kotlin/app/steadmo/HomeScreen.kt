@@ -96,6 +96,7 @@ fun HomeScreen(
     onKnownIssues: () -> Unit = {},
     shortcutsOn: Boolean = false,
     onOpenShortcutsSettings: () -> Unit = {},
+    onWeeklyReport: () -> Unit = {},
     onSettings: () -> Unit = {},
     alertsSilenced: Boolean = false,
     fullScreenAllowed: Boolean = true,
@@ -126,6 +127,7 @@ fun HomeScreen(
             var showingShortcuts by rememberSaveable { mutableStateOf(false) }
             var showingAbout by rememberSaveable { mutableStateOf(false) }
             TopBar(
+                onWeeklyReport = onWeeklyReport,
                 onGetLatest = onGetLatest,
                 onKnownIssues = onKnownIssues,
                 onReportBug = onReportBug,
@@ -305,6 +307,7 @@ private fun Reading(state: GlucoseState, now: Long, stale: Boolean) {
 /** The app name, and a ⋮ menu for the things used rarely. */
 @Composable
 private fun TopBar(
+    onWeeklyReport: () -> Unit,
     onGetLatest: () -> Unit,
     onKnownIssues: () -> Unit,
     onReportBug: () -> Unit,
@@ -320,6 +323,7 @@ private fun TopBar(
                 Icon(painterResource(R.drawable.ic_more_vert), contentDescription = "More options")
             }
             DropdownMenu(expanded = open, onDismissRequest = { open = false }) {
+                DropdownMenuItem(text = { Text("Weekly report") }, onClick = { open = false; onWeeklyReport() })
                 DropdownMenuItem(text = { Text("Get latest version") }, onClick = { open = false; onGetLatest() })
                 DropdownMenuItem(text = { Text("Known issues") }, onClick = { open = false; onKnownIssues() })
                 DropdownMenuItem(text = { Text("Report a bug") }, onClick = { open = false; onReportBug() })

@@ -46,6 +46,7 @@ class ExactAlarmPermissionReceiver : BroadcastReceiver() {
         MealReminders.schedule(context)
         MealReminders.restoreSnooze(context)
         CalendarMealReminders.scan(context)
+        WeeklyReports.schedule(context)
         Recheck.restore(context, context.repository.state.value.treatments)
         SignalWatch.run(context)
     }

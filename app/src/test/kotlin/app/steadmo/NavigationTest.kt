@@ -69,9 +69,28 @@ class NavigationTest {
         assertHome()
     }
 
+    @Test fun `back from Weekly report returns home`() {
+        menu("Weekly report")
+        compose.onNodeWithText("Weekly report").assertExists()
+        back()
+        assertHome()
+        assertFalse(compose.activity.isFinishing)
+    }
+
+    @Test fun `Weekly report stays open across rotation`() {
+        menu("Weekly report")
+        compose.activityRule.scenario.recreate()
+        compose.onNodeWithText("Weekly report").assertExists()
+    }
+
     @Test fun `back closes each Settings dialog, then returns home`() {
         menu("Settings")
-        for ((item, title) in listOf("Units" to "mg/dL", "Meal reminder" to "Add reminder", "CamAPS FX shortcuts" to "Open settings")) {
+        for ((item, title) in listOf(
+            "Units" to "mg/dL",
+            "Meal reminder" to "Add reminder",
+            "Weekly report" to "Weekly notification",
+            "CamAPS FX shortcuts" to "Open settings",
+        )) {
             compose.onNodeWithText(item).performClick()
             compose.onNodeWithText(title).assertExists()
             back()

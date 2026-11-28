@@ -290,6 +290,31 @@ class StatusNotifier(private val context: Context, private val clock: () -> Long
         post(ID_PRE_BOLUS, notification)
     }
 
+    /** Weekly summary of trends and recurring issues (SPEC.md §4.16). */
+    fun showWeeklyReport(summary: app.steadmo.core.WeeklyReport.Summary, unit: GlucoseUnit) {
+        val title = app.steadmo.core.WeeklyReport.notificationTitle(summary)
+        val body = app.steadmo.core.WeeklyReport.notificationBody(summary, unit)
+        val open = PendingIntent.getActivity(
+            context, 6,
+            Intent(context, MainActivity::class.java)
+                .putExtra(MainActivity.EXTRA_SCREEN, Screen.WEEKLY_REPORT.name)
+                .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP),
+            PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT,
+        )
+        val notification = Notification.Builder(context, CHANNEL_REMINDERS)
+            .setSmallIcon((null as TrendArrow?).drawable())
+            .setContentTitle(title)
+            .setContentText(body)
+            .setStyle(Notification.BigTextStyle().bigText(body))
+            .setCategory(Notification.CATEGORY_STATUS)
+            .setAutoCancel(true)
+            .setContentIntent(open)
+            .build()
+        post(ID_WEEKLY_REPORT, notification)
+    }
+
+    fun cancelWeeklyReport() = manager.cancel(ID_WEEKLY_REPORT)
+
     fun cancel(id: Int) = manager.cancel(id)
 
     private fun treatedAction(): Notification.Action = Notification.Action.Builder(
@@ -398,6 +423,7 @@ class StatusNotifier(private val context: Context, private val clock: () -> Long
         private const val ID_RECHECK = 5
         private const val ID_PRE_BOLUS = 6
         private const val ID_MEAL_REMINDER = 7
+        const val ID_WEEKLY_REPORT = 8
         const val CHANNEL_REMINDERS = "reminders"
 
         /** A pre-bolus suggestion is no use once the food has long arrived. */
