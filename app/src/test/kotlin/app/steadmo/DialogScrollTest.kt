@@ -33,7 +33,11 @@ class DialogScrollTest {
     }
 
     @Test fun mealReminder() = scrollsTo("restaurant booking") {
-        MealReminderDialog(on = true, time = "18:00", onToggle = {}, onPickTime = {}, onDismiss = {})
+        MealReminderDialog(
+            rules = listOf(app.steadmo.core.MealReminder.defaultRule()),
+            onToggleRule = { _, _ -> }, onPickRuleTime = {}, onToggleRuleDay = { _, _ -> },
+            onDeleteRule = {}, onAddRule = {}, onDismiss = {},
+        )
     }
 
     @Test fun units() = scrollsTo(GlucoseUnit.entries.last().label) {

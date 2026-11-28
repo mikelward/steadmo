@@ -54,13 +54,20 @@ import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.foundation.shape.CircleShape
 import app.steadmo.core.AlertPolicy
 import app.steadmo.core.CamapsGoal
 import app.steadmo.core.GlucoseUnit
+import app.steadmo.core.MealReminder
+import app.steadmo.core.MealReminderRule
 import app.steadmo.core.rate
 import app.steadmo.core.rateLabel
 import app.steadmo.core.reading
 import kotlinx.coroutines.delay
+import java.time.DayOfWeek
+import java.time.LocalTime
+import java.time.format.TextStyle
+import java.util.Locale
 import kotlin.math.abs
 
 /** Readings older than this are shown greyed out (SPEC.md §4.1). */
@@ -419,14 +426,17 @@ internal fun DialogBody(spacing: androidx.compose.ui.unit.Dp = 8.dp, content: @C
     )
 }
 
-/** The daily meal reminder: on or off, and when (SPEC.md §4.13). */
+/** Scheduled meal reminders (each with time and days of the week) and calendar meals (SPEC.md §4.13). */
 @Composable
 internal fun MealReminderDialog(
-    on: Boolean,
-    time: String,
-    onToggle: (Boolean) -> Unit,
-    onPickTime: () -> Unit,
+    rules: List<MealReminderRule>,
+    onToggleRule: (MealReminderRule, Boolean) -> Unit,
+    onPickRuleTime: (MealReminderRule) -> Unit,
+    onToggleRuleDay: (MealReminderRule, DayOfWeek) -> Unit,
+    onDeleteRule: (MealReminderRule) -> Unit,
+    onAddRule: () -> Unit,
     onDismiss: () -> Unit,
+    formatTime: (LocalTime) -> String = { String.format(Locale.US, "%02d:%02d", it.hour, it.minute) },
     calendarOn: Boolean = false,
     onCalendar: (Boolean) -> Unit = {},
     onTime: Boolean = true,
@@ -436,18 +446,69 @@ internal fun MealReminderDialog(
         onDismissRequest = onDismiss,
         title = { Text("Meal reminder") },
         text = {
-            DialogBody {
-                Text("Each day, a reminder to bolus before dinner, with Bolus and remind me in 30 or 60 minutes.")
-                Row(
-                    modifier = Modifier.fillMaxWidth()
-                        .toggleable(value = on, role = Role.Switch, onValueChange = onToggle)
-                        .padding(vertical = 8.dp),
-                    verticalAlignment = Alignment.CenterVertically,
-                ) {
-                    Text("Remind me", style = MaterialTheme.typography.bodyLarge, modifier = Modifier.weight(1f))
-                    Switch(checked = on, onCheckedChange = null)
+            DialogBody(spacing = 12.dp) {
+                Text("Reminders to bolus before meals, with Bolus and remind me in 30 or 60 minutes.")
+                rules.forEach { rule ->
+                    val timeText = formatTime(rule.time)
+                    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(4.dp),
+                        ) {
+                            OutlinedButton(onClick = { onPickRuleTime(rule) }) { Text(timeText) }
+                            Text(
+                                MealReminder.formatDays(rule.days),
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                modifier = Modifier.weight(1f).padding(horizontal = 4.dp),
+                            )
+                            Switch(
+                                checked = rule.enabled,
+                                onCheckedChange = { onToggleRule(rule, it) },
+                                modifier = Modifier.semantics { contentDescription = "Remind at $timeText" },
+                            )
+                            IconButton(onClick = { onDeleteRule(rule) }) {
+                                Icon(
+                                    painterResource(R.drawable.ic_delete),
+                                    contentDescription = "Remove reminder $timeText",
+                                )
+                            }
+                        }
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.spacedBy(4.dp),
+                        ) {
+                            DayOfWeek.entries.forEach { day ->
+                                val selected = day in rule.days
+                                Surface(
+                                    shape = CircleShape,
+                                    color = if (selected) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surfaceVariant,
+                                    contentColor = if (selected) MaterialTheme.colorScheme.onPrimaryContainer else MaterialTheme.colorScheme.onSurfaceVariant,
+                                    modifier = Modifier
+                                        .weight(1f)
+                                        .height(32.dp)
+                                        .toggleable(
+                                            value = selected,
+                                            role = Role.Checkbox,
+                                            onValueChange = { onToggleRuleDay(rule, day) },
+                                        )
+                                        .semantics {
+                                            contentDescription = day.getDisplayName(TextStyle.FULL, Locale.US)
+                                        },
+                                ) {
+                                    Box(contentAlignment = Alignment.Center) {
+                                        Text(
+                                            day.getDisplayName(TextStyle.NARROW, Locale.US),
+                                            style = MaterialTheme.typography.labelMedium,
+                                        )
+                                    }
+                                }
+                            }
+                        }
+                    }
                 }
-                OutlinedButton(onClick = onPickTime, enabled = on) { Text("At $time") }
+                OutlinedButton(onClick = onAddRule) { Text("Add reminder") }
                 Row(
                     modifier = Modifier.fillMaxWidth()
                         .toggleable(value = calendarOn, role = Role.Switch, onValueChange = onCalendar)
@@ -464,7 +525,7 @@ internal fun MealReminderDialog(
                     }
                     Switch(checked = calendarOn, onCheckedChange = null)
                 }
-                if (!onTime && (on || calendarOn)) {
+                if (!onTime && (rules.any { it.enabled && it.days.isNotEmpty() } || calendarOn)) {
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         Column(modifier = Modifier.weight(1f)) {
                             Text("On time", style = MaterialTheme.typography.bodyLarge)

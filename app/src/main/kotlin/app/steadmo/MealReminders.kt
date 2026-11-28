@@ -7,45 +7,92 @@ import android.content.Context
 import android.content.Intent
 import app.steadmo.core.CalendarMeals
 import app.steadmo.core.MealReminder
+import app.steadmo.core.MealReminderRule
 import app.steadmo.core.SteadmoLog
+import java.time.DayOfWeek
 import java.time.LocalTime
 import java.time.ZoneId
 
-/** The daily meal reminder's setting and alarms (SPEC.md §4.13). */
+/** Scheduled meal reminder rules and alarms (SPEC.md §4.13). */
 object MealReminders {
     private const val PREFS = "meal_reminder"
     const val ACTION_FIRE = "app.steadmo.MEAL_REMINDER"
     const val EXTRA_SNOOZE = "snooze_minutes"
     const val EXTRA_EVENT = "event"
+    private const val KEY_RULES = "rules"
     private const val KEY_PENDING = "pending_at"
     private const val KEY_SNOOZE_AT = "snooze_at"
     private const val KEY_SNOOZE_EVENT = "snooze_event"
 
-    fun enabled(context: Context): Boolean = prefs(context).getBoolean("on", true)
+    /** All saved rules, migrating the legacy single daily reminder if needed. */
+    fun rules(context: Context): List<MealReminderRule> {
+        val p = prefs(context)
+        if (p.contains(KEY_RULES)) return MealReminder.decode(p.getString(KEY_RULES, "").orEmpty())
+        val on = p.getBoolean("on", true)
+        val time = LocalTime.ofSecondOfDay(p.getInt("minute_of_day", MealReminder.DEFAULT_TIME.toSecondOfDay() / 60) * 60L)
+        return listOf(MealReminder.defaultRule(on = on, time = time))
+    }
 
-    fun time(context: Context): LocalTime =
-        LocalTime.ofSecondOfDay(prefs(context).getInt("minute_of_day", MealReminder.DEFAULT_TIME.toSecondOfDay() / 60) * 60L)
+    /** Whether at least one scheduled rule is enabled with at least one day selected. */
+    fun enabled(context: Context): Boolean = rules(context).any { it.enabled && it.days.isNotEmpty() }
 
-    fun set(context: Context, on: Boolean, time: LocalTime = time(context), now: Long = System.currentTimeMillis()) {
-        SteadmoLog.event("meal reminder: %s at %s", if (on) "on" else "off", time)
-        // A new time replaces the one set, rather than firing a missed one now.
-        prefs(context).edit().putBoolean("on", on).putInt("minute_of_day", time.toSecondOfDay() / 60).remove(KEY_PENDING).apply()
+    fun time(context: Context): LocalTime = rules(context).firstOrNull()?.time ?: MealReminder.DEFAULT_TIME
+
+    fun setRules(context: Context, rules: List<MealReminderRule>, now: Long = System.currentTimeMillis()) {
+        SteadmoLog.event("meal reminder: %s rule(s) saved (%s active)", rules.size, rules.count { it.enabled && it.days.isNotEmpty() })
+        // A rule change replaces any pending alarm, rather than firing an obsolete one now.
+        prefs(context).edit().putString(KEY_RULES, MealReminder.encode(rules)).remove(KEY_PENDING).apply()
         schedule(context, now)
     }
 
-    /** Sets (or clears) tomorrow's or today's reminder; called on start, on change and after each one. */
+    fun addRule(
+        context: Context,
+        time: LocalTime,
+        days: Set<DayOfWeek> = DayOfWeek.entries.toSet(),
+        now: Long = System.currentTimeMillis(),
+    ): List<MealReminderRule> {
+        val current = rules(context)
+        val id = (current.maxOfOrNull { it.id } ?: 0L) + 1L
+        val updated = current + MealReminderRule(id = id, time = time, days = days, enabled = true)
+        setRules(context, updated, now)
+        return updated
+    }
+
+    fun updateRule(context: Context, rule: MealReminderRule, now: Long = System.currentTimeMillis()): List<MealReminderRule> {
+        val updated = rules(context).map { if (it.id == rule.id) rule else it }
+        setRules(context, updated, now)
+        return updated
+    }
+
+    fun deleteRule(context: Context, id: Long, now: Long = System.currentTimeMillis()): List<MealReminderRule> {
+        val updated = rules(context).filterNot { it.id == id }
+        setRules(context, updated, now)
+        return updated
+    }
+
+    fun set(context: Context, on: Boolean, time: LocalTime = time(context), now: Long = System.currentTimeMillis()) {
+        val current = rules(context)
+        val updated = if (current.isEmpty()) {
+            listOf(MealReminder.defaultRule(on = on, time = time))
+        } else {
+            listOf(current.first().copy(enabled = on, time = time)) + current.drop(1)
+        }
+        setRules(context, updated, now)
+    }
+
+    /** Sets (or clears) the soonest scheduled reminder; called on start, on change and after each one. */
     fun schedule(context: Context, now: Long = System.currentTimeMillis(), zone: ZoneId = ZoneId.systemDefault()) {
         val alarms = context.getSystemService(AlarmManager::class.java)
         val daily = pending(context, 0, Intent(context, MealReminderReceiver::class.java).setAction(ACTION_FIRE))
-        if (!enabled(context)) {
+        val pending = prefs(context).getLong(KEY_PENDING, -1).takeIf { it >= 0 }
+        val at = MealReminder.nextAt(now, rules(context), zone, pending)
+        if (at == null) {
             alarms.cancel(daily)
             prefs(context).edit().remove(KEY_PENDING).apply()
             cancelSnooze(context, calendar = false)
             StatusNotifier(context).cancelMealReminder(calendar = false)
             return
         }
-        val pending = prefs(context).getLong(KEY_PENDING, -1).takeIf { it >= 0 }
-        val at = MealReminder.nextAt(now, time(context), zone, pending)
         prefs(context).edit().putLong(KEY_PENDING, at).apply()
         // On time with "Alarms & reminders" allowed, else within about an hour; either way while idle.
         Alarms.set(context, at, daily)

@@ -28,6 +28,11 @@ import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
 import app.steadmo.core.GlucoseUnit
+import app.steadmo.core.MealReminder
+import app.steadmo.core.MealReminderRule
+import java.time.DayOfWeek
+import java.time.LocalTime
+import java.util.Locale
 
 /** ⋮ → Settings: Steadmo's own settings, each opening its dialog. Back, or the arrow, returns home. */
 @Composable
@@ -35,10 +40,13 @@ fun SettingsScreen(
     unit: GlucoseUnit,
     onSetUnit: (GlucoseUnit) -> Unit,
     onBack: () -> Unit,
-    mealReminderOn: Boolean = true,
-    mealReminderTime: String = "18:00",
-    onMealReminderOn: (Boolean) -> Unit = {},
-    onPickMealReminderTime: () -> Unit = {},
+    mealReminderRules: List<MealReminderRule> = listOf(MealReminder.defaultRule()),
+    formatTime: (LocalTime) -> String = { String.format(Locale.US, "%02d:%02d", it.hour, it.minute) },
+    onToggleMealRule: (MealReminderRule, Boolean) -> Unit = { _, _ -> },
+    onPickMealRuleTime: (MealReminderRule) -> Unit = {},
+    onToggleMealRuleDay: (MealReminderRule, DayOfWeek) -> Unit = { _, _ -> },
+    onDeleteMealRule: (MealReminderRule) -> Unit = {},
+    onAddMealRule: () -> Unit = {},
     calendarMealsOn: Boolean = false,
     onCalendarMealsOn: (Boolean) -> Unit = {},
     remindersOnTime: Boolean = true,
@@ -63,8 +71,18 @@ fun SettingsScreen(
                 Text("Settings", style = MaterialTheme.typography.titleLarge, modifier = Modifier.semantics { heading() })
             }
             SettingRow("Units", unit.label) { showing = UNITS }
+            val activeRules = mealReminderRules.filter { it.enabled && it.days.isNotEmpty() }
+            val scheduledSummary = when (activeRules.size) {
+                0 -> null
+                1 -> {
+                    val rule = activeRules.single()
+                    val time = formatTime(rule.time)
+                    if (rule.days.size == DayOfWeek.entries.size) "At $time" else "At $time, ${MealReminder.formatDays(rule.days)}"
+                }
+                else -> "${activeRules.size} scheduled"
+            }
             val mealSummary = listOfNotNull(
-                if (mealReminderOn) "At $mealReminderTime" else null,
+                scheduledSummary,
                 if (calendarMealsOn) "Calendar meals" else null,
             ).joinToString(" · ").ifEmpty { "Off" }
             SettingRow("Meal reminder", mealSummary) { showing = MEAL_REMINDER }
@@ -75,10 +93,13 @@ fun SettingsScreen(
     when (showing) {
         UNITS -> UnitsDialog(unit = unit, onPick = { close(); onSetUnit(it) }, onDismiss = close)
         MEAL_REMINDER -> MealReminderDialog(
-            on = mealReminderOn,
-            time = mealReminderTime,
-            onToggle = onMealReminderOn,
-            onPickTime = onPickMealReminderTime,
+            rules = mealReminderRules,
+            formatTime = formatTime,
+            onToggleRule = onToggleMealRule,
+            onPickRuleTime = onPickMealRuleTime,
+            onToggleRuleDay = onToggleMealRuleDay,
+            onDeleteRule = onDeleteMealRule,
+            onAddRule = onAddMealRule,
             calendarOn = calendarMealsOn,
             onCalendar = onCalendarMealsOn,
             onTime = remindersOnTime,

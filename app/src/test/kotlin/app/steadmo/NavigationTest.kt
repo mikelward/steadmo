@@ -71,7 +71,7 @@ class NavigationTest {
 
     @Test fun `back closes each Settings dialog, then returns home`() {
         menu("Settings")
-        for ((item, title) in listOf("Units" to "mg/dL", "Meal reminder" to "Remind me", "CamAPS FX shortcuts" to "Open settings")) {
+        for ((item, title) in listOf("Units" to "mg/dL", "Meal reminder" to "Add reminder", "CamAPS FX shortcuts" to "Open settings")) {
             compose.onNodeWithText(item).performClick()
             compose.onNodeWithText(title).assertExists()
             back()
